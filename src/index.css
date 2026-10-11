@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* animate-heartbeat: double "thump" then rest, used on the Publish button's unpublished-changes square */
+@theme {
+  --animate-heartbeat: heartbeat 1.2s ease-in-out infinite;
+
+  @keyframes heartbeat {
+    0%, 40%, 100% { transform: scale(1); opacity: 0.8; }
+    10%, 30% { transform: scale(1.4); opacity: 1; }
+    20% { transform: scale(1.1); }
+  }
+}
+
+/* hide the terra-draw toolbar outside edit mode (toggled by TerritoryLayer) */
+.draw-locked .maplibregl-ctrl-group:has(.maplibregl-terradraw-render-button, .maplibregl-terradraw-add-control) {
+  display: none;
+}
+
+/* bigger terra-draw toolbar buttons */
+.maplibregl-ctrl-group button[class*="maplibregl-terradraw-"] {
+  width: 40px;
+  height: 40px;
+  background-size: 24px;
+}
+
+/* amber hover to match the nav bar; skip the active tool so its own highlight stays visible */
+.maplibregl-ctrl-group button[class*="maplibregl-terradraw-"]:not(.active):hover {
+  background-color: rgb(251 196 18 / 0.25);
+}
+
+/* old-school square look: MapLibre's own controls (draw toolbar, zoom, attribution) are rounded by default */
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-group button,
+.maplibregl-ctrl-attrib,
+.maplibregl-popup-content {
+  border-radius: 0 !important;
+}
