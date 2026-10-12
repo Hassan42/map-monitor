@@ -7,6 +7,7 @@ import type { TerraDraw, GeoJSONStoreFeatures, HexColor } from 'terra-draw'
 import { useMap, useSelection } from '../store/MapContext'
 import { createTerritory, deleteTerritory, editTerritory } from '../api/territory'
 import type { DrawMode, Faction, Territory } from '../types/types'
+import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID } from '../map/mapLayers'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formColorInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
 // saved territories carry their color in properties; new unsaved drawings fall back to blue
@@ -92,6 +93,9 @@ function TerritoryLayer({
             selectedPolygonOutlineColor: '#ffffff',
             selectedPolygonOutlineWidth: 1,
           },
+          cursors: {
+            dragStart: "wait"
+          }
         }),
       },
     })
@@ -110,6 +114,8 @@ function TerritoryLayer({
 
     // terra-draw only holds territories; map its feature UUID back to the territory's real id
     const handleSelect = (id: string | number) => {
+
+
       const feature = terraDraw.getSnapshot().find((f) => f.id === id)
       const territoryId = feature?.properties.territoryId as number | undefined
       // a just-drawn, unsaved shape has no territoryId yet

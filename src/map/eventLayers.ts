@@ -12,7 +12,7 @@ import {
 // what the events look like on the map: one clustered GeoJSON source and the layers drawing it.
 // EventMarkers fills the source with data and creates the per-color marker images.
 
-const SELECTED_COLOR = '#fbc412' // amber, like the rest of the UI
+const SELECTED_COLOR = '#ffc400' // amber, like the rest of the UI
 
 // clusters have point_count; single events don't
 const IS_CLUSTER: FilterSpecification = ['has', 'point_count']
@@ -60,7 +60,7 @@ const eventLayers: AddLayerObject[] = [
     type: 'circle',
     source: EVENTS_SOURCE_ID,
     filter: ['==', ['get', 'id'], -1],
-    paint: { 'circle-radius': 26, 'circle-color': SELECTED_COLOR },
+    paint: { 'circle-radius': 28, 'circle-color': SELECTED_COLOR },
   },
   // single events: each one image (circle + category icon), picked by category + faction color - the same
   // name eventImageId() gives. Added up front: the source starts empty, and EventMarkers creates each

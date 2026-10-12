@@ -35,3 +35,9 @@
 .maplibregl-popup-content {
   border-radius: 0 !important;
 }
+
+/* Select tool: arrow instead of MapLibre's hand when nothing is selected/hovered.
+   terra-draw's own cursors (move, grab, ...) are set inline on the canvas, so they still win */
+.select-tool .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: default;
+}

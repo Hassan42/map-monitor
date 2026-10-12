@@ -28,7 +28,7 @@ function Map() {
     const [editMode, setEditMode] = useState(false)
     const [isPlacingEvent, setIsPlacingEvent] = useState(false)
     const [mapSummary, setMapSummary] = useState<MapSummary | null>(null)
-    const [drawMode, setDrawMode] = useState<DrawMode | null>(null)
+    const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
     // whether the draft has anything to publish - always taken from the backend so it survives reloads
     const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
 

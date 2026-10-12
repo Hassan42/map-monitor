@@ -36,13 +36,20 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
     }
   }, [map])
 
+  // override terra-draw default cursor when select mode is enabled in editmode
+  useEffect(() =>{
+    if (!map) return
+    const container = map.getContainer()
+    container.classList.toggle('select-tool', active)
+    return () => container.classList.remove('select-tool')
+  }, [map, active])
+
+
   // Select tool: one handler decides what was clicked
   useEffect(() => {
     if (!map || !active) return
 
     const canvas = map.getCanvas()
-    // view mode: arrow cursor; in edit mode terra-draw sets its own cursors
-    if (!editMode) canvas.style.cursor = 'default'
 
     const handleClick = (e: MapMouseEvent) => {
       const layers = [EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID].filter((id) => map.getLayer(id))
@@ -65,7 +72,6 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
 
     map.on('click', handleClick)
     return () => {
-      if (!editMode) canvas.style.cursor = ''
       map.off('click', handleClick)
     }
   }, [map, active, editMode, setSelected])
@@ -74,34 +80,6 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
   useEffect(() => {
     if (!active) setSelected(null)
   }, [active, setSelected])
-
-  // pointer cursor over clusters (always) and events (Select tool only);
-  // restores whatever cursor the active tool had on leave
-  useEffect(() => {
-    if (!map) return
-
-    const layers = active ? [EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID] : [EVENTS_CLUSTER_LAYER_ID]
-    const canvas = map.getCanvas()
-    let previousCursor = ''
-    const handleEnter = () => {
-      previousCursor = canvas.style.cursor
-      canvas.style.cursor = 'pointer'
-    }
-    const handleLeave = () => {
-      canvas.style.cursor = previousCursor
-    }
-
-    for (const id of layers) {
-      map.on('mouseenter', id, handleEnter)
-      map.on('mouseleave', id, handleLeave)
-    }
-    return () => {
-      for (const id of layers) {
-        map.off('mouseenter', id, handleEnter)
-        map.off('mouseleave', id, handleLeave)
-      }
-    }
-  }, [map, active])
 
   return null
 }
