@@ -3,6 +3,7 @@ import type { SubmitEvent } from 'react'
 import { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw'
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import { TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
+import type { TerraDrawMouseEvent } from 'terra-draw'
 import type { TerraDraw, GeoJSONStoreFeatures, HexColor } from 'terra-draw'
 import { useMap, useSelection } from '../store/MapContext'
 import { createTerritory, deleteTerritory, editTerritory } from '../api/territory'
@@ -15,6 +16,7 @@ const territoryColor = (f: GeoJSONStoreFeatures) => (f.properties.color as HexCo
 
 // view-mode selection (set by the highlight effect); styled like terra-draw's edit-mode selection
 const isHighlighted = (f: GeoJSONStoreFeatures) => f.properties.highlighted === true
+
 
 // select-mode finish actions that change a polygon's shape
 const EDIT_ACTIONS = ['edit', 'deleteCoordinate', 'insertMidpoint', 'dragCoordinate', 'dragFeature', 'dragCoordinateResize']
@@ -57,6 +59,7 @@ function TerritoryLayer({
   // terra-draw feature id -> territory stableId; needed because a deleted feature can't be looked up anymore
   const featureToTerritoryRef = useRef(new Map<string | number, number>())
 
+
   useEffect(() => {
     territoriesRef.current = territories
   }, [territories])
@@ -64,6 +67,17 @@ function TerritoryLayer({
   // create terra-draw once per map; it stays alive in both view and edit mode
   useEffect(() => {
     if (!map) return
+
+    const isOverEvent = (e: TerraDrawMouseEvent) => {
+      const layers = [EVENTS_LAYER_ID, EVENTS_CLUSTER_LAYER_ID].filter((id) => map.getLayer(id))
+      const eventSelected = layers.length > 0 && map.queryRenderedFeatures([e.containerX, e.containerY], { layers }).length > 0
+      const selectedFeature = terraDraw
+        ?.getSnapshot()
+        .find((f) => f.properties.selected === true && f.geometry.type === 'Polygon')
+      const selectedFeatureID = selectedFeature?.id
+      if (selectedFeatureID != null && eventSelected) terraDraw?.deselectFeature(selectedFeatureID)
+      return eventSelected
+    }
 
     const draw = new MaplibreTerradrawControl({
       modes: [
@@ -93,8 +107,13 @@ function TerritoryLayer({
             selectedPolygonOutlineColor: '#ffffff',
             selectedPolygonOutlineWidth: 1,
           },
-          cursors: {
-            dragStart: "wait"
+          pointerEvents: {
+            leftClick: (e) => !isOverEvent(e),
+            onDragStart: (e) => !isOverEvent(e),
+            rightClick: true,
+            contextMenu: false,
+            onDrag: true,
+            onDragEnd: true,
           }
         }),
       },
