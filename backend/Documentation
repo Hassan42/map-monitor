@@ -1,0 +1,17 @@
+
+
+How security pipeline work:
+
+    first initiate firebase app in firebaseconfig
+
+    then we write our own firebasefilter, and register it in securtiyconfig
+
+    securityconfig is only applied on api path
+
+    security config configure the cors and the authorization
+
+    user send a request from their browser to firebase if cridentials are correct
+
+    firebase auth responds with jwt token and the user sends this to backend
+
+    backend verifies the signature and authenticate users.

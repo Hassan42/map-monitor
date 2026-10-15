@@ -1,0 +1,48 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+.env
+
+.DS_Store
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Secrets: never commit keys or env files (.env.example is fine to share) ###
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+*service-account*.json
+*.pem
+*.p12
+
+### Claude Code: local settings, session data ###
+.claude/
+CLAUDE.local.md
