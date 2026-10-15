@@ -12,6 +12,7 @@ public class CreateEventMarkerRequest {
     private LocalDateTime timestamp;
     private EventCategory category;
     private Long factionId;
+    private String sourceURL;
 
     public String getTitle() {
         return title;
@@ -67,5 +68,13 @@ public class CreateEventMarkerRequest {
 
     public void setFactionId(Long factionId) {
         this.factionId = factionId;
+    }
+
+    public String getSourceURL() {
+        return sourceURL;
+    }
+
+    public void setSourceURL(String sourceURL){
+        this.sourceURL = sourceURL;
     }
 }

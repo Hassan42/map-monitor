@@ -36,7 +36,8 @@ public class EventMarker {
     @JoinColumn(name = "map_version_id", nullable = false)
     private MapVersion mapVersion;
 
-    private String source;
+    @Column(length = 2048)
+    private String sourceURL;
 
     public Long getId() {
         return id;
@@ -114,8 +115,8 @@ public class EventMarker {
         this.factionId = factionId;
     }
 
-    public String getSource() { return source; }
+    public String getSourceURL() { return sourceURL; }
 
-    public void setSource(String source) { this.source = source; }
+    public void setSourceURL(String source) { this.sourceURL = source; }
 
 }

@@ -25,6 +25,7 @@ function AddEvent({
   const [description, setDescription] = useState('')
   const [factionId, setFactionId] = useState<number | ''>('')
   const [category, setCategory] = useState<EventCategory>('OTHER')
+  const [sourceURL, setSourceURL] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -69,6 +70,7 @@ function AddEvent({
         timestamp: new Date().toISOString(),
         category,
         factionId,
+        sourceURL,
       })
       onCreated(event)
       setPendingLocation(null)
@@ -97,6 +99,10 @@ function AddEvent({
         <div className={formFieldClass}>
           <label htmlFor="event-description">Description:</label>
           <input type="text" id="event-description" value={description} onChange={(e) => setDescription(e.target.value)} className={formInputClass} />
+        </div>
+        <div className={formFieldClass}>
+          <label htmlFor="event-description">Source (URL):</label>
+          <input type="text" id="event-source" value={sourceURL} onChange={(e) => setSourceURL(e.target.value)} className={formInputClass} />
         </div>
         <div className={formFieldClass}>
           <label htmlFor="event-category">Category:</label>

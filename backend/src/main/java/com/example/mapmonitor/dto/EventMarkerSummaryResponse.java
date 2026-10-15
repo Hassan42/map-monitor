@@ -14,6 +14,7 @@ public class EventMarkerSummaryResponse {
     private final LocalDateTime timestamp;
     private final EventCategory category;
     private final Long factionId;
+    private final String sourceURL;
 
     private EventMarkerSummaryResponse(EventMarker event) {
         this.id = event.getStableId();
@@ -24,6 +25,7 @@ public class EventMarkerSummaryResponse {
         this.timestamp = event.getTimestamp();
         this.category = event.getCategory();
         this.factionId = event.getFactionId();
+        this.sourceURL = event.getSourceURL();
     }
 
     public static EventMarkerSummaryResponse from(EventMarker event) {
@@ -61,4 +63,6 @@ public class EventMarkerSummaryResponse {
     public Long getFactionId() {
         return factionId;
     }
+
+    public String getSourceURL() {return sourceURL; }
 }

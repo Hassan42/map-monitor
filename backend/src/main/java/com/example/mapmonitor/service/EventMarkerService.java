@@ -66,6 +66,7 @@ public class EventMarkerService {
         event.setTimestamp(request.getTimestamp() != null ? request.getTimestamp() : LocalDateTime.now());
         event.setCategory(request.getCategory() != null ? request.getCategory() : EventCategory.OTHER);
         event.setFactionId(request.getFactionId());
+        event.setSourceURL(request.getSourceURL());
     }
 
     private List<EventMarker> resolveVisibleEvents(MapVersion version) {

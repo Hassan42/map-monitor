@@ -43,6 +43,7 @@ export interface EventMarker {
   timestamp: string;
   category: EventCategory | null; // null for events created before categories existed
   factionId: number;
+  sourceURL: string;
 }
 
 export interface Territory {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw'
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
-import { TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
+import { TerraDrawPolygonMode, TerraDrawSelectMode, TerraDrawFreehandMode } from 'terra-draw'
 import type { TerraDrawMouseEvent } from 'terra-draw'
 import type { TerraDraw, GeoJSONStoreFeatures, HexColor } from 'terra-draw'
 import { useMap, useSelection } from '../store/MapContext'
@@ -90,6 +90,12 @@ function TerritoryLayer({
       // deleting now removes the territory on the backend, so ask first
       showDeleteConfirmation: true,
       modeOptions: {
+        freehand: new TerraDrawFreehandMode({
+          minDistance: 5,
+          smoothing: 0.4,
+          styles: { /* same territory styling as polygon, so it matches */ },
+        }),
+
         polygon: new TerraDrawPolygonMode({
           styles: {
             fillColor: territoryColor,

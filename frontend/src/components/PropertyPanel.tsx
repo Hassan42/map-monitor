@@ -40,7 +40,7 @@ function PropertyPanel({
     }
     const flyToEvent = (e: EventMarker) => {
         setSelected({type: 'event', id: e.id})
-        mapInstance?.flyTo({ center: [e.longitude, e.latitude], zoom: Math.max(mapInstance.getZoom(), EVENTS_CLUSTER_MAX_ZOOM + 1), padding: CAMERA_PADDING })
+        mapInstance?.flyTo({ center: [e.longitude, e.latitude], zoom: Math.max(mapInstance.getZoom(), EVENTS_CLUSTER_MAX_ZOOM + 3), padding: CAMERA_PADDING })
     }
 
     const factionById = new Map(factions.map((f) => [f.id, f]))
