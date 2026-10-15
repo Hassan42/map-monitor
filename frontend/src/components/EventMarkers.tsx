@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import type { GeoJSONSource } from 'maplibre-gl'
+import type { GeoJSONSource, MapLayerMouseEvent } from 'maplibre-gl'
+import { Popup } from 'maplibre-gl'
 import { useMap, useSelection } from '../store/MapContext'
 import type { EventCategory, EventMarker as EventMarkerType, Faction } from '../types/types'
-import { EVENTS_SELECTED_LAYER_ID, EVENTS_SOURCE_ID, eventImageId } from '../map/mapLayers'
+import { EVENTS_LAYER_ID, EVENTS_SELECTED_LAYER_ID, EVENTS_SOURCE_ID, eventImageId } from '../map/mapLayers'
 import { addEventLayers, removeEventLayers } from '../map/eventLayers'
 import { EVENT_CATEGORIES, EVENT_CATEGORY_LIST, categoryOf } from '../map/eventCategories'
+import { createEventPopupContent } from '../map/EventPopup'
 
 const DEFAULT_COLOR = '#737373'
 const OUTLINE_COLOR = '#111111'
@@ -24,7 +26,7 @@ function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[]): GeoJSO
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [e.longitude, e.latitude] },
       // the marker layer picks its image from category + color (see eventImageId)
-      properties: { id: e.id, color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR, category: categoryOf(e) },
+      properties: { id: e.id, color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR, category: categoryOf(e), description: "test" },
     })),
   }
 }
@@ -137,6 +139,58 @@ function EventMarkers({
     const selectedId = selected?.type === 'event' ? selected.id : -1
     map.setFilter(EVENTS_SELECTED_LAYER_ID, ['==', ['get', 'id'], selectedId])
   }, [map, selected])
+
+
+  useEffect(() => {
+
+    if (!map) return
+
+    const handlePopUp = (e: MapLayerMouseEvent) => {
+
+      const feature = e.features?.[0]
+
+      if (!feature || feature.geometry.type !== 'Point') return
+
+      const coordinates = feature.geometry.coordinates as [number, number]
+
+      const event = events.find((ev)=> ev.id === feature.properties.id)
+      if (!event) {
+        return}
+
+      new Popup({ className:'event-popup', offset: 18 })
+        .setLngLat(coordinates)
+        .setDOMContent(createEventPopupContent(event))
+        // .setText(feature.properties.description)
+        .addTo(map)
+
+    }
+
+    map.on('click', EVENTS_LAYER_ID, handlePopUp)
+
+  }, [map, events])
+
+  // double-click an event: zoom in on it (like double-clicking its row in the property panel)
+  useEffect(() => {
+    if (!map) return
+
+    const handleDoubleClick = (e: MapLayerMouseEvent) => {
+      const feature = e.features?.[0]
+      if (!feature || feature.geometry.type !== 'Point') return
+
+      e.preventDefault() // stop MapLibre's own double-click zoom toward the cursor
+      const center = feature.geometry.coordinates as [number, number]
+      // start on the next tick: MapLibre stops camera animations while it's still handling the
+      // double-click input, so an easeTo started right here gets cancelled immediately
+      setTimeout(() => {
+        map.easeTo({ center, zoom: 10 })
+      })
+    }
+
+    map.on('dblclick', EVENTS_LAYER_ID, handleDoubleClick)
+    return () => {
+      map.off('dblclick', EVENTS_LAYER_ID, handleDoubleClick)
+    }
+  }, [map])
 
   return null
 }

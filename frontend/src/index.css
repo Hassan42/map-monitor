@@ -41,3 +41,24 @@
 .select-tool .maplibregl-canvas-container.maplibregl-interactive {
   cursor: default;
 }
+
+/* event popups: dark + square + amber, like the nav bar and dialogs */
+.event-popup .maplibregl-popup-content {
+  background: #171717;               /* neutral-900 */
+  color: #d1d5db;                    /* gray-300 */
+  border: 1px solid #fbc412;         /* amber */
+  border-radius: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.5);
+}
+
+.event-popup .maplibregl-popup-close-button {
+  color: #9ca3af;
+  font-size: 16px;
+  padding: 0 6px;
+}
+.event-popup .maplibregl-popup-close-button:hover {
+  color: #fcd34d;
+  background: transparent;
+}

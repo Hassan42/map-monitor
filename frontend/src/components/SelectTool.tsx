@@ -37,7 +37,7 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
   }, [map])
 
   // override terra-draw default cursor when select mode is enabled in editmode
-  useEffect(() =>{
+  useEffect(() => {
     if (!map) return
     const container = map.getContainer()
     container.classList.toggle('select-tool', active)
@@ -48,8 +48,6 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
   // Select tool: one handler decides what was clicked
   useEffect(() => {
     if (!map || !active) return
-
-    const canvas = map.getCanvas()
 
     const handleClick = (e: MapMouseEvent) => {
       const layers = [EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID].filter((id) => map.getLayer(id))
