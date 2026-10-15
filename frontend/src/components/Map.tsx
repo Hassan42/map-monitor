@@ -158,7 +158,8 @@ function Map() {
                     onCreated={handleEventCreated}
                 />
                 <EventMarkers events={events} factions={factions} />
-                <SelectTool active={drawMode === 'select'} editMode={editMode} territories={territories} />
+                {/* view mode is always selectable; in edit mode only with the Select tool */}
+                <SelectTool active={!editMode || drawMode === 'select'} editMode={editMode} territories={territories} />
                 <PropertyPanel map={mapSummary} factions={factions} events={events} territories={territories} />
             </MapProvider>
 
@@ -172,34 +173,38 @@ function Map() {
                 </button>
 
 
-                {/* tools, available in view and edit mode: Pan = only move the map (no tool), Select = pick territories/events.
-                    in edit mode Select is terra-draw's editing select; leaving it deselects, which saves any reshaped territory */}
-                <button
-                    type="button"
-                    aria-label="Pan"
-                    title="Pan - drag to move the map"
-                    aria-pressed={drawMode === null && !isPlacingEvent}
-                    onClick={() => {
-                        setIsPlacingEvent(false)
-                        setDrawMode(null)
-                    }}
-                    className={`${navButtonClass} ${drawMode === null && !isPlacingEvent ? 'bg-amber-400/15 text-amber-300' : ''}`}
-                >
-                    <HandIcon />
-                </button>
-                <button
-                    type="button"
-                    aria-label="Select"
-                    title="Select - click territories and events"
-                    aria-pressed={drawMode === 'select'}
-                    onClick={() => {
-                        setIsPlacingEvent(false)
-                        setDrawMode('select')
-                    }}
-                    className={`${navButtonClass} ${drawMode === 'select' ? 'bg-amber-400/15 text-amber-300' : ''}`}
-                >
-                    <CursorIcon />
-                </button>
+                {/* tools, edit mode only (view mode is always Select): Pan = only move the map (no tool),
+                    Select = terra-draw's editing select; leaving it deselects, which saves any reshaped territory */}
+                {editMode && (
+                    <>
+                        <button
+                            type="button"
+                            aria-label="Pan"
+                            title="Pan - drag to move the map"
+                            aria-pressed={drawMode === null && !isPlacingEvent}
+                            onClick={() => {
+                                setIsPlacingEvent(false)
+                                setDrawMode(null)
+                            }}
+                            className={`${navButtonClass} ${drawMode === null && !isPlacingEvent ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                        >
+                            <HandIcon />
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Select"
+                            title="Select - click territories and events"
+                            aria-pressed={drawMode === 'select'}
+                            onClick={() => {
+                                setIsPlacingEvent(false)
+                                setDrawMode('select')
+                            }}
+                            className={`${navButtonClass} ${drawMode === 'select' ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                        >
+                            <CursorIcon />
+                        </button>
+                    </>
+                )}
 
 
                 {editMode && (

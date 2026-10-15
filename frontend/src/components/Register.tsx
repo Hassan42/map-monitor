@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
+import { Link } from 'react-router'
 import { useAuth } from '../store/AuthContext'
 import type { FirebaseError } from 'firebase/app'
+import { formClass, formTitleClass, formFieldClass, formInputClass, formPrimaryButtonClass, formErrorClass } from '../styles/formStyles'
 
 function Register() {
     const [email, setEmail] = useState('')
@@ -20,20 +22,26 @@ function Register() {
     }
 
     return (
-        <div className="flex items-center justify-center h-screen">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-80">
-                <div className="flex flex-col gap-1">
-                    <label htmlFor="email">Email:</label>
-                    <input type="email" id="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} className="border border-gray-300 px-2 py-1 text-black" />
+        <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-neutral-950 px-4 text-gray-300">
+            <span className="font-mono text-sm font-bold uppercase tracking-widest text-amber-300">Map Monitor</span>
+            <form onSubmit={handleSubmit} className={formClass}>
+                <h1 className={formTitleClass}>Create account</h1>
+                <div className={formFieldClass}>
+                    <label htmlFor="email">Email</label>
+                    <input type="email" id="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={formInputClass} />
                 </div>
-                <div className="flex flex-col gap-1">
-                    <label htmlFor="password">Password:</label>
-                    <input type="password" id="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} className="border border-gray-300 px-2 py-1 text-black" />
+                <div className={formFieldClass}>
+                    <label htmlFor="password">Password</label>
+                    <input type="password" id="password" name="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={formInputClass} />
                 </div>
-                {error && <p className="text-red-600 text-sm">{error}</p>}
-                <button type="submit" disabled={loading} className="bg-blue-600 text-white px-2 py-1">
-                    {loading ? 'Registering...' : 'Register'}
+                {error && <p className={formErrorClass}>{error}</p>}
+                <button type="submit" disabled={loading} className={formPrimaryButtonClass}>
+                    {loading ? 'Creating account...' : 'Create account'}
                 </button>
+                <p className="text-center text-sm text-gray-400">
+                    Already have an account?{' '}
+                    <Link to="/login" className="text-amber-300 hover:underline">Sign in</Link>
+                </p>
             </form>
         </div>
     )
