@@ -2,8 +2,9 @@ import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { createUserMap } from '../api/map'
 import type { MapSummary } from '../types/types'
+import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
-function AddMap({ onCreated }: { onCreated: (map: MapSummary) => void }) {
+function AddMap({ onCreated, onClose }: { onCreated: (map: MapSummary) => void; onClose: () => void }) {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [loading, setLoading] = useState(false)
@@ -26,20 +27,28 @@ function AddMap({ onCreated }: { onCreated: (map: MapSummary) => void }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-80">
-            <div className="flex flex-col gap-1">
-                <label htmlFor="title">Title:</label>
-                <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} className="border border-gray-300 px-2 py-1 text-black" />
-            </div>
-            <div className="flex flex-col gap-1">
-                <label htmlFor="desc">Description:</label>
-                <input type="text" id="desc" name="desc" value={description} onChange={(e) => setDescription(e.target.value)} className="border border-gray-300 px-2 py-1 text-black" />
-            </div>
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-            <button type="submit" disabled={loading} className="bg-blue-600 text-white px-2 py-1">
-                {loading ? 'Adding...' : 'Add Map'}
-            </button>
-        </form>
+        <div className={formOverlayClass}>
+            <form onSubmit={handleSubmit} className={formClass}>
+                <h2 className={formTitleClass}>New Map</h2>
+                <div className={formFieldClass}>
+                    <label htmlFor="title">Title:</label>
+                    <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={formInputClass} />
+                </div>
+                <div className={formFieldClass}>
+                    <label htmlFor="desc">Description:</label>
+                    <input type="text" id="desc" name="desc" value={description} onChange={(e) => setDescription(e.target.value)} className={formInputClass} />
+                </div>
+                {error && <p className={formErrorClass}>{error}</p>}
+                <div className="flex gap-2">
+                    <button type="submit" disabled={loading} className={formPrimaryButtonClass}>
+                        {loading ? 'Adding...' : 'Add Map'}
+                    </button>
+                    <button type="button" onClick={onClose} className={formSecondaryButtonClass}>
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
     )
 }
 

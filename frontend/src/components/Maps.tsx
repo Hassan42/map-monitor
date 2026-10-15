@@ -3,6 +3,8 @@ import { getUserMaps, deleteUserMap } from '../api/map'
 import type { MapSummary } from '../types/types'
 import AddMap from './AddMap'
 import { useNavigate } from 'react-router'
+import { useAuth } from '../store/AuthContext'
+import { navButtonClass } from '../styles/navStyles'
 
 function Maps() {
     const [maps, setMaps] = useState<MapSummary[]>([])
@@ -10,6 +12,7 @@ function Maps() {
     const [error, setError] = useState('')
     const [showAddMap, setShowAddMap] = useState(false)
     const navigate = useNavigate()
+    const { signOut } = useAuth()
 
     useEffect(() => {
         getUserMaps()
@@ -23,48 +26,97 @@ function Maps() {
         setShowAddMap(false)
     }
 
-    const handleDelete = (mapId: string) => {
-        deleteUserMap(mapId)
+    const handleOpen = (mapId: string) => {
+        navigate(`/maps/${mapId}`, { replace: true })
+    }
+
+    // deleting removes the map and all its versions on the backend, so ask first
+    const handleDelete = (map: MapSummary) => {
+        if (!window.confirm(`Delete "${map.title}"? This can't be undone.`)) return
+        deleteUserMap(map.id)
             .then(() => {
-                setMaps((prev) => prev.filter((m) => m.id !== mapId))
+                setMaps((prev) => prev.filter((m) => m.id !== map.id))
             })
+            .catch(() => setError('Could not delete map'))
     }
 
     return (
-        <div className="flex flex-col gap-4 p-4">
-            <button
-                type="button"
-                onClick={() => setShowAddMap((prev) => !prev)}
-                className="bg-blue-600 text-white px-2 py-1 self-start"
-            >
-                {showAddMap ? 'Cancel' : 'Add Map'}
-            </button>
+        <div className="min-h-screen bg-neutral-950 text-gray-300">
+            {/* same bar as the map view */}
+            <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
+                <span className="px-2 font-mono text-sm font-bold uppercase tracking-widest text-amber-300">Map Monitor</span>
+                <button type="button" onClick={() => setShowAddMap(true)} className={`${navButtonClass} ml-auto`}>
+                    + New Map
+                </button>
+                <button type="button" onClick={signOut} className={navButtonClass}>
+                    Sign Out
+                </button>
+            </nav>
 
-            {showAddMap && <AddMap onCreated={handleCreated} />}
-
-            {loading && <p>Loading maps...</p>}
-            {error && <p className="text-red-600">{error}</p>}
-            {!loading && !error && (
-                <div className="flex flex-row flex-wrap gap-2">
-                    {maps.length === 0 && <p>No maps yet.</p>}
-                    {maps.map((map) => (
-                        <div key={map.id} className="border border-gray-300 p-3">
-                            <h3 className="font-bold">{map.title}</h3>
-                            <p>{map.description}</p>
-                            <button type="button"
-                                onClick={() => { navigate(`/maps/${map.id}`, { replace: true }) }}
-                                className="bg-green-600 text-white px-2 py-1 self-start"
-                            > View
-                            </button>
-                            <button type="button"
-                                onClick={() => handleDelete(map.id)}
-                                className="bg-red-600 text-white px-2 py-1 self-start"
-                            > Delete
-                            </button>
-                        </div>
-                    ))}
+            <main className="mx-auto max-w-6xl p-6">
+                <div className="mb-6 flex items-baseline gap-3 border-b border-neutral-800 pb-3">
+                    <h1 className="text-xl font-semibold text-white">Your Maps</h1>
+                    {!loading && !error && <span className="text-sm text-gray-500">({maps.length})</span>}
                 </div>
-            )}
+
+                {loading && <p className="text-gray-500">Loading maps...</p>}
+                {error && <p className="text-red-400">{error}</p>}
+
+                {!loading && !error && maps.length === 0 && (
+                    <div className="flex flex-col items-center gap-4 border border-dashed border-neutral-700 py-16 text-center">
+                        <p className="text-gray-400">No maps yet.</p>
+                        <button
+                            type="button"
+                            onClick={() => setShowAddMap(true)}
+                            className="bg-amber-400 px-4 py-2 font-medium text-neutral-900 transition-colors hover:bg-amber-300"
+                        >
+                            Create your first map
+                        </button>
+                    </div>
+                )}
+
+                {!loading && !error && maps.length > 0 && (
+                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {maps.map((map) => (
+                            <li
+                                key={map.id}
+                                className="group flex flex-col bg-neutral-900 ring-1 ring-white/10 transition-colors hover:ring-amber-400"
+                            >
+                                {/* the whole card body opens the map */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleOpen(map.id)}
+                                    className="flex flex-1 flex-col gap-2 p-4 text-left"
+                                >
+                                    <h3 className="truncate font-semibold text-white group-hover:text-amber-300">{map.title}</h3>
+                                    <p className="line-clamp-3 text-sm text-gray-400">
+                                        {map.description || <span className="italic text-gray-600">No description</span>}
+                                    </p>
+                                </button>
+
+                                <div className="flex border-t border-neutral-800 text-sm">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpen(map.id)}
+                                        className="flex-1 px-4 py-2 text-left transition-colors hover:bg-amber-400/15 hover:text-amber-300"
+                                    >
+                                        Open →
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(map)}
+                                        className="px-4 py-2 text-gray-500 transition-colors hover:bg-red-500/15 hover:text-red-400"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </main>
+
+            {showAddMap && <AddMap onCreated={handleCreated} onClose={() => setShowAddMap(false)} />}
         </div>
     )
 }

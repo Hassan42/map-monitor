@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import MapProvider from '../store/MapContext'
 import TerritoryLayer from './TerritoryLayer'
 import AddFaction from './AddFaction'
@@ -9,7 +9,7 @@ import SelectTool from './SelectTool'
 import PropertyPanel from './PropertyPanel'
 import NavDropdown, { NavDropdownItem } from './NavDropDown'
 import { navButtonClass } from '../styles/navStyles'
-import { CursorIcon, HandIcon } from './icons'
+import { CloseIcon, CursorIcon, HandIcon } from './icons'
 import type { EventMarker, Faction, MapSummary, Territory } from '../types/types'
 import { getMapFactions } from '../api/faction'
 import { getMapEvents } from '../api/event'
@@ -19,6 +19,7 @@ import type { DrawMode } from '../types/types'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
     const [factions, setFactions] = useState<Faction[]>([])
     const [events, setEvents] = useState<EventMarker[]>([])
     const [territories, setTerritories] = useState<Territory[]>([])
@@ -73,7 +74,7 @@ function Map() {
     // Fetching map summary from db
     useEffect(() => {
         if (!id) return
-        getMapById(id).then(setMapSummary).catch(() => { })
+        getMapById(id).then(setMapSummary).catch(() => {})
     }, [id])
 
     // faction creation handle
@@ -133,6 +134,7 @@ function Map() {
 
     if (!id) return <p>Map not found</p>
 
+    console.log(mapSummary)
     return (
         <div className="relative">
             <MapProvider>
@@ -242,6 +244,17 @@ function Map() {
                         <NavDropdownItem onClick={() => setDrawMode('polygon')}>Polygon</NavDropdownItem>
                     </NavDropdown>
                 )}
+
+                {/* back to the maps list; a draft in progress stays saved on the backend */}
+                <button
+                    type="button"
+                    aria-label="Close map"
+                    title="Back to maps"
+                    onClick={() => navigate('/maps')}
+                    className={`${navButtonClass} ml-auto`}
+                >
+                    <CloseIcon />
+                </button>
             </nav>
 
             {loading && <p className="absolute bottom-4 left-4 bg-white px-2 py-1">Loading...</p>}

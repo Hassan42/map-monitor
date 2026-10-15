@@ -20,6 +20,12 @@ public class MapController {
         this.mapService = mapService;
     }
 
+    @GetMapping("/{mapId}")
+    public MapSummaryResponse getMap(Authentication authentication, @PathVariable Long mapId){
+        String uid = (String) authentication.getPrincipal();
+        return MapSummaryResponse.from(mapService.getOwnedMap(uid, mapId));
+    }
+
     @GetMapping
     public List<MapSummaryResponse> getUserMaps(Authentication authentication) {
         String uid = (String) authentication.getPrincipal();

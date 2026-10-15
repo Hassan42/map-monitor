@@ -16,9 +16,10 @@ export function createEventPopupContent(event: EventMarker) {
     root.append(description)
   }
 
+  const source = document.createElement('a')
+  source.className = 'text-xs text-amber-300 hover:underline truncate'
+
   if (event.sourceURL) {
-    const source = document.createElement('a')
-    source.className = 'text-xs text-amber-300 hover:underline truncate'
     source.textContent = "Source"
     const arrow = document.createElement('span')
     arrow.textContent = '⇱ '
@@ -27,8 +28,11 @@ export function createEventPopupContent(event: EventMarker) {
     source.href = event.sourceURL
     source.target = '_blank'               // open in a new tab
     source.rel = 'noopener noreferrer'     // the opened page can't control your app's tab
-    root.append(source)
   }
-
+  else{
+    source.textContent = "No Source Provided."
+  }
+  root.append(source)
+  
   return root
 }

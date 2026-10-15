@@ -47,7 +47,7 @@ function PropertyPanel({
 
     // territories and events have separate id sequences, so match on type + id
     const isSelected = (type: 'territory' | 'event', id: number) => selected?.type === type && selected.id === id
-
+    
     return (
         <div className="absolute top-14 right-0 bottom-0 w-72 bg-neutral-900 text-gray-300 shadow-lg flex flex-col">
             <div className="p-4 border-b border-neutral-800">

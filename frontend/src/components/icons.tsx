@@ -39,6 +39,25 @@ const HAND = [
     '................',
 ]
 
+const CLOSE = [
+    '................',
+    '................',
+    '..XX........XX..',
+    '..XXX......XXX..',
+    '...XXX....XXX...',
+    '....XXX..XXX....',
+    '.....XXXXXX.....',
+    '......XXXX......',
+    '......XXXX......',
+    '.....XXXXXX.....',
+    '....XXX..XXX....',
+    '...XXX....XXX...',
+    '..XXX......XXX..',
+    '..XX........XX..',
+    '................',
+    '................',
+]
+
 // one 1x1 square per filled pixel; crispEdges keeps them sharp at any size
 function PixelIcon({ rows }: { rows: string[] }) {
     const d = rows
@@ -58,4 +77,8 @@ export function CursorIcon() {
 
 export function HandIcon() {
     return <PixelIcon rows={HAND} />
+}
+
+export function CloseIcon() {
+    return <PixelIcon rows={CLOSE} />
 }

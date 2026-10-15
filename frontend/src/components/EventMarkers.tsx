@@ -11,9 +11,9 @@ import { createEventPopupContent } from '../map/EventPopup'
 const DEFAULT_COLOR = '#737373'
 const OUTLINE_COLOR = '#111111'
 // sizes in image pixels; images are shown at half that (pixelRatio 2) so they stay sharp
-const MARKER_PX = 92
-const ICON_PX = 62
-const OUTLINE_PX = 5
+const MARKER_PX = 82
+const ICON_PX = 52
+const OUTLINE_PX = 4
 
 // loaded category icons; categories without an icon (OTHER) are simply absent
 type CategoryIcons = Partial<Record<EventCategory, HTMLImageElement>>
@@ -182,7 +182,7 @@ function EventMarkers({
       // start on the next tick: MapLibre stops camera animations while it's still handling the
       // double-click input, so an easeTo started right here gets cancelled immediately
       setTimeout(() => {
-        map.easeTo({ center, zoom: 10 })
+        map.easeTo({ center, zoom: 12 })
       })
     }
 
