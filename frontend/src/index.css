@@ -62,3 +62,19 @@
   color: #fcd34d;
   background: transparent;
 }
+
+/* top-left map controls (zoom, compass, reset view) start below the fixed nav bar (h-14).
+   .maplibregl-map in front: maplibre-gl.css loads after this file and sets top: 0 on the same class */
+.maplibregl-map .maplibregl-ctrl-top-left {
+  top: 3.5rem;
+}
+
+/* reset-view button: icon color + centered in the button. .maplibregl-ctrl-group in front because
+   MapLibre's own button rules (display: block, ...) are more specific than a single class */
+.maplibregl-ctrl-group .reset-view-button {
+  color: #333;
+}
+.maplibregl-ctrl-group .reset-view-button svg {
+  display: block;
+  margin: auto;
+}

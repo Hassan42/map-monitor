@@ -7,6 +7,7 @@ import AddEvent from './AddEvent'
 import EventMarkers from './EventMarkers'
 import SelectTool from './SelectTool'
 import PropertyPanel from './PropertyPanel'
+import MapControls from './MapControls'
 import NavDropdown, { NavDropdownItem } from './NavDropDown'
 import { navButtonClass } from '../styles/navStyles'
 import { CloseIcon, CursorIcon, HandIcon } from './icons'
@@ -160,6 +161,7 @@ function Map() {
                 <EventMarkers events={events} factions={factions} />
                 {/* view mode is always selectable; in edit mode only with the Select tool */}
                 <SelectTool active={!editMode || drawMode === 'select'} editMode={editMode} territories={territories} />
+                <MapControls territories={territories} events={events} />
                 <PropertyPanel map={mapSummary} factions={factions} events={events} territories={territories} />
             </MapProvider>
 

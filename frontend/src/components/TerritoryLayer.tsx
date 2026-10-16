@@ -203,7 +203,8 @@ function TerritoryLayer({
       terraDraw.off('finish', handleFinish)
       draw.off('feature-deleted', handleFeatureDeleted)
       terraDrawRef.current = null
-      map.removeControl(draw)
+      // map.remove() (MapProvider, on leaving the page) may have removed it already
+      if (map.hasControl(draw)) map.removeControl(draw)
     }
   }, [map, mapId, setSelected, onModeChange, onUpdated, onDeleted, onError])
 
