@@ -19,16 +19,18 @@ public class MapService {
     private final FactionRepository factionRepository;
     private final EventMarkerRepository eventMarkerRepository;
     private final TerritoryRepository territoryRepository;
+    private final AnnotationRepository annotationRepository;
 
     public MapService(MapRepository mapRepository, UserRepository userRepository, MapVersionRepository mapVersionRepository,
                        FactionRepository factionRepository, EventMarkerRepository eventMarkerRepository,
-                       TerritoryRepository territoryRepository) {
+                       TerritoryRepository territoryRepository, AnnotationRepository annotationRepository) {
         this.mapRepository = mapRepository;
         this.userRepository = userRepository;
         this.mapVersionRepository = mapVersionRepository;
         this.factionRepository = factionRepository;
         this.eventMarkerRepository = eventMarkerRepository;
         this.territoryRepository = territoryRepository;
+        this.annotationRepository = annotationRepository;
     }
 
     public List<MapSummaryResponse> getUserMaps(String firebaseUid) {
@@ -135,7 +137,8 @@ public class MapService {
 
         boolean hasChanges = territoryRepository.existsByMapVersionId(draft.getId())
                 || factionRepository.existsByMapVersionId(draft.getId())
-                || eventMarkerRepository.existsByMapVersionId(draft.getId());
+                || eventMarkerRepository.existsByMapVersionId(draft.getId())
+                || annotationRepository.existsByMapVersionId(draft.getId());
 
         return new DraftStatusResponse(true, hasChanges, draft.getCreatedAt());
     }
@@ -150,6 +153,7 @@ public class MapService {
             factionRepository.deleteAll(factionRepository.findByMapVersionId(draft.getId()));
             eventMarkerRepository.deleteAll(eventMarkerRepository.findByMapVersionId(draft.getId()));
             territoryRepository.deleteAll(territoryRepository.findByMapVersionId(draft.getId()));
+            annotationRepository.deleteAll(annotationRepository.findByMapVersionId(draft.getId()));
         }
         mapVersionRepository.deleteAll(drafts);
     }
@@ -176,6 +180,7 @@ public class MapService {
             factionRepository.deleteAll(factionRepository.findByMapVersionId(version.getId()));
             eventMarkerRepository.deleteAll(eventMarkerRepository.findByMapVersionId(version.getId()));
             territoryRepository.deleteAll(territoryRepository.findByMapVersionId(version.getId()));
+            annotationRepository.deleteAll(annotationRepository.findByMapVersionId(version.getId()));
         }
 
         // clear FK pointers between versions/map before deleting, to avoid constraint violations
