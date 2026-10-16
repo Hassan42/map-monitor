@@ -12,3 +12,12 @@ export const EVENTS_CLUSTER_LAYER_ID = 'events-cluster'
 export const EVENTS_CLUSTER_COUNT_LAYER_ID = 'events-cluster-count'
 // above this zoom events are never clustered; PropertyPanel flies past it so a single event is visible
 export const EVENTS_CLUSTER_MAX_ZOOM = 8
+
+export const ANNOTATIONS_SOURCE_ID = 'annotations'
+export const ANNOTATIONS_LAYER_ID = 'annotations-icon'
+// amber ring drawn under the selected annotation
+export const ANNOTATIONS_SELECTED_LAYER_ID = 'annotations-selected'
+// annotation images are named by kind + color, e.g. 'annotation-ARROW-#c0392b'.
+// annotationLayers.ts builds the same name per feature with an expression - keep the two in sync
+export const ANNOTATION_IMAGE_PREFIX = 'annotation-'
+export const annotationImageId = (kind: string, color: string) => `${ANNOTATION_IMAGE_PREFIX}${kind}-${color}`
