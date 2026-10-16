@@ -34,8 +34,17 @@ function AnnotationEditor({
   // the mode belongs to the annotation it was picked for: selecting another one starts in 'move'
   const selectedId = active && selected?.type === 'annotation' ? selected.id : null
   const [modeFor, setModeFor] = useState<{ id: number; mode: Mode } | null>(null)
-  const mode: Mode = modeFor && modeFor.id === selectedId ? modeFor.mode : 'move'
-  
+  const mode = modeFor?.id === selectedId ? modeFor.mode : 'move'
+
+  useEffect(() => {
+    if (selectedId == null) {
+      setModeFor(null)
+      return
+    }
+
+    setModeFor({ id: selectedId, mode: 'move' })
+  }, [selectedId])
+
   // the drag listeners are attached once per drag-enabled period; they read the latest values from here
   const latestRef = useRef({ annotations, onChange, onCommit })
   useEffect(() => {
@@ -177,8 +186,7 @@ function AnnotationEditor({
   // clicking the active mode again goes back to moving
   const toggleMode = (next: Mode) => setModeFor({ id: annotation.id, mode: mode === next ? 'move' : next })
   const modeButtonClass = (m: Mode) =>
-    `flex items-center gap-2 px-3 py-1.5 transition-colors ${
-      mode === m ? 'bg-amber-400/15 text-amber-300' : 'hover:bg-amber-400/15 hover:text-amber-300'
+    `flex items-center gap-2 px-3 py-1.5 transition-colors ${mode === m ? 'bg-amber-400/15 text-amber-300' : 'hover:bg-amber-400/15 hover:text-amber-300'
     }`
 
   return (
