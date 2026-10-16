@@ -61,3 +61,18 @@ export interface DraftStatus {
   hasChanges: boolean;
   createdAt: string | null; // ISO LocalDateTime (no timezone), null when there's no draft
 }
+
+// mirrors the backend's AnnotationKind enum (Jackson sends the constant's name)
+export type AnnotationKind = 'AMBUSH' | 'ARROW' | 'DESTROY' | 'OBJECTIVE'
+
+// a tactical graphic stamped on the map: the kind's icon at a point, in `color`, sized by `scale`
+export interface Annotation {
+  id: number; // stableId, like the other *SummaryResponse ids
+  kind: AnnotationKind;
+  geometry: string; // GeoJSON geometry as text, e.g. {"type":"Point","coordinates":[lng,lat]}
+  factionId: number | null;
+  label: string | null;
+  color: string | null;
+  scale: number; // 1.0 = default size
+  rotation: number; // clockwise degrees, 0 = the icon's normal (up) direction
+}
