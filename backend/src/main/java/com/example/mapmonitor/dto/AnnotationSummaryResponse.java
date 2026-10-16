@@ -11,6 +11,7 @@ public class AnnotationSummaryResponse {
     private final String label;
     private final String color;
     private final Double scale;
+    private final Double rotation;
 
     private AnnotationSummaryResponse(Annotation annotation) {
         this.id = annotation.getStableId();
@@ -20,6 +21,7 @@ public class AnnotationSummaryResponse {
         this.label = annotation.getLabel();
         this.color = annotation.getColor();
         this.scale = annotation.getScale();
+        this.rotation = annotation.getRotation();
     }
 
     public static AnnotationSummaryResponse from(Annotation annotation) {
@@ -52,5 +54,9 @@ public class AnnotationSummaryResponse {
 
     public Double getScale() {
         return scale;
+    }
+
+    public Double getRotation() {
+        return rotation;
     }
 }

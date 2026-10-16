@@ -9,6 +9,7 @@ public class CreateAnnotationRequest {
     private String label;
     private String color;
     private Double scale;
+    private Double rotation;
 
     public AnnotationKind getKind() {
         return kind;
@@ -56,5 +57,13 @@ public class CreateAnnotationRequest {
 
     public void setScale(Double scale) {
         this.scale = scale;
+    }
+
+    public Double getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(Double rotation) {
+        this.rotation = rotation;
     }
 }

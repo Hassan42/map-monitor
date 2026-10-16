@@ -17,6 +17,7 @@ import java.util.Map;
 public class AnnotationService {
 
     private static final double DEFAULT_SCALE = 1.0;
+    private static final double DEFAULT_ROTATION = 0.0;
 
     private final AnnotationRepository annotationRepository;
     private final MapService mapService;
@@ -89,6 +90,7 @@ public class AnnotationService {
         shadow.setLabel(visible.getLabel());
         shadow.setColor(visible.getColor());
         shadow.setScale(visible.getScale());
+        shadow.setRotation(visible.getRotation());
         shadow.setDeleted(true);
         annotationRepository.save(shadow);
 
@@ -109,6 +111,9 @@ public class AnnotationService {
         annotation.setLabel(request.getLabel());
         annotation.setColor(request.getColor());
         annotation.setScale(request.getScale() != null ? request.getScale() : DEFAULT_SCALE);
+        // keep it in 0..360 so the same direction is always stored the same way
+        double rotation = request.getRotation() != null ? request.getRotation() : DEFAULT_ROTATION;
+        annotation.setRotation(((rotation % 360) + 360) % 360);
     }
 
     private List<Annotation> resolveVisibleAnnotations(MapVersion version) {

@@ -25,7 +25,11 @@ public class Annotation {
 
     @Column(nullable = false)
     @ColumnDefault("1.0")
-    private Double scale;      // size multiplier for drawing (arrow head, text size, line width), 1.0 = default
+    private Double scale;      // size multiplier for the drawn icon/arrow, 1.0 = default
+
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    private Double rotation;   // clockwise degrees from north (the icon's up direction), 0 = unrotated
 
     private Long stableId;
 
@@ -88,6 +92,14 @@ public class Annotation {
 
     public void setScale(Double scale) {
         this.scale = scale;
+    }
+
+    public Double getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(Double rotation) {
+        this.rotation = rotation;
     }
 
     public Long getStableId() {
