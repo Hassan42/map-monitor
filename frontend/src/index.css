@@ -78,3 +78,20 @@
   display: block;
   margin: auto;
 }
+
+/* annotations (edit mode, Select tool): move cursor on hover, grabbing while dragging.
+   !important because terra-draw's select mode sets/clears the canvas cursor on every mouse move */
+.annotation-hover .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: move !important;
+}
+.annotation-dragging .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grabbing !important;
+}
+
+/* annotation rotate / scale modes: dragging anywhere on the map transforms the selected annotation */
+.annotation-rotate-mode .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grab !important;
+}
+.annotation-scale-mode .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: ns-resize !important;
+}

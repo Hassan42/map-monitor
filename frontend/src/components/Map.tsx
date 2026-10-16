@@ -5,16 +5,20 @@ import TerritoryLayer from './TerritoryLayer'
 import AddFaction from './AddFaction'
 import AddEvent from './AddEvent'
 import EventMarkers from './EventMarkers'
+import AnnotationLayer from './AnnotationLayer'
+import AddAnnotation from './AddAnnotation'
+import AnnotationEditor from './AnnotationEditor'
 import SelectTool from './SelectTool'
 import PropertyPanel from './PropertyPanel'
 import MapControls from './MapControls'
 import NavDropdown, { NavDropdownItem } from './NavDropDown'
 import { navButtonClass } from '../styles/navStyles'
 import { CloseIcon, CursorIcon, HandIcon } from './icons'
-import type { EventMarker, Faction, MapSummary, Territory } from '../types/types'
+import type { Annotation, EventMarker, Faction, MapSummary, Territory } from '../types/types'
 import { getMapFactions } from '../api/faction'
 import { getMapEvents } from '../api/event'
 import { getMapTerritories } from '../api/territory'
+import { editAnnotation, getMapAnnotations } from '../api/annotation'
 import { getMapById, startDraft, publishMap, getDraftStatus } from '../api/map'
 import type { DrawMode } from '../types/types'
 
@@ -24,11 +28,13 @@ function Map() {
     const [factions, setFactions] = useState<Faction[]>([])
     const [events, setEvents] = useState<EventMarker[]>([])
     const [territories, setTerritories] = useState<Territory[]>([])
+    const [annotations, setAnnotations] = useState<Annotation[]>([])
     const [showAddFaction, setShowAddFaction] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(true)
     const [editMode, setEditMode] = useState(false)
     const [isPlacingEvent, setIsPlacingEvent] = useState(false)
+    const [isPlacingAnnotation, setIsPlacingAnnotation] = useState(false)
     const [mapSummary, setMapSummary] = useState<MapSummary | null>(null)
     const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
     // whether the draft has anything to publish - always taken from the backend so it survives reloads
@@ -72,6 +78,14 @@ function Map() {
             .catch(() => setError('Could not load territories'))
     }, [id, editMode])
 
+    // Fetching map annotations from db - draft copies while editing, published otherwise
+    useEffect(() => {
+        if (!id) return
+        getMapAnnotations(id, editMode)
+            .then(setAnnotations)
+            .catch(() => setError('Could not load annotations'))
+    }, [id, editMode])
+
     // Fetching map summary from db
     useEffect(() => {
         if (!id) return
@@ -86,6 +100,26 @@ function Map() {
     }
 
     // event creation handle
+    // annotation creation handle
+    const handleAnnotationCreated = (annotation: Annotation) => {
+        setAnnotations((prev) => [...prev, annotation])
+        refreshDraftStatus()
+    }
+
+    // annotation rotate/resize: update the map right away, save when the change is finished
+    const handleAnnotationChange = (annotation: Annotation) => {
+        setAnnotations((prev) => prev.map((a) => (a.id === annotation.id ? annotation : a)))
+    }
+
+    const handleAnnotationCommit = (annotation: Annotation) => {
+        if (!id) return
+        // PUT replaces every field, so send the whole annotation
+        const { id: stableId, ...data } = annotation
+        editAnnotation(id, stableId, data)
+            .then(() => refreshDraftStatus())
+            .catch(() => setError('Could not save annotation'))
+    }
+
     const handleEventCreated = (event: EventMarker) => {
         setEvents((prev) => [...prev, event])
         refreshDraftStatus()
@@ -113,6 +147,8 @@ function Map() {
         if (editMode) {
             setEditMode(false)
             setDrawMode(null)
+            setIsPlacingEvent(false)
+            setIsPlacingAnnotation(false)
             return
         }
         if (!id) return
@@ -151,12 +187,27 @@ function Map() {
                     onDeleted={handleTerritoryDeleted}
                     onError={setError}
                 />
+                <AddAnnotation
+                    mapId={id}
+                    factions={factions}
+                    active={isPlacingAnnotation}
+                    onExit={() => setIsPlacingAnnotation(false)}
+                    onCreated={handleAnnotationCreated}
+                />
                 <AddEvent
                     mapId={id}
                     factions={factions}
                     active={isPlacingEvent}
                     onExit={() => setIsPlacingEvent(false)}
                     onCreated={handleEventCreated}
+                />
+                <AnnotationLayer annotations={annotations} factions={factions} />
+                <AnnotationEditor
+                    annotations={annotations}
+                    active={editMode}
+                    canDrag={drawMode === 'select'}
+                    onChange={handleAnnotationChange}
+                    onCommit={handleAnnotationCommit}
                 />
                 <EventMarkers events={events} factions={factions} />
                 {/* view mode is always selectable; in edit mode only with the Select tool */}
@@ -183,12 +234,13 @@ function Map() {
                             type="button"
                             aria-label="Pan"
                             title="Pan - drag to move the map"
-                            aria-pressed={drawMode === null && !isPlacingEvent}
+                            aria-pressed={drawMode === null && !isPlacingEvent && !isPlacingAnnotation}
                             onClick={() => {
                                 setIsPlacingEvent(false)
+                                setIsPlacingAnnotation(false)
                                 setDrawMode(null)
                             }}
-                            className={`${navButtonClass} ${drawMode === null && !isPlacingEvent ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                            className={`${navButtonClass} ${drawMode === null && !isPlacingEvent && !isPlacingAnnotation ? 'bg-amber-400/15 text-amber-300' : ''}`}
                         >
                             <HandIcon />
                         </button>
@@ -199,6 +251,7 @@ function Map() {
                             aria-pressed={drawMode === 'select'}
                             onClick={() => {
                                 setIsPlacingEvent(false)
+                                setIsPlacingAnnotation(false)
                                 setDrawMode('select')
                             }}
                             className={`${navButtonClass} ${drawMode === 'select' ? 'bg-amber-400/15 text-amber-300' : ''}`}
@@ -222,10 +275,28 @@ function Map() {
                 {editMode && (
                     <button
                         type="button"
-                        onClick={() => setIsPlacingEvent(true)}
+                        onClick={() => {
+                            setIsPlacingAnnotation(false)
+                            setIsPlacingEvent(true)
+                        }}
                         className={navButtonClass}
                     >
                         {isPlacingEvent ? 'Click on the map...' : 'Add Event'}
+                    </button>
+                )}
+
+                {/* place an annotation: the next map click picks the spot (no draw/select tool, so that click isn't also handled by them) */}
+                {editMode && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setDrawMode(null)
+                            setIsPlacingEvent(false)
+                            setIsPlacingAnnotation(true)
+                        }}
+                        className={navButtonClass}
+                    >
+                        {isPlacingAnnotation ? 'Click on the map...' : 'Add Annotation'}
                     </button>
                 )}
 

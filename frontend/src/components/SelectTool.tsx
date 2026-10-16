@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { GeoJSONSource, MapLayerMouseEvent, MapMouseEvent } from 'maplibre-gl'
 import { useMap, useSelection } from '../store/MapContext'
 import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID, EVENTS_SOURCE_ID } from '../map/mapLayers'
+import { findAnnotationAt } from '../map/annotationHitTest'
 import { findTerritoryAt } from '../map/geometry'
 import type { Territory } from '../types/types'
 
@@ -50,17 +51,24 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
     if (!map || !active) return
 
     const handleClick = (e: MapMouseEvent) => {
+      // topmost first: events and clusters are drawn above annotations
       const layers = [EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID].filter((id) => map.getLayer(id))
       const hit = layers.length ? map.queryRenderedFeatures(e.point, { layers })[0] : undefined
 
       if (hit?.layer.id === EVENTS_CLUSTER_LAYER_ID) return // the cluster handler zooms in
-      if (hit) {
+      if (hit?.layer.id === EVENTS_LAYER_ID) {
         setSelected({ type: 'event', id: hit.properties.id as number })
         return
       }
+      // annotations: checked against their drawn circle (see annotationHitTest.ts)
+      const annotationId = findAnnotationAt(map, e.point)
+      if (annotationId != null) {
+        setSelected({ type: 'annotation', id: annotationId })
+        return
+      }
       if (editMode) {
-        // terra-draw picks territories while editing; an empty click only drops an event selection
-        setSelected((prev) => (prev?.type === 'event' ? null : prev))
+        // terra-draw picks territories while editing; an empty click only drops an event/annotation selection
+        setSelected((prev) => (prev?.type === 'event' || prev?.type === 'annotation' ? null : prev))
         return
       }
       // view mode: read-only territory picking (terra-draw's select mode would allow dragging edits)

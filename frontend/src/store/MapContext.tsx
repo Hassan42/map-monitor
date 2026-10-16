@@ -9,6 +9,7 @@ setWorkerUrl(workerUrl)
 export type Selection =
   | { type: 'territory'; id: number }
   | { type: 'event'; id: number }
+  | { type: 'annotation'; id: number }
   | null
 
 const MapContext = createContext<{

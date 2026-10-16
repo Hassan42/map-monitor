@@ -9,6 +9,7 @@ import { useMap, useSelection } from '../store/MapContext'
 import { createTerritory, deleteTerritory, editTerritory } from '../api/territory'
 import type { DrawMode, Faction, Territory } from '../types/types'
 import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID } from '../map/mapLayers'
+import { findAnnotationAt } from '../map/annotationHitTest'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formColorInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
 // saved territories carry their color in properties; new unsaved drawings fall back to blue
@@ -70,7 +71,9 @@ function TerritoryLayer({
 
     const isOverEvent = (e: TerraDrawMouseEvent) => {
       const layers = [EVENTS_LAYER_ID, EVENTS_CLUSTER_LAYER_ID].filter((id) => map.getLayer(id))
-      const eventSelected = layers.length > 0 && map.queryRenderedFeatures([e.containerX, e.containerY], { layers }).length > 0
+      const eventSelected =
+        (layers.length > 0 && map.queryRenderedFeatures([e.containerX, e.containerY], { layers }).length > 0) ||
+        findAnnotationAt(map, [e.containerX, e.containerY]) != null
       const selectedFeature = terraDraw
         ?.getSnapshot()
         .find((f) => f.properties.selected === true && f.geometry.type === 'Polygon')
