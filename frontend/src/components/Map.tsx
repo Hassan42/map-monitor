@@ -13,7 +13,7 @@ import PropertyPanel from './PropertyPanel'
 import MapControls from './MapControls'
 import NavDropdown, { NavDropdownItem } from './NavDropDown'
 import { navButtonClass } from '../styles/navStyles'
-import { CloseIcon, CursorIcon, HandIcon } from './icons'
+import { CloseIcon, CursorIcon, EyeIcon, HandIcon } from './icons'
 import type { Annotation, EventMarker, Faction, MapSummary, Territory } from '../types/types'
 import { getMapFactions } from '../api/faction'
 import { getMapEvents } from '../api/event'
@@ -23,6 +23,7 @@ import { getMapById, startDraft, publishMap, getDraftStatus } from '../api/map'
 import type { DrawMode } from '../types/types'
 import TopoLayer from './TopoLayer'
 import TerrainLayer from './TerrainLayer'
+import Viewshed from './Viewshed'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
@@ -37,6 +38,7 @@ function Map() {
     const [editMode, setEditMode] = useState(false)
     const [isPlacingEvent, setIsPlacingEvent] = useState(false)
     const [isPlacingAnnotation, setIsPlacingAnnotation] = useState(false)
+    const [isPlacingViewshed, setIsPlacingViewshed] = useState(false)
     const [mapSummary, setMapSummary] = useState<MapSummary | null>(null)
     const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
     const [showTopo, setShowTopo] = useState<boolean | null>(null)
@@ -215,11 +217,12 @@ function Map() {
                 />
                 <EventMarkers events={events} factions={factions} />
                 {/* view mode is always selectable; in edit mode only with the Select tool */}
-                <SelectTool active={!editMode || drawMode === 'select'} editMode={editMode} territories={territories} />
+                <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed} editMode={editMode} territories={territories} />
                 <MapControls territories={territories} events={events} />
                 <PropertyPanel map={mapSummary} factions={factions} events={events} territories={territories} />
                 <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
                 <TerrainLayer enabled={showTerrain} />
+                <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
             </MapProvider>
 
 
@@ -233,28 +236,6 @@ function Map() {
                     {editMode ? 'Exit Edit Mode' : 'Edit'}
                 </button>
 
-                <button
-                    type="button"
-                    aria-pressed={showTopo ? showTopo : false}
-                    aria-label="Topographic map"
-                    title="Topographic map"
-                    onClick={() => setShowTopo((on) => !on)}
-                    className={`${navButtonClass} ml-auto ${showTopo ? 'bg-amber-400/15 text-amber-300' : ''}`}
-                >
-                    Topo
-                </button>
-
-                {/* 3D terrain on/off: tilts the map when switched on, flat again when off */}
-                <button
-                    type="button"
-                    aria-pressed={showTerrain}
-                    aria-label="3D terrain"
-                    title="3D terrain (right-drag or Ctrl+drag to tilt)"
-                    onClick={() => setShowTerrain((on) => !on)}
-                    className={`${navButtonClass} ${showTerrain ? 'bg-amber-400/15 text-amber-300' : ''}`}
-                >
-                    3D
-                </button>
 
 
                 {/* tools, edit mode only (view mode is always Select): Pan = only move the map (no tool),
@@ -308,6 +289,7 @@ function Map() {
                         type="button"
                         onClick={() => {
                             setIsPlacingAnnotation(false)
+                            setIsPlacingViewshed(false)
                             setIsPlacingEvent(true)
                         }}
                         className={navButtonClass}
@@ -323,6 +305,7 @@ function Map() {
                         onClick={() => {
                             setDrawMode(null)
                             setIsPlacingEvent(false)
+                            setIsPlacingViewshed(false)
                             setIsPlacingAnnotation(true)
                         }}
                         className={navButtonClass}
@@ -354,13 +337,55 @@ function Map() {
                     </NavDropdown>
                 )}
 
+                {/* map view toggles, pushed right together with the close button (ml-auto on the first one) */}
+                <button
+                    type="button"
+                    aria-pressed={showTopo ? showTopo : false}
+                    aria-label="Topographic map"
+                    title="Topographic map"
+                    onClick={() => setShowTopo((on) => !on)}
+                    className={`${navButtonClass} ml-auto ${showTopo ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                >
+                    Topo
+                </button>
+
+                {/* 3D terrain on/off: tilts the map when switched on, flat again when off */}
+                <button
+                    type="button"
+                    aria-pressed={showTerrain}
+                    aria-label="3D terrain"
+                    title="3D terrain (right-drag or Ctrl+drag to tilt)"
+                    onClick={() => setShowTerrain((on) => !on)}
+                    className={`${navButtonClass} ${showTerrain ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                >
+                    3D
+                </button>
+
+                {/* line of sight: the next map click places an observer; what it can't see turns gray.
+                    Clears the other placing tools / editing select so that click isn't handled twice */}
+                <button
+                    type="button"
+                    aria-pressed={isPlacingViewshed}
+                    aria-label="Line of sight"
+                    title="Line of sight - click a point to see what is visible from there"
+                    onClick={() => {
+                        setIsPlacingEvent(false)
+                        setIsPlacingAnnotation(false)
+                        if (editMode) setDrawMode(null)
+                        setIsPlacingViewshed((on) => !on)
+                    }}
+                    className={`${navButtonClass} ${isPlacingViewshed ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                >
+                    <EyeIcon />
+                </button>
+
                 {/* back to the maps list; a draft in progress stays saved on the backend */}
                 <button
                     type="button"
                     aria-label="Close map"
                     title="Back to maps"
                     onClick={() => navigate('/maps')}
-                    className={`${navButtonClass} ml-auto`}
+                    className={navButtonClass}
                 >
                     <CloseIcon />
                 </button>

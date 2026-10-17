@@ -95,3 +95,8 @@
 .annotation-scale-mode .maplibregl-canvas-container.maplibregl-interactive {
   cursor: ns-resize !important;
 }
+
+/* line of sight: placing the observer (crosshair over everything, terra-draw resets the inline cursor) */
+.viewshed-placing .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: crosshair !important;
+}
