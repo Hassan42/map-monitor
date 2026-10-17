@@ -42,6 +42,8 @@ function MapProvider({ children }: { children: ReactNode }) {
       style: 'https://tiles.openfreemap.org/styles/positron',
       center: [0, 0],
       zoom: 2,
+      // default 60; 85 lets you tilt down to nearly the horizon (above 60 MapLibre calls experimental)
+      maxPitch: 85,
     })
 
     const resizeObserver = new ResizeObserver(() => mapInstance.resize())

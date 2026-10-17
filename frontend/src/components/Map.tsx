@@ -21,6 +21,8 @@ import { getMapTerritories } from '../api/territory'
 import { editAnnotation, getMapAnnotations } from '../api/annotation'
 import { getMapById, startDraft, publishMap, getDraftStatus } from '../api/map'
 import type { DrawMode } from '../types/types'
+import TopoLayer from './TopoLayer'
+import TerrainLayer from './TerrainLayer'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
@@ -37,6 +39,8 @@ function Map() {
     const [isPlacingAnnotation, setIsPlacingAnnotation] = useState(false)
     const [mapSummary, setMapSummary] = useState<MapSummary | null>(null)
     const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
+    const [showTopo, setShowTopo] = useState<boolean | null>(null)
+    const [showTerrain, setShowTerrain] = useState(false)
     // whether the draft has anything to publish - always taken from the backend so it survives reloads
     const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
 
@@ -89,7 +93,7 @@ function Map() {
     // Fetching map summary from db
     useEffect(() => {
         if (!id) return
-        getMapById(id).then(setMapSummary).catch(() => {})
+        getMapById(id).then(setMapSummary).catch(() => { })
     }, [id])
 
     // faction creation handle
@@ -214,7 +218,11 @@ function Map() {
                 <SelectTool active={!editMode || drawMode === 'select'} editMode={editMode} territories={territories} />
                 <MapControls territories={territories} events={events} />
                 <PropertyPanel map={mapSummary} factions={factions} events={events} territories={territories} />
+                <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
+                <TerrainLayer enabled={showTerrain} />
             </MapProvider>
+
+
 
             <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 text-gray-300 text-base px-3 select-none">
                 <button
@@ -223,6 +231,29 @@ function Map() {
                     className={navButtonClass}
                 >
                     {editMode ? 'Exit Edit Mode' : 'Edit'}
+                </button>
+
+                <button
+                    type="button"
+                    aria-pressed={showTopo ? showTopo : false}
+                    aria-label="Topographic map"
+                    title="Topographic map"
+                    onClick={() => setShowTopo((on) => !on)}
+                    className={`${navButtonClass} ml-auto ${showTopo ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                >
+                    Topo
+                </button>
+
+                {/* 3D terrain on/off: tilts the map when switched on, flat again when off */}
+                <button
+                    type="button"
+                    aria-pressed={showTerrain}
+                    aria-label="3D terrain"
+                    title="3D terrain (right-drag or Ctrl+drag to tilt)"
+                    onClick={() => setShowTerrain((on) => !on)}
+                    className={`${navButtonClass} ${showTerrain ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                >
+                    3D
                 </button>
 
 
