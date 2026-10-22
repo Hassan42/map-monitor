@@ -2,8 +2,12 @@ package com.example.mapmonitor.dto;
 
 import com.example.mapmonitor.model.EventCategory;
 import com.example.mapmonitor.model.EventMarker;
+import com.example.mapmonitor.model.EventRelation;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class EventMarkerSummaryResponse {
     private final Long id;
@@ -15,6 +19,7 @@ public class EventMarkerSummaryResponse {
     private final EventCategory category;
     private final Long factionId;
     private final String sourceURL;
+    private final List<EventRelationDto> relations;
 
     private EventMarkerSummaryResponse(EventMarker event) {
         this.id = event.getStableId();
@@ -26,6 +31,11 @@ public class EventMarkerSummaryResponse {
         this.category = event.getCategory();
         this.factionId = event.getFactionId();
         this.sourceURL = event.getSourceURL();
+        this.relations = event.getRelations().stream().map(EventRelationDto::from).toList();
+    }
+
+    public List<EventRelationDto> getRelations() {
+        return relations;
     }
 
     public static EventMarkerSummaryResponse from(EventMarker event) {

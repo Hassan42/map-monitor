@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class EventMarker {
@@ -23,7 +25,9 @@ public class EventMarker {
     private LocalDateTime timestamp;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    // plain varchar: without it Hibernate adds a check constraint listing today's enum values,
+    // and ddl-auto=update never updates it, so new categories would be rejected by the database
+    @Column(nullable = false, columnDefinition = "varchar(255)")
     @ColumnDefault("'OTHER'")
     private EventCategory category;
 
@@ -38,6 +42,9 @@ public class EventMarker {
 
     @Column(length = 2048)
     private String sourceURL;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<EventRelation> relations = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -119,4 +126,11 @@ public class EventMarker {
 
     public void setSourceURL(String source) { this.sourceURL = source; }
 
+    public Set<EventRelation> getRelations() {
+        return relations;
+    }
+
+    public void setRelations(Set<EventRelation> relations) {
+        this.relations = relations;
+    }
 }

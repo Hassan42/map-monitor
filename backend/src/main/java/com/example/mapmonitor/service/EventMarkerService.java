@@ -2,8 +2,10 @@ package com.example.mapmonitor.service;
 
 import com.example.mapmonitor.dto.CreateEventMarkerRequest;
 import com.example.mapmonitor.dto.EventMarkerSummaryResponse;
+import com.example.mapmonitor.dto.EventRelationDto;
 import com.example.mapmonitor.model.EventCategory;
 import com.example.mapmonitor.model.EventMarker;
+import com.example.mapmonitor.model.EventRelation;
 import com.example.mapmonitor.model.MapVersion;
 import com.example.mapmonitor.repository.EventMarkerRepository;
 import org.springframework.stereotype.Service;
@@ -67,6 +69,15 @@ public class EventMarkerService {
         event.setCategory(request.getCategory() != null ? request.getCategory() : EventCategory.OTHER);
         event.setFactionId(request.getFactionId());
         event.setSourceURL(request.getSourceURL());
+
+        event.getRelations().clear();
+        for (EventRelationDto r : request.getRelations()) {
+            EventRelation relation = new EventRelation();
+            relation.setEvent(event);
+            relation.setRelatedEventId(r.getRelatedEventId());
+            relation.setType(r.getType());
+            event.getRelations().add(relation);
+        }
     }
 
     private List<EventMarker> resolveVisibleEvents(MapVersion version) {

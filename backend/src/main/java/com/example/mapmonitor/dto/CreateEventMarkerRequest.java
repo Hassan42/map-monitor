@@ -1,8 +1,12 @@
 package com.example.mapmonitor.dto;
 
 import com.example.mapmonitor.model.EventCategory;
+import com.example.mapmonitor.model.EventRelation;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class CreateEventMarkerRequest {
     private String title;
@@ -13,6 +17,15 @@ public class CreateEventMarkerRequest {
     private EventCategory category;
     private Long factionId;
     private String sourceURL;
+    private List<EventRelationDto> relations;
+
+    public List<EventRelationDto> getRelations() {
+        return relations;
+    }
+
+    public void setRelations(List<EventRelationDto> relations) {
+        this.relations = relations;
+    }
 
     public String getTitle() {
         return title;

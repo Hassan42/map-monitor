@@ -5,5 +5,8 @@ public enum EventCategory {
     ATTACK,
     CAPTURE,
     EXPLOSION,
+    PEACEFUL_PROTEST,
+    VIOLENT_PROTEST,
+    SHELLING_ARTILLERY_MISSILE_ATTACK,
     OTHER
 }

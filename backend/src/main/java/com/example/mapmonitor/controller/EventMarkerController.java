@@ -2,7 +2,6 @@ package com.example.mapmonitor.controller;
 
 import com.example.mapmonitor.dto.CreateEventMarkerRequest;
 import com.example.mapmonitor.dto.EventMarkerSummaryResponse;
-import com.example.mapmonitor.model.EventMarker;
 import com.example.mapmonitor.service.EventMarkerService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -26,16 +25,19 @@ public class EventMarkerController {
         return eventMarkerService.getEventsForMap(uid, mapId, draft);
     }
 
+    // responses are DTOs, never the entity: the entity's relations point back at the event, which
+    // Jackson would follow forever, and the entity's id is the version row's id, not the stableId
     @PostMapping
-    public EventMarker createEvent(Authentication authentication, @PathVariable Long mapId, @RequestBody CreateEventMarkerRequest request) {
+    public EventMarkerSummaryResponse createEvent(Authentication authentication, @PathVariable Long mapId,
+                                                  @RequestBody CreateEventMarkerRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return eventMarkerService.createEvent(uid, mapId, request);
+        return EventMarkerSummaryResponse.from(eventMarkerService.createEvent(uid, mapId, request));
     }
 
     @PutMapping("/{stableId}")
-    public EventMarker editEvent(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId,
-                                  @RequestBody CreateEventMarkerRequest request) {
+    public EventMarkerSummaryResponse editEvent(Authentication authentication, @PathVariable Long mapId,
+                                                @PathVariable Long stableId, @RequestBody CreateEventMarkerRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return eventMarkerService.editEvent(uid, mapId, stableId, request);
+        return EventMarkerSummaryResponse.from(eventMarkerService.editEvent(uid, mapId, stableId, request));
     }
 }
