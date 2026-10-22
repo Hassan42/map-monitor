@@ -23,7 +23,7 @@ function Register() {
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-neutral-950 px-4 text-gray-300">
-            <span className="font-mono text-sm font-bold uppercase tracking-widest text-amber-300">Map Monitor</span>
+            <span className="font-mono text-sm font-bold uppercase tracking-widest text-accent-300">Map Monitor</span>
             <form onSubmit={handleSubmit} className={formClass}>
                 <h1 className={formTitleClass}>Create account</h1>
                 <div className={formFieldClass}>
@@ -40,7 +40,7 @@ function Register() {
                 </button>
                 <p className="text-center text-sm text-gray-400">
                     Already have an account?{' '}
-                    <Link to="/login" className="text-amber-300 hover:underline">Sign in</Link>
+                    <Link to="/login" className="text-accent-300 hover:underline">Sign in</Link>
                 </p>
             </form>
         </div>

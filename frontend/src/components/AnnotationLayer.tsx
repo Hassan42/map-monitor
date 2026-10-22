@@ -5,8 +5,9 @@ import type { Annotation, AnnotationKind, Faction } from '../types/types'
 import { ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SOURCE_ID, annotationImageId } from '../map/mapLayers'
 import { addAnnotationLayers, removeAnnotationLayers } from '../map/annotationLayers'
 import { ANNOTATION_KINDS, ANNOTATION_KIND_LIST } from '../map/annotationKinds'
+import { ACCENT } from '../styles/colors'
 
-const DEFAULT_COLOR = '#fbc412' // amber, for annotations with neither their own color nor a faction
+const DEFAULT_COLOR = ACCENT // accent, for annotations with neither their own color nor a faction
 // annotations are bitmaps on the map (symbol layers can't draw vectors), stretched by icon-size.
 // Drawn large so they stay sharp when scaled up: 256px shown as 32px at size 1 (pixelRatio 8),
 // i.e. crisp up to ~4x on high-density screens (~8x on normal ones). The normal on-screen size is
@@ -117,7 +118,7 @@ function AnnotationLayer({ annotations, factions }: { annotations: Annotation[];
     source.setData(data)
   }, [map, icons, annotations, factions])
 
-  // selected annotation: show the amber ring under it
+  // selected annotation: show the accent ring under it
   useEffect(() => {
     if (!map?.getLayer(ANNOTATIONS_SELECTED_LAYER_ID)) return
     const selectedId = selected?.type === 'annotation' ? selected.id : -1

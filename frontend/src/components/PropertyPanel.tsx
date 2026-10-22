@@ -116,7 +116,7 @@ function PropertyPanel({
                                     {/* events have no color of their own, so show their faction's */}
                                     <Swatch color={factionById.get(e.factionId)?.color} />
                                     <CategoryIcon category={categoryOf(e)} />
-                                    <span className="flex-1 truncate">{e.title || `Event #${e.id}`}</span>
+                                    <span className="flex-1 truncate">{`${e.category?.replaceAll("_", " ").toLowerCase()}` || `Event #${e.id}`}</span>
                                     <span className="text-xs text-gray-500">{new Date(e.timestamp).toLocaleDateString()}</span>
                                 </li>
                             ))}
@@ -136,7 +136,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
             aria-selected={active}
             onClick={onClick}
             className={`flex-1 px-3 py-2 uppercase tracking-wider border-b-2 transition-colors ${
-                active ? 'border-amber-400 text-amber-300' : 'border-transparent text-gray-400 hover:text-gray-200'
+                active ? 'border-accent-400 text-accent-300' : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
         >
             {children}
@@ -154,7 +154,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpen((o) => !o)}
-                className="flex w-full items-center gap-2 px-1 py-1 text-sm font-semibold text-white hover:text-amber-300"
+                className="flex w-full items-center gap-2 px-1 py-1 text-sm font-semibold text-white hover:text-accent-300"
             >
                 <span className="w-3 text-xs">{open ? '▾' : '▸'}</span>
                 {title}
@@ -170,12 +170,12 @@ function Section({ title, count, children }: { title: string; count: number; chi
     )
 }
 
-// amber bar on the left + tint marks the selected row, matching the amber accent elsewhere;
+// accent bar on the left + tint marks the selected row, matching the accent accent elsewhere;
 // unselected rows keep a transparent bar so text doesn't shift when selection changes
 function rowClass(selected: boolean) {
     // select-none: double-clicking would otherwise highlight the row's text
     return `flex items-center gap-2 px-2 py-1 border-l-2 cursor-pointer select-none ${
-        selected ? 'border-amber-400 bg-amber-400/10 text-amber-200' : 'border-transparent hover:bg-white/5'
+        selected ? 'border-accent-400 bg-accent-400/10 text-accent-200' : 'border-transparent hover:bg-white/5'
     }`
 }
 

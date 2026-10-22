@@ -1,5 +1,5 @@
 // hand-drawn pixel-art icons (16x16 grid, 'X' = filled pixel) to match the old-school square theme;
-// drawn in currentColor so they follow the button's text color (gray, amber on hover/active)
+// drawn in currentColor so they follow the button's text color (gray, accent on hover/active)
 
 const CURSOR = [
     'X...............',

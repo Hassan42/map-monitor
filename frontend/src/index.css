@@ -2,6 +2,20 @@
 
 /* animate-heartbeat: double "thump" then rest, used on the Publish button's unpublished-changes square */
 @theme {
+  /* app surfaces: charcoal gray instead of Tailwind's near-black neutrals. Every bg-neutral-* /
+     border-neutral-* class in the app follows these, so the whole theme is changed here */
+  --color-neutral-950: #1c1f23;
+  --color-neutral-900: #25292e;
+  --color-neutral-800: #30353b;
+  --color-neutral-700: #40464d;
+  --color-neutral-600: #555c64;
+
+  /* the app's accent (buttons, hover, selection). Use bg-accent-400, text-accent-300, ... in classes.
+     Map layers can't read CSS variables: keep ACCENT in styles/colors.ts in sync with these */
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+
   --animate-heartbeat: heartbeat 1.2s ease-in-out infinite;
 
   @keyframes heartbeat {
@@ -23,9 +37,14 @@
   background-size: 24px;
 }
 
-/* amber hover to match the nav bar; skip the active tool so its own highlight stays visible */
+/* accent hover to match the nav bar; skip the active tool so its own highlight stays visible */
 .maplibregl-ctrl-group button[class*="maplibregl-terradraw-"]:not(.active):hover {
-  background-color: rgb(251 196 18 / 0.25);
+  background-color: color-mix(in srgb, var(--color-accent-400) 25%, transparent);
+}
+
+/* the active draw tool: terra-draw colors it amber by default, use the app accent instead */
+.maplibregl-ctrl-group button[class*="maplibregl-terradraw-"].active {
+  background-color: var(--color-accent-400);
 }
 
 /* old-school square look: MapLibre's own controls (draw toolbar, zoom, attribution) are rounded by default */
@@ -42,11 +61,11 @@
   cursor: default;
 }
 
-/* event popups: dark + square + amber, like the nav bar and dialogs */
+/* event popups: dark + square + accent, like the nav bar and dialogs */
 .event-popup .maplibregl-popup-content {
-  background: #171717;               /* neutral-900 */
+  background: var(--color-neutral-900);
   color: #d1d5db;                    /* gray-300 */
-  border: 1px solid #fbc412;         /* amber */
+  border: 1px solid var(--color-accent-400);
   border-radius: 0;
   padding: 10px 12px;
   font-size: 13px;
@@ -59,7 +78,7 @@
   padding: 0 6px;
 }
 .event-popup .maplibregl-popup-close-button:hover {
-  color: #fcd34d;
+  color: var(--color-accent-300);
   background: transparent;
 }
 

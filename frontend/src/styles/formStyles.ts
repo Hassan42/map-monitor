@@ -1,4 +1,4 @@
-// shared look for the add-territory / add-faction / add-event dialogs, matching the dark nav + amber accent
+// shared look for the add-territory / add-faction / add-event dialogs, matching the dark nav + accent accent
 
 export const formOverlayClass = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/60'
 
@@ -12,14 +12,14 @@ export const formFieldClass = 'flex flex-col gap-1 text-sm'
 
 export const formInputClass =
     'bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-gray-100 ' +
-    'focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
+    'focus:outline-none focus:border-accent-400 focus:ring-1 focus:ring-accent-400'
 
 export const formColorInputClass =
     'h-10 w-full bg-neutral-800 border border-neutral-700 p-1 cursor-pointer'
 
 export const formPrimaryButtonClass =
-    'flex-1 bg-amber-400 px-3 py-1.5 font-medium text-neutral-900 transition-colors ' +
-    'hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed'
+    'flex-1 bg-accent-400 px-3 py-1.5 font-medium text-neutral-900 transition-colors ' +
+    'hover:bg-accent-300 disabled:opacity-50 disabled:cursor-not-allowed'
 
 export const formSecondaryButtonClass =
     'flex-1 bg-neutral-700 px-3 py-1.5 text-gray-200 transition-colors hover:bg-neutral-600'

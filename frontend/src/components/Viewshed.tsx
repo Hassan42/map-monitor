@@ -15,7 +15,7 @@ const OBSERVER_LAYER_ID = 'viewshed-observer'
 const DEFAULT_RANGE_KM = 10
 const MAX_RANGE_KM = 50 // bigger ranges mean much more terrain to download and process
 const DEFAULT_EYE_HEIGHT_M = 2
-const AMBER = '#fbc412'
+import { ACCENT } from '../styles/colors'
 
 // lng/lat points of a circle `radius` meters around a point (for the range ring)
 function circle([lng, lat]: [number, number], radius: number, points = 128): [number, number][] {
@@ -91,14 +91,14 @@ function drawViewshed(map: MapLibreMap, result: ViewshedResult, request: Viewshe
       type: 'line',
       source: MARKERS_SOURCE_ID,
       filter: ['==', ['geometry-type'], 'LineString'],
-      paint: { 'line-color': AMBER, 'line-width': 1.5, 'line-dasharray': [3, 2] },
+      paint: { 'line-color': ACCENT, 'line-width': 1.5, 'line-dasharray': [3, 2] },
     })
     map.addLayer({
       id: OBSERVER_LAYER_ID,
       type: 'circle',
       source: MARKERS_SOURCE_ID,
       filter: ['==', ['geometry-type'], 'Point'],
-      paint: { 'circle-radius': 6, 'circle-color': AMBER, 'circle-stroke-width': 2, 'circle-stroke-color': '#111111' },
+      paint: { 'circle-radius': 6, 'circle-color': ACCENT, 'circle-stroke-width': 2, 'circle-stroke-color': '#111111' },
     })
   }
 }
@@ -216,7 +216,7 @@ function Viewshed({ placing, onPlaced }: { placing: boolean; onPlaced: () => voi
           <span className="w-32 text-xs text-gray-500">
             {error || (calculating ? 'Calculating…' : groundHeight != null ? `Ground ${Math.round(groundHeight)} m` : '')}
           </span>
-          <button type="button" onClick={clear} className="px-2 py-1 transition-colors hover:bg-amber-400/15 hover:text-amber-300">
+          <button type="button" onClick={clear} className="px-2 py-1 transition-colors hover:bg-accent-400/15 hover:text-accent-300">
             Clear
           </button>
         </>
@@ -259,7 +259,7 @@ function NumberField({ label, unit, value, min, max, onChange }: {
         onKeyDown={(e) => {
           if (e.key === 'Enter') apply()
         }}
-        className="w-16 bg-neutral-800 border border-neutral-700 px-2 py-1 text-gray-100 focus:outline-none focus:border-amber-400"
+        className="w-16 bg-neutral-800 border border-neutral-700 px-2 py-1 text-gray-100 focus:outline-none focus:border-accent-400"
       />
       <span className="text-gray-500">{unit}</span>
     </label>

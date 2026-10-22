@@ -6,8 +6,9 @@ import type { Annotation, AnnotationKind, Faction } from '../types/types'
 import { ANNOTATION_KINDS, ANNOTATION_KIND_LIST } from '../map/annotationKinds'
 import { ANNOTATION_REFERENCE_ZOOM, scaleAtZoom } from '../map/annotationScale'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formColorInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
+import { ACCENT } from '../styles/colors'
 
-const DEFAULT_COLOR = '#fbc412' // amber, until a faction is picked
+const DEFAULT_COLOR = ACCENT // accent, until a faction is picked
 
 // click the map to place an annotation, then pick its kind, color and size in a dialog
 function AddAnnotation({

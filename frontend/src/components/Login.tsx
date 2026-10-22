@@ -23,7 +23,7 @@ function Login() {
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-neutral-950 px-4 text-gray-300">
-            <span className="font-mono text-sm font-bold uppercase tracking-widest text-amber-300">Map Monitor</span>
+            <span className="font-mono text-sm font-bold uppercase tracking-widest text-accent-300">Map Monitor</span>
             <form onSubmit={handleSubmit} className={formClass}>
                 <h1 className={formTitleClass}>Sign in</h1>
                 <div className={formFieldClass}>
@@ -42,7 +42,7 @@ function Login() {
                 </button>
                 <p className="text-center text-sm text-gray-400">
                     No account?{' '}
-                    <Link to="/register" className="text-amber-300 hover:underline">Register</Link>
+                    <Link to="/register" className="text-accent-300 hover:underline">Register</Link>
                 </p>
             </form>
         </div>

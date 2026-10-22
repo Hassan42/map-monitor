@@ -34,7 +34,7 @@ function NavDropdown({ label, children }: Props) {
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen((o) => !o)}
-                className={`${navButtonClass} ${open ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                className={`${navButtonClass} ${open ? 'bg-accent-400/15 text-accent-300' : ''}`}
             >
                 {label} ▾
             </button>
@@ -59,7 +59,7 @@ export function NavDropdownItem({ onClick, children }: { onClick?: () => void; c
             type="button"
             role="menuitem"
             onClick={onClick}
-            className="block w-full text-left px-4 py-2 transition-colors hover:bg-amber-400/15 hover:text-amber-300"
+            className="block w-full text-left px-4 py-2 transition-colors hover:bg-accent-400/15 hover:text-accent-300"
         >
             {children}
         </button>

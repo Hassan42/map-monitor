@@ -44,7 +44,7 @@ function Maps() {
         <div className="min-h-screen bg-neutral-950 text-gray-300">
             {/* same bar as the map view */}
             <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
-                <span className="px-2 font-mono text-sm font-bold uppercase tracking-widest text-amber-300">Map Monitor</span>
+                <span className="px-2 font-mono text-sm font-bold uppercase tracking-widest text-accent-300">Map Monitor</span>
                 <button type="button" onClick={() => setShowAddMap(true)} className={`${navButtonClass} ml-auto`}>
                     + New Map
                 </button>
@@ -68,7 +68,7 @@ function Maps() {
                         <button
                             type="button"
                             onClick={() => setShowAddMap(true)}
-                            className="bg-amber-400 px-4 py-2 font-medium text-neutral-900 transition-colors hover:bg-amber-300"
+                            className="bg-accent-400 px-4 py-2 font-medium text-neutral-900 transition-colors hover:bg-accent-300"
                         >
                             Create your first map
                         </button>
@@ -80,7 +80,7 @@ function Maps() {
                         {maps.map((map) => (
                             <li
                                 key={map.id}
-                                className="group flex flex-col bg-neutral-900 ring-1 ring-white/10 transition-colors hover:ring-amber-400"
+                                className="group flex flex-col bg-neutral-900 ring-1 ring-white/10 transition-colors hover:ring-accent-400"
                             >
                                 {/* the whole card body opens the map */}
                                 <button
@@ -88,7 +88,7 @@ function Maps() {
                                     onClick={() => handleOpen(map.id)}
                                     className="flex flex-1 flex-col gap-2 p-4 text-left"
                                 >
-                                    <h3 className="truncate font-semibold text-white group-hover:text-amber-300">{map.title}</h3>
+                                    <h3 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h3>
                                     <p className="line-clamp-3 text-sm text-gray-400">
                                         {map.description || <span className="italic text-gray-600">No description</span>}
                                     </p>
@@ -98,7 +98,7 @@ function Maps() {
                                     <button
                                         type="button"
                                         onClick={() => handleOpen(map.id)}
-                                        className="flex-1 px-4 py-2 text-left transition-colors hover:bg-amber-400/15 hover:text-amber-300"
+                                        className="flex-1 px-4 py-2 text-left transition-colors hover:bg-accent-400/15 hover:text-accent-300"
                                     >
                                         Open →
                                     </button>

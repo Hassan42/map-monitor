@@ -1,6 +1,7 @@
 import type { AddLayerObject, Map, SourceSpecification } from 'maplibre-gl'
 import { ICON_MIN_SIZE, ICON_RADIUS_PX, MAX_ICON_SIZE, zoomScaled } from './annotationScale'
 import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
+import { ACCENT } from '../styles/colors'
 
 // what annotations look like on the map: one GeoJSON source of points and one symbol layer
 // stamping each kind's icon. AnnotationLayer fills the source and creates the per-color images.
@@ -12,7 +13,7 @@ const annotationsSource: SourceSpecification = {
 
 // in drawing order: later layers draw on top
 const annotationLayers: AddLayerObject[] = [
-  // amber ring under the selected annotation, sized with it (its filter is set by AnnotationLayer)
+  // accent ring under the selected annotation, sized with it (its filter is set by AnnotationLayer)
   {
     id: ANNOTATIONS_SELECTED_LAYER_ID,
     type: 'circle',
@@ -23,7 +24,7 @@ const annotationLayers: AddLayerObject[] = [
       'circle-radius': zoomScaled(['*', ICON_RADIUS_PX, ['get', 'scale']], ICON_MIN_SIZE * ICON_RADIUS_PX, MAX_ICON_SIZE * ICON_RADIUS_PX),
       'circle-color': 'transparent',
       'circle-stroke-width': 2,
-      'circle-stroke-color': '#fbc412',
+      'circle-stroke-color': ACCENT,
     },
   },
   {
