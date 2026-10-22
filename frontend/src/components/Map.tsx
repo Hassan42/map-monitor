@@ -203,6 +203,7 @@ function Map() {
                 <AddEvent
                     mapId={id}
                     factions={factions}
+                    events={events}
                     active={isPlacingEvent}
                     onExit={() => setIsPlacingEvent(false)}
                     onCreated={handleEventCreated}
@@ -252,7 +253,7 @@ function Map() {
                                 setIsPlacingAnnotation(false)
                                 setDrawMode(null)
                             }}
-                            className={`${navButtonClass} ${drawMode === null && !isPlacingEvent && !isPlacingAnnotation ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                            className={`${navButtonClass} ${drawMode === null && !isPlacingEvent && !isPlacingAnnotation ? 'bg-accent-400/15 text-accent-300' : ''}`}
                         >
                             <HandIcon />
                         </button>
@@ -266,7 +267,7 @@ function Map() {
                                 setIsPlacingAnnotation(false)
                                 setDrawMode('select')
                             }}
-                            className={`${navButtonClass} ${drawMode === 'select' ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                            className={`${navButtonClass} ${drawMode === 'select' ? 'bg-accent-400/15 text-accent-300' : ''}`}
                         >
                             <CursorIcon />
                         </button>
@@ -325,7 +326,7 @@ function Map() {
                         {hasUnpublishedChanges && (
                             <span
                                 title="Unpublished changes"
-                                className="h-2.5 w-2.5 bg-amber-400 animate-heartbeat motion-reduce:animate-none"
+                                className="h-2.5 w-2.5 bg-accent-400 animate-heartbeat motion-reduce:animate-none"
                             />
                         )}
                     </button>
@@ -344,7 +345,7 @@ function Map() {
                     aria-label="Topographic map"
                     title="Topographic map"
                     onClick={() => setShowTopo((on) => !on)}
-                    className={`${navButtonClass} ml-auto ${showTopo ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                    className={`${navButtonClass} ml-auto ${showTopo ? 'bg-accent-400/15 text-accent-300' : ''}`}
                 >
                     Topo
                 </button>
@@ -356,7 +357,7 @@ function Map() {
                     aria-label="3D terrain"
                     title="3D terrain (right-drag or Ctrl+drag to tilt)"
                     onClick={() => setShowTerrain((on) => !on)}
-                    className={`${navButtonClass} ${showTerrain ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                    className={`${navButtonClass} ${showTerrain ? 'bg-accent-400/15 text-accent-300' : ''}`}
                 >
                     3D
                 </button>
@@ -374,7 +375,7 @@ function Map() {
                         if (editMode) setDrawMode(null)
                         setIsPlacingViewshed((on) => !on)
                     }}
-                    className={`${navButtonClass} ${isPlacingViewshed ? 'bg-amber-400/15 text-amber-300' : ''}`}
+                    className={`${navButtonClass} ${isPlacingViewshed ? 'bg-accent-400/15 text-accent-300' : ''}`}
                 >
                     <EyeIcon />
                 </button>
