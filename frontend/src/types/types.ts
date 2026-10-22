@@ -32,7 +32,24 @@ export interface Faction {
 }
 
 // mirrors the backend's EventCategory enum (Jackson sends the constant's name)
-export type EventCategory = 'DEATH' | 'ATTACK' | 'CAPTURE' | 'EXPLOSION' | 'OTHER'
+export type EventCategory =
+  | 'DEATH'
+  | 'ATTACK'
+  | 'CAPTURE'
+  | 'EXPLOSION'
+  | 'PEACEFUL_PROTEST'
+  | 'VIOLENT_PROTEST'
+  | 'SHELLING_ARTILLERY_MISSILE_ATTACK'
+  | 'OTHER'
+
+// mirrors the backend's EventRelationType enum
+export type EventRelationType = 'PartOf' | 'causedBy' | 'RetaliationTo' | 'Other'
+
+// a link from one event to another; relatedEventId is the other event's id
+export interface EventRelation {
+  relatedEventId: number;
+  type: EventRelationType;
+}
 
 export interface EventMarker {
   id: number;
@@ -44,6 +61,7 @@ export interface EventMarker {
   category: EventCategory | null; // null for events created before categories existed
   factionId: number;
   sourceURL: string;
+  relations?: EventRelation[]; // missing on responses from before relations existed
 }
 
 export interface Territory {

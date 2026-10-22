@@ -17,7 +17,7 @@ export function createEventPopupContent(event: EventMarker) {
   }
 
   const source = document.createElement('a')
-  source.className = 'text-xs text-amber-300 hover:underline truncate'
+  source.className = 'text-xs text-accent-300 hover:underline truncate'
 
   if (event.sourceURL) {
     source.textContent = "Source"

@@ -11,8 +11,8 @@ import { createEventPopupContent } from '../map/EventPopup'
 const DEFAULT_COLOR = '#737373'
 const OUTLINE_COLOR = '#111111'
 // sizes in image pixels; images are shown at half that (pixelRatio 2) so they stay sharp
-const MARKER_PX = 82
-const ICON_PX = 52
+const MARKER_PX = 98
+const ICON_PX = 62
 const OUTLINE_PX = 4
 
 // loaded category icons; categories without an icon (OTHER) are simply absent
@@ -95,9 +95,10 @@ function EventMarkers({
   factions: Faction[]
 }) {
   const map = useMap()
-  const [selected] = useSelection()
+  const [selected, setSelected] = useSelection()
   // the icons every marker image is drawn from; markers wait until they've loaded
   const [icons, setIcons] = useState<CategoryIcons | null>(null)
+  const [menu, setMenu] = useState<{ x: number, y: number, eventId: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -133,7 +134,7 @@ function EventMarkers({
     source.setData(data)
   }, [map, icons, events, factions])
 
-  // selected event: show the amber ring under it
+  // selected event: show the accent ring under it
   useEffect(() => {
     if (!map?.getLayer(EVENTS_SELECTED_LAYER_ID)) return
     const selectedId = selected?.type === 'event' ? selected.id : -1
@@ -153,11 +154,12 @@ function EventMarkers({
 
       const coordinates = feature.geometry.coordinates as [number, number]
 
-      const event = events.find((ev)=> ev.id === feature.properties.id)
+      const event = events.find((ev) => ev.id === feature.properties.id)
       if (!event) {
-        return}
+        return
+      }
 
-      new Popup({ className:'event-popup', offset: 18 })
+      new Popup({ className: 'event-popup', offset: 18 })
         .setLngLat(coordinates)
         .setDOMContent(createEventPopupContent(event))
         // .setText(feature.properties.description)
@@ -186,13 +188,73 @@ function EventMarkers({
       })
     }
 
+    const handleRightClick = (e: MapLayerMouseEvent) => {
+
+      e.preventDefault() // no browser right-click menu
+      const feature = e.features?.[0]
+      if (!feature) return
+      setMenu({
+        x: e.originalEvent.clientX,
+        y: e.originalEvent.clientY,
+        eventId: feature.properties.id as number
+      });
+      setSelected({ type: 'event',  id: feature.properties.id as number });
+
+    }
+
+
+    map.on('contextmenu', EVENTS_LAYER_ID, handleRightClick)
+    map.on('click', () => { setMenu(null) })
     map.on('dblclick', EVENTS_LAYER_ID, handleDoubleClick)
     return () => {
       map.off('dblclick', EVENTS_LAYER_ID, handleDoubleClick)
+      map.off('click', () => { setMenu(null) })
+      map.off('contextmenu', EVENTS_LAYER_ID, handleRightClick)
     }
   }, [map])
 
-  return null
+  return (
+    <>
+      {menu != null &&
+        (< div
+          className="fixed z-50 min-w-40 bg-neutral-900 py-1 text-sm text-gray-300 shadow-xl ring-1 ring-white/10"
+          style={{ left: menu.x, top: menu.y }}
+        >
+          <button
+            type="button"
+            onClick={() => { console.log('edit') }}
+            className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
+          >
+            Move
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { console.log('edit') }}
+            className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
+          >
+            Edit event
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { console.log('edit') }}
+            className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
+          >
+            Delete
+          </button>
+
+                    <button
+            type="button"
+            onClick={() => { console.log('edit') }}
+            className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
+          >
+            Relates to 
+          </button>
+
+        </div >)}
+    </>
+  )
 }
 
 export default EventMarkers

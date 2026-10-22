@@ -2,7 +2,7 @@
 export const EVENTS_SOURCE_ID = 'events'
 // single events: one symbol layer, each event one image (circle + skull drawn together)
 export const EVENTS_LAYER_ID = 'events-marker'
-// amber ring drawn under the selected event
+// accent ring drawn under the selected event
 export const EVENTS_SELECTED_LAYER_ID = 'events-selected'
 // marker images are named by category + faction color, e.g. 'event-ATTACK-#c0392b'.
 // eventLayers.ts builds the same name per feature with an expression - keep the two in sync
@@ -15,7 +15,7 @@ export const EVENTS_CLUSTER_MAX_ZOOM = 8
 
 export const ANNOTATIONS_SOURCE_ID = 'annotations'
 export const ANNOTATIONS_LAYER_ID = 'annotations-icon'
-// amber ring drawn under the selected annotation
+// accent ring drawn under the selected annotation
 export const ANNOTATIONS_SELECTED_LAYER_ID = 'annotations-selected'
 // annotation images are named by kind + color, e.g. 'annotation-ARROW-#c0392b'.
 // annotationLayers.ts builds the same name per feature with an expression - keep the two in sync

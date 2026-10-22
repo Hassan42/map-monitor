@@ -8,11 +8,12 @@ import {
   EVENTS_SELECTED_LAYER_ID,
   EVENTS_SOURCE_ID,
 } from './mapLayers'
+import { ACCENT, ACCENT_LIGHT } from '../styles/colors'
 
 // what the events look like on the map: one clustered GeoJSON source and the layers drawing it.
 // EventMarkers fills the source with data and creates the per-color marker images.
 
-const SELECTED_COLOR = '#ffc400' // amber, like the rest of the UI
+const SELECTED_COLOR = ACCENT // the app's accent, like the rest of the UI
 
 // clusters have point_count; single events don't
 const IS_CLUSTER: FilterSpecification = ['has', 'point_count']
@@ -22,13 +23,13 @@ const eventsSource: SourceSpecification = {
   type: 'geojson',
   data: { type: 'FeatureCollection', features: [] },
   cluster: true,
-  clusterRadius: 40, // px: events closer than this on screen are grouped
+  clusterRadius: 48, // px: events closer than this on screen are grouped
   clusterMaxZoom: EVENTS_CLUSTER_MAX_ZOOM,
 }
 
 // in drawing order: later layers draw on top
 const eventLayers: AddLayerObject[] = [
-  // cluster: dark badge with an amber ring, sized by how many events it holds
+  // cluster: dark badge with an accent ring, sized by how many events it holds
   {
     id: EVENTS_CLUSTER_LAYER_ID,
     type: 'circle',
@@ -36,7 +37,7 @@ const eventLayers: AddLayerObject[] = [
     filter: IS_CLUSTER,
     paint: {
       'circle-radius': ['step', ['get', 'point_count'], 14, 10, 18, 50, 24],
-      'circle-color': '#171717',
+      'circle-color': '#25292e', // neutral-900 from the app theme (index.css)
       'circle-stroke-width': 2,
       'circle-stroke-color': SELECTED_COLOR,
     },
@@ -52,15 +53,15 @@ const eventLayers: AddLayerObject[] = [
       'text-size': 12,
       'text-allow-overlap': true,
     },
-    paint: { 'text-color': '#fcd34d' },
+    paint: { 'text-color': ACCENT_LIGHT },
   },
-  // amber ring under the selected event (its filter is set by EventMarkers when selection changes)
+  // accent ring under the selected event (its filter is set by EventMarkers when selection changes)
   {
     id: EVENTS_SELECTED_LAYER_ID,
     type: 'circle',
     source: EVENTS_SOURCE_ID,
     filter: ['==', ['get', 'id'], -1],
-    paint: { 'circle-radius': 28, 'circle-color': SELECTED_COLOR },
+    paint: { 'circle-radius': 32, 'circle-color': SELECTED_COLOR },
   },
   // single events: each one image (circle + category icon), picked by category + faction color - the same
   // name eventImageId() gives. Added up front: the source starts empty, and EventMarkers creates each
