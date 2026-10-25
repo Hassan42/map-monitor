@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import MapProvider from '../store/MapContext'
 import TerritoryLayer from './TerritoryLayer'
 import AddFaction from './AddFaction'
 import AddEvent from './AddEvent'
+import EditEvent from './EditEvent'
 import EventMarkers from './EventMarkers'
 import AnnotationLayer from './AnnotationLayer'
 import AddAnnotation from './AddAnnotation'
@@ -16,7 +17,7 @@ import { navButtonClass } from '../styles/navStyles'
 import { CloseIcon, CursorIcon, EyeIcon, HandIcon } from './icons'
 import type { Annotation, EventMarker, Faction, MapSummary, Territory } from '../types/types'
 import { getMapFactions } from '../api/faction'
-import { getMapEvents } from '../api/event'
+import { getMapEvents, editEvent, deleteEvent } from '../api/event'
 import { getMapTerritories } from '../api/territory'
 import { editAnnotation, getMapAnnotations } from '../api/annotation'
 import { getMapById, startDraft, publishMap, getDraftStatus } from '../api/map'
@@ -24,6 +25,10 @@ import type { DrawMode } from '../types/types'
 import TopoLayer from './TopoLayer'
 import TerrainLayer from './TerrainLayer'
 import Viewshed from './Viewshed'
+import TimeLine from './TimeLine'
+import { territoryAt, territoryKey } from '../map/territoryTime'
+import { parseServerTime } from '../map/eventTime'
+import { DAY_MS } from '../map/eventTime'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
@@ -45,6 +50,45 @@ function Map() {
     const [showTerrain, setShowTerrain] = useState(false)
     // whether the draft has anything to publish - always taken from the backend so it survives reloads
     const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
+    // the event whose edit form is open (from the event's right-click menu)
+    const [editingEventId, setEditingEventId] = useState<number | null>(null)
+    // the date the map shows (ms): decides which events are visible and how faded. The real clock
+    // for now, refreshed every minute so events fade as time passes; a timeline slider can set it later
+    const [now, setNow] = useState(() => Date.now())
+    const [today] = useState(() => Date.now()) // real time in case there was no events, we use it as fallback
+    const [live, setLive] = useState<boolean>(true)
+
+    // territories as they were at the timeline's date: earlier shapes from their history, ones that
+    // didn't exist yet or had ended left out. Rebuilt only when some territory switches state
+    // (shownTerritoriesKey), not on every timeline tick - a new list makes TerritoryLayer redraw all polygons
+    const shownTerritoriesKey = territoryKey(territories, now)
+    const visibleTerritories = useMemo(
+        () => territories.map((t) => territoryAt(t, now)).filter((t): t is Territory => t !== null),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- shownTerritoriesKey covers `now`
+        [territories, shownTerritoriesKey],
+    )
+
+    // the timeline spans everything dated on the map: events (start, end) and territories (each
+    // history state's start, end). Live can go past it to the present: the handle then sits at the
+    // right end while the date label shows now
+    const times = [
+        ...events.flatMap((e) => (e.endTime ? [parseServerTime(e.timestamp), parseServerTime(e.endTime)] : [parseServerTime(e.timestamp)])),
+        ...territories.flatMap((t) => [
+            // a state from 1970 means "always" (see withShapeAt): not a real date, leave it out of the range
+            ...(t.history ?? []).map((s) => parseServerTime(s.from)).filter((time) => time > 0),
+            ...(t.endTime ? [parseServerTime(t.endTime)] : []),
+        ]),
+    ]
+    const min = times.length > 0 ? Math.min(...times) : today - 30 * DAY_MS // nothing dated yet: the last 30 days
+    const max = times.length > 0 ? Math.max(...times, min + DAY_MS) : today // at least a day, so the bar never has zero length
+    
+
+    useEffect(() => {
+        if (!live) return;
+        const timer = setInterval(() => setNow(Date.now()), 60_000)
+        return () => clearInterval(timer)
+    }, [live])
+    const editingEvent = events.find((e) => e.id === editingEventId)
 
     const refreshDraftStatus = useCallback(() => {
         if (!id) return
@@ -127,8 +171,39 @@ function Map() {
     }
 
     const handleEventCreated = (event: EventMarker) => {
+        setNow(Date.now())
         setEvents((prev) => [...prev, event])
         refreshDraftStatus()
+    }
+
+
+    const handleEventSaved = (event: EventMarker) => {
+        setEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))
+        refreshDraftStatus()
+    }
+
+    const handleEventDeleted = async (eventId: number) => {
+        if (!id) return
+        try {
+            await deleteEvent(id, eventId)
+            setEvents((prev) => prev.filter((e) => e.id !== eventId))
+            refreshDraftStatus()
+        } catch {
+            setError('Could not delete event')
+        }
+    }
+
+    const handleEventMoved = async (eventId: number, latitude: number, longitude: number) => {
+        const event = events.find((e) => e.id === eventId)
+        if (!id || !event) return
+        setEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, latitude, longitude } : e)))
+        // PUT replaces every field, so send the whole event (without its id, that's in the URL)
+        try {
+            await editEvent(id, eventId, { ...event, latitude, longitude }) // the extra `id` is ignored by the backend
+            refreshDraftStatus()
+        } catch {
+            setError('Could not move event')
+        }
     }
 
     // territory creation handle
@@ -175,16 +250,32 @@ function Map() {
             .catch(() => setError('Could not publish'))
     }
 
+    const handleTimeChange = (time: number) => {
+        setLive(false);
+        setNow(time);
+    }
+
+    // nav bar Live button: on = follow the real clock (timeline hidden); off = show the timeline to
+    // pick a date, starting from where the clock is now
+    const handleLiveToggle = () => {
+        if (live) {
+            setLive(false)
+            return
+        }
+        setLive(true)
+        setNow(Date.now())
+    }
+
     if (!id) return <p>Map not found</p>
 
-    console.log(mapSummary)
     return (
         <div className="relative">
             <MapProvider>
                 <TerritoryLayer
                     mapId={id}
                     factions={factions}
-                    territories={territories}
+                    territories={visibleTerritories}
+                    now={now}
                     active={editMode}
                     mode={drawMode}
                     onModeChange={setDrawMode}
@@ -216,14 +307,26 @@ function Map() {
                     onChange={handleAnnotationChange}
                     onCommit={handleAnnotationCommit}
                 />
-                <EventMarkers events={events} factions={factions} />
+                <EventMarkers events={events} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId} 
+                onDelete={handleEventDeleted} now={now} editMode={editMode} />
+                {editingEvent && (
+                    <EditEvent
+                        mapId={id}
+                        event={editingEvent}
+                        factions={factions}
+                        events={events}
+                        onSaved={handleEventSaved}
+                        onClose={() => setEditingEventId(null)}
+                    />
+                )}
                 {/* view mode is always selectable; in edit mode only with the Select tool */}
-                <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed} editMode={editMode} territories={territories} />
+                <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed} editMode={editMode} territories={visibleTerritories} />
                 <MapControls territories={territories} events={events} />
                 <PropertyPanel map={mapSummary} factions={factions} events={events} territories={territories} />
                 <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
                 <TerrainLayer enabled={showTerrain} />
                 <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
+                {!live && <TimeLine min={min} max={max} now={now} onChange={handleTimeChange} />}
             </MapProvider>
 
 
@@ -341,11 +444,21 @@ function Map() {
                 {/* map view toggles, pushed right together with the close button (ml-auto on the first one) */}
                 <button
                     type="button"
+                    aria-pressed={live}
+                    title={live ? 'Showing the present - click to pick a date on the timeline' : 'Back to the present'}
+                    onClick={handleLiveToggle}
+                    className={`${navButtonClass} ml-auto flex items-center gap-1.5 ${live ? 'bg-accent-400/15 text-accent-300' : ''}`}
+                >
+                    <span className={`h-2 w-2 ${live ? 'bg-accent-400 animate-heartbeat motion-reduce:animate-none' : 'bg-gray-500'}`} />
+                    Live
+                </button>
+                <button
+                    type="button"
                     aria-pressed={showTopo ? showTopo : false}
                     aria-label="Topographic map"
                     title="Topographic map"
                     onClick={() => setShowTopo((on) => !on)}
-                    className={`${navButtonClass} ml-auto ${showTopo ? 'bg-accent-400/15 text-accent-300' : ''}`}
+                    className={`${navButtonClass} ${showTopo ? 'bg-accent-400/15 text-accent-300' : ''}`}
                 >
                     Topo
                 </button>

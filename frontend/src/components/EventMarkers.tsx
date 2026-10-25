@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { GeoJSONSource, MapLayerMouseEvent } from 'maplibre-gl'
 import { Popup } from 'maplibre-gl'
 import { useMap, useSelection } from '../store/MapContext'
@@ -7,6 +7,10 @@ import { EVENTS_LAYER_ID, EVENTS_SELECTED_LAYER_ID, EVENTS_SOURCE_ID, eventImage
 import { addEventLayers, removeEventLayers } from '../map/eventLayers'
 import { EVENT_CATEGORIES, EVENT_CATEGORY_LIST, categoryOf } from '../map/eventCategories'
 import { createEventPopupContent } from '../map/EventPopup'
+import { eventOpacity } from '../map/eventTime'
+import ConfirmDialog from './ConfirmDialog'
+import type { MapMouseEvent } from 'maplibre-gl'
+
 
 const DEFAULT_COLOR = '#737373'
 const OUTLINE_COLOR = '#111111'
@@ -18,16 +22,22 @@ const OUTLINE_PX = 4
 // loaded category icons; categories without an icon (OTHER) are simply absent
 type CategoryIcons = Partial<Record<EventCategory, HTMLImageElement>>
 
-function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[]): GeoJSON.FeatureCollection {
+// only events visible at `now` become features: expired ones never reach the map (nor its clusters),
+// they stay in the app's event list and come back when `now` moves back in time
+function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: number): GeoJSON.FeatureCollection {
   const colorByFaction = new Map(factions.map((f) => [f.id, f.color]))
   return {
     type: 'FeatureCollection',
-    features: events.map((e) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [e.longitude, e.latitude] },
-      // the marker layer picks its image from category + color (see eventImageId)
-      properties: { id: e.id, color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR, category: categoryOf(e), description: "test" },
-    })),
+    features: events.flatMap((e): GeoJSON.Feature[] => {
+      const opacity = eventOpacity(e, now)
+      if (opacity === null) return []
+      return [{
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [e.longitude, e.latitude] },
+        // the marker layer picks its image from category + color (see eventImageId), and fades it by opacity
+        properties: { id: e.id, color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR, category: categoryOf(e), opacity },
+      }]
+    }),
   }
 }
 
@@ -90,15 +100,38 @@ function drawMarkerImage(icon: HTMLImageElement | undefined, color: string) {
 function EventMarkers({
   events,
   factions,
+  onMoved,
+  onEdit,
+  onDelete,
+  now,
+  editMode,
 }: {
   events: EventMarkerType[]
   factions: Faction[]
+  onMoved: (id: number, latitude: number, longitude: number) => Promise<void>
+  onEdit: (id: number) => void
+  onDelete: (id: number) => void
+  now: number // the map's date (ms): decides which events show and how faded
+  editMode: boolean // the right-click menu (move/edit/delete) is for editing only
 }) {
   const map = useMap()
   const [selected, setSelected] = useSelection()
   // the icons every marker image is drawn from; markers wait until they've loaded
   const [icons, setIcons] = useState<CategoryIcons | null>(null)
   const [menu, setMenu] = useState<{ x: number, y: number, eventId: number } | null>(null)
+  // the event waiting for "really delete?" (ConfirmDialog)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  // edit mode for the right-click handler, which is only registered once per map
+  const editModeRef = useRef(editMode)
+  useEffect(() => {
+    editModeRef.current = editMode
+  }, [editMode])
+  const [movingId, setMovingId] = useState<number | null>(null)
+  // same value for the map's click handlers, which keep the state from when they were registered
+  const movingRef = useRef<number | null>(null)
+  useEffect(() => {
+    movingRef.current = movingId
+  }, [movingId])
 
   useEffect(() => {
     let cancelled = false
@@ -125,14 +158,14 @@ function EventMarkers({
     const source = map.getSource(EVENTS_SOURCE_ID) as GeoJSONSource | undefined
     if (!source) return
 
-    const data = eventsToGeoJSON(events, factions)
+    const data = eventsToGeoJSON(events, factions, now)
     for (const feature of data.features) {
       const { category, color } = feature.properties as { category: EventCategory; color: string }
       const imageId = eventImageId(category, color)
       if (!map.hasImage(imageId)) map.addImage(imageId, drawMarkerImage(icons[category], color), { pixelRatio: 2 })
     }
     source.setData(data)
-  }, [map, icons, events, factions])
+  }, [map, icons, events, factions, now])
 
   // selected event: show the accent ring under it
   useEffect(() => {
@@ -147,6 +180,7 @@ function EventMarkers({
     if (!map) return
 
     const handlePopUp = (e: MapLayerMouseEvent) => {
+      if (movingRef.current !== null) return // the click that drops a moved event opens no popup
 
       const feature = e.features?.[0]
 
@@ -168,7 +202,11 @@ function EventMarkers({
     }
 
     map.on('click', EVENTS_LAYER_ID, handlePopUp)
-
+    // remove it before the next run (events change often): otherwise every run adds one more
+    // handler and a single click opens a popup per handler, stacked on top of each other
+    return () => {
+      map.off('click', EVENTS_LAYER_ID, handlePopUp)
+    }
   }, [map, events])
 
   // double-click an event: zoom in on it (like double-clicking its row in the property panel)
@@ -189,6 +227,7 @@ function EventMarkers({
     }
 
     const handleRightClick = (e: MapLayerMouseEvent) => {
+      if (!editModeRef.current) return // view mode: no menu
 
       e.preventDefault() // no browser right-click menu
       const feature = e.features?.[0]
@@ -198,31 +237,67 @@ function EventMarkers({
         y: e.originalEvent.clientY,
         eventId: feature.properties.id as number
       });
-      setSelected({ type: 'event',  id: feature.properties.id as number });
+      setSelected({ type: 'event', id: feature.properties.id as number });
 
     }
 
 
+    // map.off only removes the same function that was passed to map.on, so keep it in a const
+    const closeMenu = () => setMenu(null)
+
     map.on('contextmenu', EVENTS_LAYER_ID, handleRightClick)
-    map.on('click', () => { setMenu(null) })
+    map.on('click', closeMenu)
     map.on('dblclick', EVENTS_LAYER_ID, handleDoubleClick)
     return () => {
       map.off('dblclick', EVENTS_LAYER_ID, handleDoubleClick)
-      map.off('click', () => { setMenu(null) })
+      map.off('click', closeMenu)
       map.off('contextmenu', EVENTS_LAYER_ID, handleRightClick)
     }
   }, [map])
 
+  // movement of evetn on map
+  useEffect(() => {
+    if (!map || movingId === null) return
+    const source = map.getSource(EVENTS_SOURCE_ID) as GeoJSONSource
+    const data = eventsToGeoJSON(events, factions, now)
+    const feature = data.features.find((f) => f.properties?.id === movingId)
+    if (!feature) return
+    const point = feature.geometry as GeoJSON.Point
+
+    map.getCanvas().style.cursor = 'grabbing'
+
+    const handleMove = (e: MapMouseEvent) => {
+      point.coordinates = [e.lngLat.lng, e.lngLat.lat]
+      source.setData(data) // redraw with the marker at the mouse
+    }
+    const handleRelease = (e: MapMouseEvent) => {
+      onMoved(movingId, e.lngLat.lat, e.lngLat.lng) // parent saves it
+      setMovingId(null)
+    }
+
+    map.on('mousemove', handleMove)
+    map.once('click', handleRelease)
+    return () => {
+      map.getCanvas().style.cursor = ''
+      map.off('mousemove', handleMove)
+      map.off('click', handleRelease)
+    }
+  }, [map, movingId, events, factions, now, onMoved])
+
+
   return (
     <>
-      {menu != null &&
+      {menu != null && movingId === null && editMode &&
         (< div
           className="fixed z-50 min-w-40 bg-neutral-900 py-1 text-sm text-gray-300 shadow-xl ring-1 ring-white/10"
           style={{ left: menu.x, top: menu.y }}
         >
           <button
             type="button"
-            onClick={() => { console.log('edit') }}
+            onClick={() => {
+              document.querySelectorAll('.event-popup').forEach((p) => p.remove()) // close open popups
+              setMovingId(menu.eventId)
+            }}
             className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
           >
             Move
@@ -230,29 +305,50 @@ function EventMarkers({
 
           <button
             type="button"
-            onClick={() => { console.log('edit') }}
+            onClick={() => {
+              onEdit(menu.eventId)
+              setMenu(null)
+            }}
             className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
           >
             Edit event
           </button>
 
+{/* 
           <button
             type="button"
             onClick={() => { console.log('edit') }}
             className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
           >
+            Relates to
+          </button> */}
+
+          <button
+            type="button"
+            onClick={() => {
+              setMenu(null)
+              setDeletingId(menu.eventId)
+            }}
+            className="block w-full px-3 py-1.5 text-left hover:bg-red-500/15 hover:text-red-400"
+          >
             Delete
           </button>
 
-                    <button
-            type="button"
-            onClick={() => { console.log('edit') }}
-            className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
-          >
-            Relates to 
-          </button>
 
         </div >)}
+
+      {deletingId !== null && (
+        <ConfirmDialog
+          title={`Delete this event?`}
+          message="The entire event will be removed from the map's history: it disappears on every date of the timeline, not just from now on."
+          onConfirm={() => {
+            document.querySelectorAll('.event-popup').forEach((p) => p.remove()) // its popup may be open
+            onDelete(deletingId)
+            setDeletingId(null)
+          }}
+          onCancel={() => setDeletingId(null)}
+        />
+      )}
     </>
   )
 }
