@@ -119,3 +119,39 @@
 .viewshed-placing .maplibregl-canvas-container.maplibregl-interactive {
   cursor: crosshair !important;
 }
+
+/* timeline slider: thin line with a square accent handle, drawn over the tick marks (TimeLine.tsx) */
+.timeline-range {
+  appearance: none;
+  height: 12px;
+  background: transparent;
+  cursor: pointer;
+}
+.timeline-range::-webkit-slider-runnable-track {
+  height: 2px;
+  margin-top: 5px;
+  background: var(--color-neutral-600);
+}
+.timeline-range::-moz-range-track {
+  height: 2px;
+  background: var(--color-neutral-600);
+}
+.timeline-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 14px;
+  margin-top: -6px;
+  background: var(--color-accent-400);
+  border: 1px solid #111111;
+}
+.timeline-range::-moz-range-thumb {
+  width: 10px;
+  height: 14px;
+  border-radius: 0;
+  background: var(--color-accent-400);
+  border: 1px solid #111111;
+}
+.timeline-range:focus-visible {
+  outline: 1px solid var(--color-accent-400);
+  outline-offset: 4px;
+}
