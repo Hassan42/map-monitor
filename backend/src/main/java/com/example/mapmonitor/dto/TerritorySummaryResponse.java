@@ -1,5 +1,7 @@
 package com.example.mapmonitor.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import com.example.mapmonitor.model.Territory;
 
 public class TerritorySummaryResponse {
@@ -8,6 +10,8 @@ public class TerritorySummaryResponse {
     private final String color;
     private final String points;
     private final Long factionId;
+    private final List<TerritoryStateDto> history;
+    private final LocalDateTime endTime;
 
     private TerritorySummaryResponse(Territory territory) {
         this.id = territory.getStableId();
@@ -15,6 +19,8 @@ public class TerritorySummaryResponse {
         this.color = territory.getColor();
         this.points = territory.getPoints();
         this.factionId = territory.getFactionId();
+        this.history = territory.getHistory().stream().map(TerritoryStateDto::from).toList();
+        this.endTime = territory.getEndTime();
     }
 
     public static TerritorySummaryResponse from(Territory territory) {
@@ -39,5 +45,13 @@ public class TerritorySummaryResponse {
 
     public Long getFactionId() {
         return factionId;
+    }
+
+    public List<TerritoryStateDto> getHistory() {
+        return history;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
     }
 }

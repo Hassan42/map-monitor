@@ -2,7 +2,6 @@ package com.example.mapmonitor.controller;
 
 import com.example.mapmonitor.dto.CreateTerritoryRequest;
 import com.example.mapmonitor.dto.TerritorySummaryResponse;
-import com.example.mapmonitor.model.Territory;
 import com.example.mapmonitor.service.TerritoryService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -27,16 +26,18 @@ public class TerritoryController {
     }
 
     @PostMapping
-    public Territory createTerritory(Authentication authentication, @PathVariable Long mapId, @RequestBody CreateTerritoryRequest request) {
+    public TerritorySummaryResponse createTerritory(Authentication authentication, @PathVariable Long mapId, @RequestBody CreateTerritoryRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return territoryService.createTerritory(uid, mapId, request.getName(), request.getColor(), request.getPoints(), request.getFactionId());
+        return territoryService.toResponse(territoryService.createTerritory(uid, mapId, request.getName(), request.getColor(), request.getPoints(), request.getFactionId(),
+                request.getHistory(), request.getEndTime()));
     }
 
     @PutMapping("/{stableId}")
-    public Territory editTerritory(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId,
+    public TerritorySummaryResponse editTerritory(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId,
                                     @RequestBody CreateTerritoryRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return territoryService.editTerritory(uid, mapId, stableId, request.getName(), request.getColor(), request.getPoints(), request.getFactionId());
+        return territoryService.toResponse(territoryService.editTerritory(uid, mapId, stableId, request.getName(), request.getColor(), request.getPoints(), request.getFactionId(),
+                request.getHistory(), request.getEndTime()));
     }
 
     @DeleteMapping("/{stableId}")
