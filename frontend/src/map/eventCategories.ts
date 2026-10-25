@@ -6,6 +6,9 @@ import explosionIcon from '../assets/markers/explosion_marker.svg'
 import peacefulProtestIcon from '../assets/markers/peaceful_protest.svg'
 import violentProtestIcon from '../assets/markers/violent_protest.svg'
 import shellingIcon from '../assets/markers/shelling_missile_attack.svg'
+import operationIcon from '../assets/markers/operation.svg'
+import agreementIcon from '../assets/markers/agreement.svg'
+import collateralDamageIcon from '../assets/markers/collateral_damage.svg'
 import otherIcon from '../assets/markers/other_marker.svg'
 
 // every backend category -> how it's shown on the map and in the UI. Record<EventCategory, ...>
@@ -19,6 +22,9 @@ export const EVENT_CATEGORIES: Record<EventCategory, { label: string; icon: stri
   PEACEFUL_PROTEST: { label: 'Peaceful protest', icon: peacefulProtestIcon },
   VIOLENT_PROTEST: { label: 'Violent protest', icon: violentProtestIcon },
   SHELLING_ARTILLERY_MISSILE_ATTACK: { label: 'Shelling/artillery/missile attack', icon: shellingIcon },
+  OPERATION: { label: 'Operation', icon: operationIcon },
+  AGREEMENT: { label: 'Agreement', icon: agreementIcon },
+  COLLATERAL_DAMAGE: { label: 'Collateral damage', icon: collateralDamageIcon },
   OTHER: { label: 'Other', icon: otherIcon },
 }
 

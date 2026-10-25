@@ -76,6 +76,8 @@ const eventLayers: AddLayerObject[] = [
       'icon-allow-overlap': true, // overlapping events are all drawn, each as a whole marker
       'icon-ignore-placement': true,
     },
+    // fades events out after they end (opacity is computed per event in EventMarkers, see eventTime.ts)
+    paint: { 'icon-opacity': ['get', 'opacity'] },
   },
 ]
 
