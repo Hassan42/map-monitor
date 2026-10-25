@@ -20,6 +20,9 @@ public class EventMarkerSummaryResponse {
     private final Long factionId;
     private final String sourceURL;
     private final List<EventRelationDto> relations;
+    private final LocalDateTime endTime;
+    private final boolean ongoing;
+    private final int visibleDays;
 
     private EventMarkerSummaryResponse(EventMarker event) {
         this.id = event.getStableId();
@@ -32,6 +35,9 @@ public class EventMarkerSummaryResponse {
         this.factionId = event.getFactionId();
         this.sourceURL = event.getSourceURL();
         this.relations = event.getRelations().stream().map(EventRelationDto::from).toList();
+        this.endTime = event.getEndTime();
+        this.ongoing = event.isOngoing();
+        this.visibleDays = event.getVisibleDays();
     }
 
     public List<EventRelationDto> getRelations() {
@@ -75,4 +81,10 @@ public class EventMarkerSummaryResponse {
     }
 
     public String getSourceURL() {return sourceURL; }
+
+    public LocalDateTime getEndTime() { return endTime; }
+
+    public boolean isOngoing() { return ongoing; }
+
+    public int getVisibleDays() { return visibleDays; }
 }

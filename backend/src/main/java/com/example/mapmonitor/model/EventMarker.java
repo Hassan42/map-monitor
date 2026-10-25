@@ -24,9 +24,8 @@ public class EventMarker {
 
     private LocalDateTime timestamp;
 
-    @Enumerated(EnumType.STRING)
-    // plain varchar: without it Hibernate adds a check constraint listing today's enum values,
-    // and ddl-auto=update never updates it, so new categories would be rejected by the database
+    // stored by name through a converter, so the database gets no constraint listing today's categories
+    @Convert(converter = EventCategoryConverter.class)
     @Column(nullable = false, columnDefinition = "varchar(255)")
     @ColumnDefault("'OTHER'")
     private EventCategory category;
@@ -45,6 +44,54 @@ public class EventMarker {
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<EventRelation> relations = new HashSet<>();
+
+    // deleted shadow: marks this stableId as deleted in this version, hiding rows inherited from older versions
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean deleted;
+
+    private LocalDateTime endTime;
+
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean ongoing;
+
+    // how many days the event stays on the map after it ends (fading out)
+    @Column(nullable = false)
+    @ColumnDefault("7")
+    private int visibleDays = 7;
+
+    public int getVisibleDays() {
+        return visibleDays;
+    }
+
+    public void setVisibleDays(int visibleDays) {
+        this.visibleDays = visibleDays;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public boolean isOngoing() {
+        return ongoing;
+    }
+
+    public void setOngoing(boolean ongoing) {
+        this.ongoing = ongoing;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 
     public Long getId() {
         return id;

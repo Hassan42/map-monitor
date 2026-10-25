@@ -18,6 +18,16 @@ public class CreateEventMarkerRequest {
     private Long factionId;
     private String sourceURL;
     private List<EventRelationDto> relations;
+    private LocalDateTime endTime;   // null: a moment (ends when it starts) or ongoing
+    private boolean ongoing;
+    private Integer visibleDays;     // null: the default
+
+    public LocalDateTime getEndTime() { return endTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+    public boolean isOngoing() { return ongoing; }
+    public void setOngoing(boolean ongoing) { this.ongoing = ongoing; }
+    public Integer getVisibleDays() { return visibleDays; }
+    public void setVisibleDays(Integer visibleDays) { this.visibleDays = visibleDays; }
 
     public List<EventRelationDto> getRelations() {
         return relations;

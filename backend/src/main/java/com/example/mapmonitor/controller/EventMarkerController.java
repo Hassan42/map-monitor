@@ -40,4 +40,10 @@ public class EventMarkerController {
         String uid = (String) authentication.getPrincipal();
         return EventMarkerSummaryResponse.from(eventMarkerService.editEvent(uid, mapId, stableId, request));
     }
+
+    @DeleteMapping("/{stableId}")
+    public Long deleteEvent(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId) {
+        String uid = (String) authentication.getPrincipal();
+        return eventMarkerService.deleteEvent(uid, mapId, stableId);
+    }
 }
