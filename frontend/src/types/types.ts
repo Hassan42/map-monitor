@@ -40,6 +40,9 @@ export type EventCategory =
   | 'PEACEFUL_PROTEST'
   | 'VIOLENT_PROTEST'
   | 'SHELLING_ARTILLERY_MISSILE_ATTACK'
+  | 'OPERATION'
+  | 'AGREEMENT'
+  | 'COLLATERAL_DAMAGE'
   | 'OTHER'
 
 // mirrors the backend's EventRelationType enum
@@ -62,6 +65,9 @@ export interface EventMarker {
   factionId: number;
   sourceURL: string;
   relations?: EventRelation[]; // missing on responses from before relations existed
+  endTime?: string | null; // null: a moment (ends when it starts) or ongoing
+  ongoing?: boolean;
+  visibleDays?: number; // days it stays on the map after it ends
 }
 
 export interface Territory {
@@ -70,6 +76,16 @@ export interface Territory {
   color: string;
   points: string;
   factionId: number;
+  history?: TerritoryState[]; // the shapes over time, sorted by `from`; the first one's `from` is when it was created
+  endTime?: string | null; // null = ongoing (still there)
+}
+
+// one shape of a territory over time (the backend's TerritoryStateDto): holds from `from` until the next one
+export interface TerritoryState {
+  from: string;
+  points: string;
+  factionId: number;
+  color: string;
 }
 
 export type DrawMode = 'polygon' | 'freehand' | 'select'
