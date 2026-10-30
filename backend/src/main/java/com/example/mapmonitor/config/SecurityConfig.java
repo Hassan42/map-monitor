@@ -3,6 +3,7 @@ package com.example.mapmonitor.config;
 import com.example.mapmonitor.security.FirebaseAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -27,6 +28,15 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // reading one map and its contents is open to visitors; MapService still only
+                        // serves them a public map's published version (drafts need the owner)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/maps/{mapId}",
+                                "/api/maps/{mapId}/events",
+                                "/api/maps/{mapId}/factions",
+                                "/api/maps/{mapId}/territories",
+                                "/api/maps/{mapId}/annotations",
+                                "/api/maps/{mapId}/layers").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new FirebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
