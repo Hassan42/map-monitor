@@ -19,8 +19,24 @@ export interface IAuth {
  signOut: () => void;
 }
 
+export type MapVisibility = 
+| 'PUBLIC'
+| 'PRIVATE'
+
+
 export interface MapSummary {
   id: string;
+  title: string;
+  description: string;
+  visibility: MapVisibility;
+  owned: boolean; // whether the signed-in user owns it; visitors and other users can only view
+}
+
+
+
+// a named group of elements in a map; elements point at it by layerId
+export interface Layer {
+  id: number;
   title: string;
   description: string;
 }
@@ -34,19 +50,42 @@ export interface Faction {
 // mirrors the backend's EventCategory enum (Jackson sends the constant's name)
 export type EventCategory =
   | 'DEATH'
+  | 'ECONOMIC_DEVELOPMENT'
+  | 'ELECTION'
   | 'ATTACK'
   | 'CAPTURE'
+  | 'MARITIME_ATTACK'
   | 'EXPLOSION'
+  | 'AIR_STRIKE'
+  | 'CHEMICAL_WEAPON'
+  | 'DRONE_ATTACK'
+  | 'GRENADE'
+  | 'ONE_WAY_DRONE'
+  | 'IED'
+  | 'SHELLING_ARTILLERY_MISSILE_ATTACK'
+  | 'AGREEMENT'
+  | 'ARRESTS'
+  | 'CHANGE_TO_GROUP'
+  | 'HEADQUARTERS_ESTABLISHED'
+  | 'NON_VIOLENT_TERRITORY_TRANSFER'
+  | 'OPERATION'
   | 'PEACEFUL_PROTEST'
   | 'VIOLENT_PROTEST'
-  | 'SHELLING_ARTILLERY_MISSILE_ATTACK'
-  | 'OPERATION'
-  | 'AGREEMENT'
-  | 'COLLATERAL_DAMAGE'
+  | 'ABDUCTION'
+  | 'ATTACK_ON_CIVILIANS'
+  | 'LOOTING'
+  | 'PROPERTY_DESTRUCTION'
   | 'OTHER'
 
 // mirrors the backend's EventRelationType enum
 export type EventRelationType = 'PartOf' | 'causedBy' | 'RetaliationTo' | 'Other'
+
+// what every element drawn on a map has, like the backend's ElementSummary
+export interface MapElement {
+  id: number; // stableId
+  factionId: number | null;
+  layerId?: number | null; // null = in no layer
+}
 
 // a link from one event to another; relatedEventId is the other event's id
 export interface EventRelation {
@@ -54,15 +93,14 @@ export interface EventRelation {
   type: EventRelationType;
 }
 
-export interface EventMarker {
-  id: number;
+export interface EventMarker extends MapElement {
   title: string;
   description: string;
   latitude: number;
   longitude: number;
   timestamp: string;
   category: EventCategory | null; // null for events created before categories existed
-  factionId: number;
+  factionId: number; // narrowed: events always have a faction
   sourceURL: string;
   relations?: EventRelation[]; // missing on responses from before relations existed
   endTime?: string | null; // null: a moment (ends when it starts) or ongoing
@@ -70,12 +108,11 @@ export interface EventMarker {
   visibleDays?: number; // days it stays on the map after it ends
 }
 
-export interface Territory {
-  id: number;
+export interface Territory extends MapElement {
   name: string;
   color: string;
   points: string;
-  factionId: number;
+  factionId: number; // narrowed: territories always have a faction
   history?: TerritoryState[]; // the shapes over time, sorted by `from`; the first one's `from` is when it was created
   endTime?: string | null; // null = ongoing (still there)
 }
@@ -100,8 +137,7 @@ export interface DraftStatus {
 export type AnnotationKind = 'AMBUSH' | 'ARROW' | 'DESTROY' | 'OBJECTIVE'
 
 // a tactical graphic stamped on the map: the kind's icon at a point, in `color`, sized by `scale`
-export interface Annotation {
-  id: number; // stableId, like the other *SummaryResponse ids
+export interface Annotation extends MapElement {
   kind: AnnotationKind;
   geometry: string; // GeoJSON geometry as text, e.g. {"type":"Point","coordinates":[lng,lat]}
   factionId: number | null;
@@ -109,4 +145,23 @@ export interface Annotation {
   color: string | null;
   scale: number; // 1.0 = default size
   rotation: number; // clockwise degrees, 0 = the icon's normal (up) direction
+  startTime?: string | null; // null = it has always been there
+  endTime?: string | null; // null = still there
 }
+
+// GET /api/maps/{id}/changes: one element the draft changed, mirroring the backend's ChangeDto.
+// before/after are the element's usual summary (Territory, EventMarker, Annotation or Layer, as entityType says):
+// before is null when added, after is null when deleted
+export type MapChange = ChangeOf<'TERRITORY', Territory> | ChangeOf<'EVENT', EventMarker> | ChangeOf<'ANNOTATION', Annotation>
+  | ChangeOf<'LAYER', Layer>
+
+type ChangeOf<E extends 'TERRITORY' | 'EVENT' | 'ANNOTATION' | 'LAYER', T extends MapElement | Layer> = {
+  entityType: E;
+  stableId: number;
+  action: MapChangeAction;
+  name: string | null;
+  before: T | null;
+  after: T | null;
+}
+
+export type MapChangeAction = 'ADDED' | 'MODIFIED' | 'DELETED'

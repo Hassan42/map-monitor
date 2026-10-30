@@ -13,8 +13,19 @@ export const EVENTS_CLUSTER_COUNT_LAYER_ID = 'events-cluster-count'
 // above this zoom events are never clustered; PropertyPanel flies past it so a single event is visible
 export const EVENTS_CLUSTER_MAX_ZOOM = 8
 
+// the Relations toggle: lines between related events that have happened by the timeline's date, and
+// faded markers for the ones among them the timeline no longer shows
+export const RELATIONS_SOURCE_ID = 'event-relations'
+export const RELATIONS_LINE_LAYER_ID = 'event-relations-lines'
+export const RELATIONS_END_LAYER_ID = 'event-relations-ends'
+export const RELATIONS_LABEL_LAYER_ID = 'event-relations-labels'
+export const RELATIONS_SELECTED_LAYER_ID = 'event-relations-selected'
+export const RELATIONS_ARROW_LAYER_ID = 'event-relations-arrows'
+export const RELATION_ARROW_IMAGE = 'relation-arrow'
+
 export const ANNOTATIONS_SOURCE_ID = 'annotations'
 export const ANNOTATIONS_LAYER_ID = 'annotations-icon'
+export const ANNOTATIONS_LABEL_LAYER_ID = 'annotations-label'
 // accent ring drawn under the selected annotation
 export const ANNOTATIONS_SELECTED_LAYER_ID = 'annotations-selected'
 // annotation images are named by kind + color, e.g. 'annotation-ARROW-#c0392b'.
