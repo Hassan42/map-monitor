@@ -4,14 +4,16 @@ export const formOverlayClass = 'fixed inset-0 z-[70] flex items-center justify-
 
 // color-scheme dark also makes the browser-drawn parts (select dropdown list) dark
 export const formClass =
-    'flex flex-col gap-4 w-80 p-5 bg-neutral-900 text-gray-300 shadow-xl ring-1 ring-white/10 [color-scheme:dark]'
+    // phones: never wider or taller than the screen; scrolls when the fields don't fit
+    'flex flex-col gap-4 w-80 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 bg-neutral-900 text-gray-300 shadow-xl ring-1 ring-white/10 [color-scheme:dark]'
 
 export const formTitleClass = 'text-lg font-semibold text-white'
 
 export const formFieldClass = 'flex flex-col gap-1 text-sm'
 
+// 16px text on phones: iOS zooms the page into any smaller input when it's tapped
 export const formInputClass =
-    'bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-gray-100 ' +
+    'bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-gray-100 max-md:text-base ' +
     'focus:outline-none focus:border-accent-400 focus:ring-1 focus:ring-accent-400'
 
 export const formColorInputClass =

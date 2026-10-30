@@ -203,12 +203,12 @@ function Viewshed({ placing, onPlaced }: { placing: boolean; onPlaced: () => voi
   if (!observer && !placing) return null
 
   return (
-    // top center over the map area (the property panel takes the right 18rem)
-    <div className="fixed top-16 left-[calc((100%-18rem)/2)] z-40 flex -translate-x-1/2 items-center gap-3 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10">
+    // top center over the map area (the property panel takes the right 24rem); phones: across the screen
+    <div className="fixed top-16 left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap z-40 flex -translate-x-1/2 items-center gap-3 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10">
       <span className="font-semibold text-white">Line of sight</span>
 
       {!observer ? (
-        <span className="text-gray-400">Click the map to place the observer (right-click cancels)</span>
+        <span className="text-gray-400"><span className="md:hidden">Tap</span><span className="max-md:hidden">Click</span> the map to place the observer<span className="max-md:hidden"> (right-click cancels)</span></span>
       ) : (
         <>
           <NumberField label="Range" unit="km" value={rangeKm} min={0.1} max={MAX_RANGE_KM} onChange={setRangeKm} />

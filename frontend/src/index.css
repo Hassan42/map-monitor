@@ -98,13 +98,9 @@
   margin: auto;
 }
 
-/* annotations (edit mode, Select tool): move cursor on hover, grabbing while dragging.
-   !important because terra-draw's select mode sets/clears the canvas cursor on every mouse move */
-.annotation-hover .maplibregl-canvas-container.maplibregl-interactive {
+/* right-click > Move on a territory or annotation: it follows the pointer until a click places it */
+.map-moving .maplibregl-canvas-container.maplibregl-interactive {
   cursor: move !important;
-}
-.annotation-dragging .maplibregl-canvas-container.maplibregl-interactive {
-  cursor: grabbing !important;
 }
 
 /* annotation rotate / scale modes: dragging anywhere on the map transforms the selected annotation */
@@ -123,13 +119,13 @@
 /* timeline slider: thin line with a square accent handle, drawn over the tick marks (TimeLine.tsx) */
 .timeline-range {
   appearance: none;
-  height: 12px;
+  height: 16px;
   background: transparent;
   cursor: pointer;
 }
 .timeline-range::-webkit-slider-runnable-track {
   height: 2px;
-  margin-top: 5px;
+  margin-top: 7px;
   background: var(--color-neutral-600);
 }
 .timeline-range::-moz-range-track {
@@ -138,15 +134,15 @@
 }
 .timeline-range::-webkit-slider-thumb {
   appearance: none;
-  width: 10px;
-  height: 14px;
-  margin-top: -6px;
+  width: 14px; /* THUMB_PX in TimeLine.tsx */
+  height: 18px;
+  margin-top: -8px;
   background: var(--color-accent-400);
   border: 1px solid #111111;
 }
 .timeline-range::-moz-range-thumb {
-  width: 10px;
-  height: 14px;
+  width: 14px; /* THUMB_PX in TimeLine.tsx */
+  height: 18px;
   border-radius: 0;
   background: var(--color-accent-400);
   border: 1px solid #111111;
@@ -154,4 +150,23 @@
 .timeline-range:focus-visible {
   outline: 1px solid var(--color-accent-400);
   outline-offset: 4px;
+}
+
+/* touch: holding a finger on the map is our right-click (see longPress.ts), not iOS's callout or text selection */
+.maplibregl-canvas {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* phones: no territory drawing (too fiddly by finger), so no draw toolbar; the map's credits sit
+   above the property sheet's 48px bar instead of under it */
+@media (max-width: 767px) {
+  .maplibregl-map .maplibregl-ctrl-bottom-right,
+  .maplibregl-map .maplibregl-ctrl-bottom-left {
+    bottom: 48px;
+  }
+  .maplibregl-ctrl-group:has(.maplibregl-terradraw-render-button, .maplibregl-terradraw-add-control) {
+    display: none;
+  }
 }

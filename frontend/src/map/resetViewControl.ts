@@ -1,7 +1,5 @@
-import type { IControl, LngLatBounds, Map, PaddingOptions } from 'maplibre-gl'
-
-// keep the fitted area clear of the nav bar (h-14 = 56px) and the property panel (w-72 = 288px)
-const PADDING: PaddingOptions = { top: 56 + 40, right: 288 + 40, bottom: 40, left: 40 }
+import type { IControl, LngLatBounds, Map } from 'maplibre-gl'
+import { cameraPadding } from './cameraPadding'
 // the view MapContext starts with, used when there's nothing on the map to fit
 const START_VIEW = { center: [0, 0] as [number, number], zoom: 2 }
 
@@ -34,7 +32,7 @@ export class ResetViewControl implements IControl {
     button.innerHTML = ICON
     button.addEventListener('click', () => {
       const bounds = this.getBounds()
-      if (bounds) map.fitBounds(bounds, { padding: PADDING, maxZoom: 12 })
+      if (bounds) map.fitBounds(bounds, { padding: cameraPadding(), maxZoom: 12 })
       else map.flyTo({ ...START_VIEW, bearing: 0, pitch: 0 })
     })
 
