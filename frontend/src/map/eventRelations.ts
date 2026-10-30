@@ -5,7 +5,7 @@ import type { EventRelationType } from '../types/types'
 export const EVENT_RELATION_LABELS: Record<EventRelationType, string> = {
   PartOf: 'Part of',
   causedBy: 'Caused by',
-  RetaliationTo: 'Retaliation of',
+  RetaliationTo: 'Retaliation to',
   Other: 'Other',
 }
 

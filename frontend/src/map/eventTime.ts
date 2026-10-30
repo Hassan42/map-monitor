@@ -11,6 +11,13 @@ export function parseServerTime(time: string): number {
   return new Date(hasZone ? time : `${time}Z`).getTime()
 }
 
+// whether something with an optional start and end is on the map at `time`: no start = it has always
+// been there, no end = still there
+export function activeAt(item: { startTime?: string | null; endTime?: string | null }, time: number): boolean {
+  return (item.startTime == null || parseServerTime(item.startTime) <= time) &&
+    (item.endTime == null || time < parseServerTime(item.endTime))
+}
+
 // how visible an event is at `now` (the map's date, ms): 1 = solid, lower = fading, null = hidden.
 // Ongoing events stay solid; others stay solid until they end, then fade out over visibleDays
 export function eventOpacity(event: EventMarker, now: number): number | null {
