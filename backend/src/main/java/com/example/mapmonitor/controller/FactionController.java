@@ -22,7 +22,7 @@ public class FactionController {
     @GetMapping
     public List<FactionSummaryResponse> getFactions(Authentication authentication, @PathVariable Long mapId,
                                                       @RequestParam(defaultValue = "false") boolean draft) {
-        String uid = (String) authentication.getPrincipal();
+        String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor
         return factionService.getFactionsForMap(uid, mapId, draft);
     }
 

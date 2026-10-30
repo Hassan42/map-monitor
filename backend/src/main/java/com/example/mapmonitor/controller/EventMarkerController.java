@@ -21,7 +21,7 @@ public class EventMarkerController {
     @GetMapping
     public List<EventMarkerSummaryResponse> getEvents(Authentication authentication, @PathVariable Long mapId,
                                                         @RequestParam(defaultValue = "false") boolean draft) {
-        String uid = (String) authentication.getPrincipal();
+        String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor
         return eventMarkerService.getEventsForMap(uid, mapId, draft);
     }
 

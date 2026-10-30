@@ -8,11 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-public class EventMarker {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class EventMarker extends MapElement {
 
     private String title;
 
@@ -30,25 +26,14 @@ public class EventMarker {
     @ColumnDefault("'OTHER'")
     private EventCategory category;
 
-    private Long stableId;
-
     @Column(nullable = false)
     private Long factionId;   // the owning Faction's stableId, not its row id
-
-    @ManyToOne
-    @JoinColumn(name = "map_version_id", nullable = false)
-    private MapVersion mapVersion;
 
     @Column(length = 2048)
     private String sourceURL;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<EventRelation> relations = new HashSet<>();
-
-    // deleted shadow: marks this stableId as deleted in this version, hiding rows inherited from older versions
-    @Column(nullable = false)
-    @ColumnDefault("false")
-    private boolean deleted;
 
     private LocalDateTime endTime;
 
@@ -83,18 +68,6 @@ public class EventMarker {
 
     public void setOngoing(boolean ongoing) {
         this.ongoing = ongoing;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
-
-    public Long getId() {
-        return id;
     }
 
     public String getTitle() {
@@ -145,22 +118,6 @@ public class EventMarker {
         this.category = category;
     }
 
-    public Long getStableId() {
-        return stableId;
-    }
-
-    public void setStableId(Long stableId) {
-        this.stableId = stableId;
-    }
-
-    public MapVersion getMapVersion() {
-        return mapVersion;
-    }
-
-    public void setMapVersion(MapVersion mapVersion) {
-        this.mapVersion = mapVersion;
-    }
-
     public Long getFactionId() {
         return factionId;
     }
@@ -179,5 +136,15 @@ public class EventMarker {
 
     public void setRelations(Set<EventRelation> relations) {
         this.relations = relations;
+    }
+
+    @Override
+    public EntityType entityType() {
+        return EntityType.EVENT;
+    }
+
+    @Override
+    public String displayName() {
+        return title;
     }
 }

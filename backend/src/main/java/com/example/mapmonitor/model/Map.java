@@ -1,6 +1,7 @@
 package com.example.mapmonitor.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 public class Map {
@@ -12,6 +13,12 @@ public class Map {
     private String title;
 
     private String description;
+
+    // stored as the name; existing maps get PRIVATE when the column is added
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'PRIVATE'")
+    @Column(nullable = false)
+    private Visibility visibility = Visibility.PRIVATE;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -40,6 +47,14 @@ public class Map {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
 
     public User getUser() {

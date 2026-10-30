@@ -22,8 +22,10 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String idToken = request.getHeader("Authorization");
 
+        // no token = a visitor: nobody is signed in, and SecurityConfig decides what they may reach
+        // (public reads only). A token that is present but invalid is still rejected below
         if (idToken == null || idToken.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            filterChain.doFilter(request, response);
             return;
         }
 

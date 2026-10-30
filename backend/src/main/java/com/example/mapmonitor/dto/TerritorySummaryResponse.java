@@ -4,12 +4,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import com.example.mapmonitor.model.Territory;
 
-public class TerritorySummaryResponse {
+public final class TerritorySummaryResponse implements ElementSummary {
     private final Long id;
     private final String name;
     private final String color;
     private final String points;
     private final Long factionId;
+    private final Long layerId;
     private final List<TerritoryStateDto> history;
     private final LocalDateTime endTime;
 
@@ -19,6 +20,7 @@ public class TerritorySummaryResponse {
         this.color = territory.getColor();
         this.points = territory.getPoints();
         this.factionId = territory.getFactionId();
+        this.layerId = territory.layerId();
         this.history = territory.getHistory().stream().map(TerritoryStateDto::from).toList();
         this.endTime = territory.getEndTime();
     }
@@ -53,5 +55,9 @@ public class TerritorySummaryResponse {
 
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+    public Long getLayerId() {
+        return layerId;
     }
 }

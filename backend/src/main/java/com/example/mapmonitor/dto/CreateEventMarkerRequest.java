@@ -16,6 +16,7 @@ public class CreateEventMarkerRequest {
     private LocalDateTime timestamp;
     private EventCategory category;
     private Long factionId;
+    private Long layerId; // null = in no layer
     private String sourceURL;
     private List<EventRelationDto> relations;
     private LocalDateTime endTime;   // null: a moment (ends when it starts) or ongoing
@@ -99,5 +100,13 @@ public class CreateEventMarkerRequest {
 
     public void setSourceURL(String sourceURL){
         this.sourceURL = sourceURL;
+    }
+
+    public Long getLayerId() {
+        return layerId;
+    }
+
+    public void setLayerId(Long layerId) {
+        this.layerId = layerId;
     }
 }

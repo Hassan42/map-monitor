@@ -1,15 +1,19 @@
 package com.example.mapmonitor.dto;
 
+import java.time.LocalDateTime;
 import com.example.mapmonitor.model.AnnotationKind;
 
 public class CreateAnnotationRequest {
     private AnnotationKind kind;
     private String geometry;
     private Long factionId;
+    private Long layerId; // null = in no layer
     private String label;
     private String color;
     private Double scale;
     private Double rotation;
+    private LocalDateTime startTime; // null = always been there
+    private LocalDateTime endTime;   // null = still there
 
     public AnnotationKind getKind() {
         return kind;
@@ -65,5 +69,29 @@ public class CreateAnnotationRequest {
 
     public void setRotation(Double rotation) {
         this.rotation = rotation;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public Long getLayerId() {
+        return layerId;
+    }
+
+    public void setLayerId(Long layerId) {
+        this.layerId = layerId;
     }
 }

@@ -21,10 +21,12 @@ public class TerritoryService {
 
     private final TerritoryRepository territoryRepository;
     private final MapService mapService;
+    private final LayerService layerService;
 
-    public TerritoryService(TerritoryRepository territoryRepository, MapService mapService) {
+    public TerritoryService(TerritoryRepository territoryRepository, MapService mapService, LayerService layerService) {
         this.territoryRepository = territoryRepository;
         this.mapService = mapService;
+        this.layerService = layerService;
     }
 
     public TerritorySummaryResponse toResponse(Territory territory) {
@@ -58,7 +60,7 @@ public class TerritoryService {
     }
 
     public Territory createTerritory(String firebaseUid, Long mapId, String name, String color, String points, Long factionId,
-                                     List<TerritoryStateDto> history, LocalDateTime endTime) {
+                                     List<TerritoryStateDto> history, LocalDateTime endTime, Long layerId) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
         Territory territory = new Territory();
@@ -66,6 +68,7 @@ public class TerritoryService {
         territory.setColor(color);
         territory.setPoints(points);
         territory.setFactionId(factionId);
+        territory.setLayer(layerService.findLayerOfMap(mapId, layerId));
         applyHistory(territory, history);
         territory.setEndTime(endTime);
         territory.setMapVersion(draft);
@@ -76,7 +79,7 @@ public class TerritoryService {
     }
 
     public Territory editTerritory(String firebaseUid, Long mapId, Long stableId, String name, String color, String points, Long factionId,
-                                   List<TerritoryStateDto> history, LocalDateTime endTime) {
+                                   List<TerritoryStateDto> history, LocalDateTime endTime, Long layerId) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
         Territory shadow = territoryRepository.findByMapVersionId(draft.getId()).stream()
@@ -94,6 +97,7 @@ public class TerritoryService {
         shadow.setColor(color);
         shadow.setPoints(points);
         shadow.setFactionId(factionId);
+        shadow.setLayer(layerService.findLayerOfMap(mapId, layerId));
         applyHistory(shadow, history);
         shadow.setEndTime(endTime);
         return territoryRepository.save(shadow);
@@ -124,6 +128,7 @@ public class TerritoryService {
         shadow.setColor(visible.getColor());
         shadow.setPoints(visible.getPoints());
         shadow.setFactionId(visible.getFactionId());
+        shadow.setLayer(visible.getLayer());
         // the shadow is a new row, so it gets its own copies of the states (rows can't be shared)
         applyHistory(shadow, visible.getHistory().stream().map(TerritoryStateDto::from).toList());
         shadow.setEndTime(visible.getEndTime());

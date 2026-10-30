@@ -1,8 +1,11 @@
 package com.example.mapmonitor.dto;
 
+import com.example.mapmonitor.model.Visibility;
+
 public class CreateMapRequest {
     private String title;
     private String description;
+    private Visibility visibility; // null = PRIVATE
 
     public String getTitle() {
         return title;
@@ -18,5 +21,13 @@ public class CreateMapRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
 }

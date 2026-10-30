@@ -20,10 +20,12 @@ public class MapService {
     private final EventMarkerRepository eventMarkerRepository;
     private final TerritoryRepository territoryRepository;
     private final AnnotationRepository annotationRepository;
+    private final LayerRepository layerRepository;
 
     public MapService(MapRepository mapRepository, UserRepository userRepository, MapVersionRepository mapVersionRepository,
                        FactionRepository factionRepository, EventMarkerRepository eventMarkerRepository,
-                       TerritoryRepository territoryRepository, AnnotationRepository annotationRepository) {
+                       TerritoryRepository territoryRepository, AnnotationRepository annotationRepository,
+                       LayerRepository layerRepository) {
         this.mapRepository = mapRepository;
         this.userRepository = userRepository;
         this.mapVersionRepository = mapVersionRepository;
@@ -31,6 +33,7 @@ public class MapService {
         this.eventMarkerRepository = eventMarkerRepository;
         this.territoryRepository = territoryRepository;
         this.annotationRepository = annotationRepository;
+        this.layerRepository = layerRepository;
     }
 
     public List<MapSummaryResponse> getUserMaps(String firebaseUid) {
@@ -38,17 +41,18 @@ public class MapService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return mapRepository.findByUserId(user.getId()).stream()
-                .map(MapSummaryResponse::from)
+                .map((map) -> MapSummaryResponse.from(map, firebaseUid))
                 .toList();
     }
 
-    public Map createMap(String firebaseUid, String title, String description) {
+    public Map createMap(String firebaseUid, String title, String description, Visibility visibility) {
         User user = userRepository.findByFirebaseUid(firebaseUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Map map = new Map();
         map.setTitle(title);
         map.setDescription(description);
+        map.setVisibility(visibility != null ? visibility : Visibility.PRIVATE);
         map.setUser(user);
         Map savedMap = mapRepository.save(map);
 
@@ -73,13 +77,27 @@ public class MapService {
         return map;
     }
 
+    public Map getReadableMap(String firebaseUid, Long mapId) {
+        Map map = mapRepository.findById(mapId)
+                .orElseThrow(() -> new RuntimeException("Map not found"));
+
+        boolean hasAccess = map.getUser().getFirebaseUid().equals(firebaseUid);
+
+        if(map.getVisibility() == Visibility.PUBLIC || hasAccess){
+            return map;
+        }
+
+        throw new AccessDeniedException("This map is private.");
+    }
+
     /**
      * Resolves which MapVersion a caller should read/write:
      * - draft=false -> the published version (must exist)
      * - draft=true  -> the current draft, creating one (based on the published version) if none exists yet
      */
     public MapVersion resolveVersion(String firebaseUid, Long mapId, boolean draft) {
-        Map map = getOwnedMap(firebaseUid, mapId);
+        Map map = draft ? getOwnedMap(firebaseUid, mapId) :
+                getReadableMap(firebaseUid, mapId);
 
         if (!draft) {
             if (map.getPublishedVersion() == null) {
@@ -138,7 +156,8 @@ public class MapService {
         boolean hasChanges = territoryRepository.existsByMapVersionId(draft.getId())
                 || factionRepository.existsByMapVersionId(draft.getId())
                 || eventMarkerRepository.existsByMapVersionId(draft.getId())
-                || annotationRepository.existsByMapVersionId(draft.getId());
+                || annotationRepository.existsByMapVersionId(draft.getId())
+                || layerRepository.existsByMapVersionId(draft.getId());
 
         return new DraftStatusResponse(true, hasChanges, draft.getCreatedAt());
     }
@@ -154,6 +173,8 @@ public class MapService {
             eventMarkerRepository.deleteAll(eventMarkerRepository.findByMapVersionId(draft.getId()));
             territoryRepository.deleteAll(territoryRepository.findByMapVersionId(draft.getId()));
             annotationRepository.deleteAll(annotationRepository.findByMapVersionId(draft.getId()));
+            // after the elements: they point at layers. Only the draft's own elements can use its layers
+            layerRepository.deleteAll(layerRepository.findByMapVersionId(draft.getId()));
         }
         mapVersionRepository.deleteAll(drafts);
     }
@@ -166,7 +187,7 @@ public class MapService {
      * that instead of crashing, but doesn't prevent it. A DB-level partial unique constraint
      * (one DRAFT per map_id) would close the race itself; not yet in place here.
      */
-    private MapVersion findDraft(Long mapId) {
+    public MapVersion findDraft(Long mapId) {
         List<MapVersion> drafts = mapVersionRepository.findByMapIdAndStatusOrderByCreatedAtDesc(mapId, VersionStatus.DRAFT);
         return drafts.isEmpty() ? null : drafts.get(0);
     }
@@ -182,6 +203,11 @@ public class MapService {
             territoryRepository.deleteAll(territoryRepository.findByMapVersionId(version.getId()));
             annotationRepository.deleteAll(annotationRepository.findByMapVersionId(version.getId()));
         }
+        // layers only once every version's elements are gone: a newer version's element can sit in an
+        // older version's layer
+        for (MapVersion version : versions) {
+            layerRepository.deleteAll(layerRepository.findByMapVersionId(version.getId()));
+        }
 
         // clear FK pointers between versions/map before deleting, to avoid constraint violations
         map.setPublishedVersion(null);
@@ -195,5 +221,13 @@ public class MapService {
         mapRepository.delete(map);
 
         return mapId;
+    }
+
+    public void changeVisibility(String firebaseUid, Long mapId, Visibility visibility) {
+        Map map = getOwnedMap(firebaseUid, mapId);
+        if (visibility == null) throw new IllegalArgumentException("Visibility is required");
+        map.setVisibility(visibility);
+        mapRepository.save(map);
+        return;
     }
 }

@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class EventMarkerSummaryResponse {
+public final class EventMarkerSummaryResponse implements ElementSummary {
     private final Long id;
     private final String title;
     private final String description;
@@ -18,6 +18,7 @@ public class EventMarkerSummaryResponse {
     private final LocalDateTime timestamp;
     private final EventCategory category;
     private final Long factionId;
+    private final Long layerId;
     private final String sourceURL;
     private final List<EventRelationDto> relations;
     private final LocalDateTime endTime;
@@ -33,6 +34,7 @@ public class EventMarkerSummaryResponse {
         this.timestamp = event.getTimestamp();
         this.category = event.getCategory();
         this.factionId = event.getFactionId();
+        this.layerId = event.layerId();
         this.sourceURL = event.getSourceURL();
         this.relations = event.getRelations().stream().map(EventRelationDto::from).toList();
         this.endTime = event.getEndTime();
@@ -87,4 +89,8 @@ public class EventMarkerSummaryResponse {
     public boolean isOngoing() { return ongoing; }
 
     public int getVisibleDays() { return visibleDays; }
+
+    public Long getLayerId() {
+        return layerId;
+    }
 }

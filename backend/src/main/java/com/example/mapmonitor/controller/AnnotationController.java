@@ -22,7 +22,7 @@ public class AnnotationController {
     @GetMapping
     public List<AnnotationSummaryResponse> getAnnotations(Authentication authentication, @PathVariable Long mapId,
                                                           @RequestParam(defaultValue = "false") boolean draft) {
-        String uid = (String) authentication.getPrincipal();
+        String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor
         return annotationService.getAnnotationsForMap(uid, mapId, draft);
     }
 

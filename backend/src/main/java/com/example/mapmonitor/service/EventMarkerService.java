@@ -28,10 +28,12 @@ public class EventMarkerService {
 
     private final EventMarkerRepository eventMarkerRepository;
     private final MapService mapService;
+    private final LayerService layerService;
 
-    public EventMarkerService(EventMarkerRepository eventMarkerRepository, MapService mapService) {
+    public EventMarkerService(EventMarkerRepository eventMarkerRepository, MapService mapService, LayerService layerService) {
         this.eventMarkerRepository = eventMarkerRepository;
         this.mapService = mapService;
+        this.layerService = layerService;
     }
 
     public List<EventMarkerSummaryResponse> getEventsForMap(String firebaseUid, Long mapId, boolean draft) {
@@ -47,6 +49,7 @@ public class EventMarkerService {
 
         EventMarker event = new EventMarker();
         applyRequest(event, request);
+        event.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
         event.setMapVersion(draft);
         EventMarker saved = eventMarkerRepository.save(event);
 
@@ -67,9 +70,13 @@ public class EventMarkerService {
                 .findFirst()
                 .orElseGet(EventMarker::new);
 
-        shadow.setStableId(stableId);
-        shadow.setMapVersion(draft);
+        if (shadow.getId() == null) {
+            shadow.setStableId(stableId);
+            shadow.setMapVersion(draft);
+        }
+
         applyRequest(shadow, request);
+        shadow.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
         return eventMarkerRepository.save(shadow);
     }
 
@@ -101,6 +108,7 @@ public class EventMarkerService {
         shadow.setTimestamp(visible.getTimestamp());
         shadow.setCategory(visible.getCategory());
         shadow.setFactionId(visible.getFactionId());
+        shadow.setLayer(visible.getLayer());
         shadow.setSourceURL(visible.getSourceURL());
         shadow.setEndTime(visible.getEndTime());
         shadow.setOngoing(visible.isOngoing());

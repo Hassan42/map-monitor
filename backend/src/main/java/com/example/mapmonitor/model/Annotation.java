@@ -1,14 +1,11 @@
 package com.example.mapmonitor.model;
 
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
-public class Annotation {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Annotation extends MapElement {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -31,20 +28,10 @@ public class Annotation {
     @ColumnDefault("0")
     private Double rotation;   // clockwise degrees from north (the icon's up direction), 0 = unrotated
 
-    private Long stableId;
+    // when it's on the map: null start = it has always been there, null end = still there
+    private LocalDateTime startTime;
 
-    @ManyToOne
-    @JoinColumn(name = "map_version_id", nullable = false)
-    private MapVersion mapVersion;
-
-    // deleted shadow: marks this stableId as deleted in this version, hiding rows inherited from older versions
-    @Column(nullable = false)
-    @ColumnDefault("false")
-    private boolean deleted;
-
-    public Long getId() {
-        return id;
-    }
+    private LocalDateTime endTime;
 
     public AnnotationKind getKind() {
         return kind;
@@ -102,27 +89,29 @@ public class Annotation {
         this.rotation = rotation;
     }
 
-    public Long getStableId() {
-        return stableId;
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
-    public void setStableId(Long stableId) {
-        this.stableId = stableId;
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 
-    public MapVersion getMapVersion() {
-        return mapVersion;
+    public LocalDateTime getEndTime() {
+        return endTime;
     }
 
-    public void setMapVersion(MapVersion mapVersion) {
-        this.mapVersion = mapVersion;
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
     }
 
-    public boolean isDeleted() {
-        return deleted;
+    @Override
+    public EntityType entityType() {
+        return EntityType.ANNOTATION;
     }
 
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
+    @Override
+    public String displayName() {
+        return label;
     }
 }

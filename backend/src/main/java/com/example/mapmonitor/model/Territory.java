@@ -1,18 +1,13 @@
 package com.example.mapmonitor.model;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Territory {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Territory extends MapElement {
 
     private String name;
 
@@ -22,19 +17,8 @@ public class Territory {
     @Column(columnDefinition = "text")
     private String points;   // polygon points, encoded as JSON e.g. "[[lat,lng],[lat,lng],...]"
 
-    private Long stableId;
-
     @Column(nullable = false)
     private Long factionId;   // the owning Faction's stableId, not its row id
-
-    @ManyToOne
-    @JoinColumn(name = "map_version_id", nullable = false)
-    private MapVersion mapVersion;
-
-    // deleted shadow: marks this stableId as deleted in this version, hiding rows inherited from older versions
-    @Column(nullable = false)
-    @ColumnDefault("false")
-    private boolean deleted;
 
     // the shapes over time, in their own table (territory_state), always sorted by date
     @OneToMany(mappedBy = "territory", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -57,10 +41,6 @@ public class Territory {
 
     public void setHistory(List<TerritoryState> history) {
         this.history = history;
-    }
-
-    public Long getId() {
-        return id;
     }
 
     public String getName() {
@@ -87,22 +67,6 @@ public class Territory {
         this.points = points;
     }
 
-    public Long getStableId() {
-        return stableId;
-    }
-
-    public void setStableId(Long stableId) {
-        this.stableId = stableId;
-    }
-
-    public MapVersion getMapVersion() {
-        return mapVersion;
-    }
-
-    public void setMapVersion(MapVersion mapVersion) {
-        this.mapVersion = mapVersion;
-    }
-
     public Long getFactionId() {
         return factionId;
     }
@@ -111,11 +75,13 @@ public class Territory {
         this.factionId = factionId;
     }
 
-    public boolean isDeleted() {
-        return deleted;
+    @Override
+    public EntityType entityType() {
+        return EntityType.TERRITORY;
     }
 
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
+    @Override
+    public String displayName() {
+        return name;
     }
 }

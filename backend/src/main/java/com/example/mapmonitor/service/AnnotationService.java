@@ -21,10 +21,12 @@ public class AnnotationService {
 
     private final AnnotationRepository annotationRepository;
     private final MapService mapService;
+    private final LayerService layerService;
 
-    public AnnotationService(AnnotationRepository annotationRepository, MapService mapService) {
+    public AnnotationService(AnnotationRepository annotationRepository, MapService mapService, LayerService layerService) {
         this.annotationRepository = annotationRepository;
         this.mapService = mapService;
+        this.layerService = layerService;
     }
 
     public List<AnnotationSummaryResponse> getAnnotationsForMap(String firebaseUid, Long mapId, boolean draft) {
@@ -40,6 +42,7 @@ public class AnnotationService {
 
         Annotation annotation = new Annotation();
         applyRequest(annotation, request);
+        annotation.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
         annotation.setMapVersion(draft);
         Annotation saved = annotationRepository.save(annotation);
 
@@ -60,6 +63,7 @@ public class AnnotationService {
         shadow.setStableId(stableId);
         shadow.setMapVersion(draft);
         applyRequest(shadow, request);
+        shadow.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
         return annotationRepository.save(shadow);
     }
 
@@ -87,10 +91,13 @@ public class AnnotationService {
         shadow.setKind(visible.getKind());
         shadow.setGeometry(visible.getGeometry());
         shadow.setFactionId(visible.getFactionId());
+        shadow.setLayer(visible.getLayer());
         shadow.setLabel(visible.getLabel());
         shadow.setColor(visible.getColor());
         shadow.setScale(visible.getScale());
         shadow.setRotation(visible.getRotation());
+        shadow.setStartTime(visible.getStartTime());
+        shadow.setEndTime(visible.getEndTime());
         shadow.setDeleted(true);
         annotationRepository.save(shadow);
 
@@ -104,6 +111,9 @@ public class AnnotationService {
         if (request.getGeometry() == null || request.getGeometry().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Annotation geometry is required");
         }
+        if (request.getStartTime() != null && request.getEndTime() != null && request.getEndTime().isBefore(request.getStartTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Annotation can't end before it starts");
+        }
 
         annotation.setKind(request.getKind());
         annotation.setGeometry(request.getGeometry());
@@ -114,6 +124,8 @@ public class AnnotationService {
         // keep it in 0..360 so the same direction is always stored the same way
         double rotation = request.getRotation() != null ? request.getRotation() : DEFAULT_ROTATION;
         annotation.setRotation(((rotation % 360) + 360) % 360);
+        annotation.setStartTime(request.getStartTime());
+        annotation.setEndTime(request.getEndTime());
     }
 
     private List<Annotation> resolveVisibleAnnotations(MapVersion version) {

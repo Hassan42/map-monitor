@@ -9,6 +9,7 @@ public class CreateTerritoryRequest {
     private String color;
     private String points;
     private Long factionId;
+    private Long layerId; // null = in no layer
     private List<TerritoryStateDto> history = new ArrayList<>(); // the shapes over time, see TerritoryStateDto
     private LocalDateTime endTime;
 
@@ -58,5 +59,13 @@ public class CreateTerritoryRequest {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public Long getLayerId() {
+        return layerId;
+    }
+
+    public void setLayerId(Long layerId) {
+        this.layerId = layerId;
     }
 }
