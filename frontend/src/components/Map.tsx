@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import MapProvider from '../store/MapContext'
 import TerritoryLayer from './TerritoryLayer'
 import AddFaction from './AddFaction'
+import AddLayer from './AddLayer'
 import AddEvent from './AddEvent'
 import EditEvent from './EditEvent'
 import EventMarkers from './EventMarkers'
@@ -11,33 +12,55 @@ import AddAnnotation from './AddAnnotation'
 import AnnotationEditor from './AnnotationEditor'
 import SelectTool from './SelectTool'
 import PropertyPanel from './PropertyPanel'
+import type { LayerKey } from './PropertyPanel'
 import MapControls from './MapControls'
 import NavDropdown, { NavDropdownItem } from './NavDropDown'
-import { navButtonClass } from '../styles/navStyles'
-import { CloseIcon, CursorIcon, EyeIcon, HandIcon } from './icons'
-import type { Annotation, EventMarker, Faction, MapSummary, Territory } from '../types/types'
+import { navButtonActiveClass, navButtonClass } from '../styles/navStyles'
+import NavIcon from './NavIcon'
+import handIcon from '../assets/icons/hand.svg'
+import cursorIcon from '../assets/icons/cursor.svg'
+import relationsIcon from '../assets/icons/relations.svg'
+import topoIcon from '../assets/icons/topo.svg'
+import terrainIcon from '../assets/icons/terrain.svg'
+import eyeIcon from '../assets/icons/eye.svg'
+import closeIcon from '../assets/icons/close.svg'
+import allTimeIcon from '../assets/icons/all-time.svg'
+import liveIcon from '../assets/icons/live.svg'
+import addFactionIcon from '../assets/icons/add-faction.svg'
+import addLayerIcon from '../assets/icons/add-layer.svg'
+import addEventIcon from '../assets/icons/add-event.svg'
+import addAnnotationIcon from '../assets/icons/add-annotation.svg'
+import addTerritoryIcon from '../assets/icons/add-territory.svg'
+import type { Annotation, EventMarker, MapChange, Faction, Layer, MapSummary, Territory } from '../types/types'
 import { getMapFactions } from '../api/faction'
+import { getMapLayers } from '../api/layer'
 import { getMapEvents, editEvent, deleteEvent } from '../api/event'
 import { getMapTerritories } from '../api/territory'
 import { editAnnotation, getMapAnnotations } from '../api/annotation'
-import { getMapById, startDraft, publishMap, getDraftStatus } from '../api/map'
+import { auth } from '../firebase/BaseConfig'
+import { getMapById, startDraft, publishMap, getDraftStatus, discardChange } from '../api/map'
 import type { DrawMode } from '../types/types'
 import TopoLayer from './TopoLayer'
 import TerrainLayer from './TerrainLayer'
 import Viewshed from './Viewshed'
 import TimeLine from './TimeLine'
+import PublishMenu from './PublishMenu'
 import { territoryAt, territoryKey } from '../map/territoryTime'
-import { parseServerTime } from '../map/eventTime'
+import { activeAt, parseServerTime } from '../map/eventTime'
 import { DAY_MS } from '../map/eventTime'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const [factions, setFactions] = useState<Faction[]>([])
+    const [layers, setLayers] = useState<Layer[]>([])
     const [events, setEvents] = useState<EventMarker[]>([])
     const [territories, setTerritories] = useState<Territory[]>([])
     const [annotations, setAnnotations] = useState<Annotation[]>([])
     const [showAddFaction, setShowAddFaction] = useState(false)
+    const [showAddLayer, setShowAddLayer] = useState(false)
+    // layers switched off in the property panel (null = elements in no layer): their elements leave the map
+    const [hiddenLayers, setHiddenLayers] = useState<Set<LayerKey>>(() => new Set())
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(true)
     const [editMode, setEditMode] = useState(false)
@@ -48,6 +71,15 @@ function Map() {
     const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
     const [showTopo, setShowTopo] = useState<boolean | null>(null)
     const [showTerrain, setShowTerrain] = useState(false)
+    // nav bar toggle: lines between related events that have happened by the timeline's date
+    const [showRelations, setShowRelations] = useState(false)
+    // nav bar toggle: every element at once, ignoring the timeline's date. Territories then show their
+    // latest shape, so edits made meanwhile are saved as of the present (`editTime` below)
+    const [showAllTime, setShowAllTime] = useState(true) // opens showing every date
+    // bumped to reload the map's elements from the backend (after a change is discarded)
+    const [elementsRevision, setElementsRevision] = useState(0)
+    // bumped after every draft status refresh, i.e. after every edit: tells the open publish menu to reload
+    const [draftRevision, setDraftRevision] = useState(0)
     // whether the draft has anything to publish - always taken from the backend so it survives reloads
     const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
     // the event whose edit form is open (from the event's right-click menu)
@@ -62,11 +94,36 @@ function Map() {
     // didn't exist yet or had ended left out. Rebuilt only when some territory switches state
     // (shownTerritoriesKey), not on every timeline tick - a new list makes TerritoryLayer redraw all polygons
     const shownTerritoriesKey = territoryKey(territories, now)
+    // the date edits are made at: the timeline's, or with All time (no date shown, latest shapes) the
+    // present - Infinity, which the save clamps to the real clock
+    const editTime = showAllTime ? Number.POSITIVE_INFINITY : now
     const visibleTerritories = useMemo(
-        () => territories.map((t) => territoryAt(t, now)).filter((t): t is Territory => t !== null),
+        () => (showAllTime
+            ? territories // All time: each in its latest shape (its own points), ended ones included
+            : territories.map((t) => territoryAt(t, now)).filter((t): t is Territory => t !== null)
+        ).filter((t) => !hiddenLayers.has(t.layerId ?? null)),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- shownTerritoriesKey covers `now`
-        [territories, shownTerritoriesKey],
+        [territories, shownTerritoriesKey, showAllTime, hiddenLayers],
     )
+    // events and annotations of the shown layers - memoized so the map layers don't redraw on every render
+    const shownEvents = useMemo(() => events.filter((e) => !hiddenLayers.has(e.layerId ?? null)), [events, hiddenLayers])
+    // annotations also by date (start/end; All time shows them all). Keyed on which ones are on the map,
+    // not on `now`, so a timeline tick only redraws when one appears or disappears
+    const shownAnnotationsKey = showAllTime ? 'all' : annotations.filter((a) => activeAt(a, now)).map((a) => a.id).join(',')
+    const shownAnnotations = useMemo(
+        () => annotations.filter((a) => !hiddenLayers.has(a.layerId ?? null) && (showAllTime || activeAt(a, now))),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- shownAnnotationsKey covers `now`
+        [annotations, hiddenLayers, shownAnnotationsKey, showAllTime],
+    )
+
+    const handleToggleLayer = (layer: LayerKey) => {
+        setHiddenLayers((prev) => {
+            const next = new Set(prev)
+            if (next.has(layer)) next.delete(layer)
+            else next.add(layer)
+            return next
+        })
+    }
 
     // the timeline spans everything dated on the map: events (start, end) and territories (each
     // history state's start, end). Live can go past it to the present: the handle then sits at the
@@ -80,8 +137,7 @@ function Map() {
         ]),
     ]
     const min = times.length > 0 ? Math.min(...times) : today - 30 * DAY_MS // nothing dated yet: the last 30 days
-    const max = times.length > 0 ? Math.max(...times, min + DAY_MS) : today // at least a day, so the bar never has zero length
-    
+    const max = times.length > 0 ? Math.max(...times, min + DAY_MS) : today // the latest element's date; at least a day long
 
     useEffect(() => {
         if (!live) return;
@@ -90,17 +146,24 @@ function Map() {
     }, [live])
     const editingEvent = events.find((e) => e.id === editingEventId)
 
+    // only the owner edits; visitors (and other users of a public map) just view the published map
+    const canEdit = mapSummary?.owned === true
+
     const refreshDraftStatus = useCallback(() => {
-        if (!id) return
+        if (!id || !canEdit) return // the draft is the owner's alone
         getDraftStatus(id)
-            .then((status) => setHasUnpublishedChanges(status.hasChanges))
+            .then((status) => {
+                setHasUnpublishedChanges(status.hasChanges)
+                setDraftRevision((r) => r + 1)
+            })
             .catch(() => { })
-    }, [id])
+    }, [id, canEdit])
 
     // on page load / switching maps
     useEffect(() => {
         refreshDraftStatus()
     }, [refreshDraftStatus])
+
 
 
     // Fetching map factions from db - draft copies while editing, published otherwise
@@ -112,13 +175,21 @@ function Map() {
             .finally(() => setLoading(false))
     }, [id, editMode])
 
+    // Fetching map layers from db - draft copies while editing, published otherwise
+    useEffect(() => {
+        if (!id) return
+        getMapLayers(id, editMode)
+            .then(setLayers)
+            .catch(() => setError('Could not load layers'))
+    }, [id, editMode, elementsRevision])
+
     // Fetching map events from db - draft copies while editing, published otherwise
     useEffect(() => {
         if (!id) return
         getMapEvents(id, editMode)
             .then(setEvents)
             .catch(() => setError('Could not load events'))
-    }, [id, editMode])
+    }, [id, editMode, elementsRevision])
 
     // Fetching map territories from db - draft copies while editing, published otherwise
     useEffect(() => {
@@ -126,7 +197,7 @@ function Map() {
         getMapTerritories(id, editMode)
             .then(setTerritories)
             .catch(() => setError('Could not load territories'))
-    }, [id, editMode])
+    }, [id, editMode, elementsRevision])
 
     // Fetching map annotations from db - draft copies while editing, published otherwise
     useEffect(() => {
@@ -134,7 +205,7 @@ function Map() {
         getMapAnnotations(id, editMode)
             .then(setAnnotations)
             .catch(() => setError('Could not load annotations'))
-    }, [id, editMode])
+    }, [id, editMode, elementsRevision])
 
     // Fetching map summary from db
     useEffect(() => {
@@ -142,11 +213,20 @@ function Map() {
         getMapById(id).then(setMapSummary).catch(() => { })
     }, [id])
 
+
+
     // faction creation handle
     const handleFactionCreated = (faction: Faction) => {
         setFactions((prev) => [...prev, faction])
         refreshDraftStatus()
         setShowAddFaction(false)
+    }
+
+    // layer creation handle
+    const handleLayerCreated = (layer: Layer) => {
+        setLayers((prev) => [...prev, layer])
+        refreshDraftStatus()
+        setShowAddLayer(false)
     }
 
     // event creation handle
@@ -171,7 +251,9 @@ function Map() {
     }
 
     const handleEventCreated = (event: EventMarker) => {
-        setNow(Date.now())
+        // show the timeline at the new event. Live's clock only ticks once a minute, so an event dated
+        // "just now" can be newer than it: catch the clock up so the event shows
+        setNow(live ? Date.now() : parseServerTime(event.timestamp))
         setEvents((prev) => [...prev, event])
         refreshDraftStatus()
     }
@@ -223,6 +305,7 @@ function Map() {
         refreshDraftStatus()
     }, [refreshDraftStatus])
 
+
     // entering edit mode should start (or resume) a draft version
     const handleEditClick = () => {
         if (editMode) {
@@ -250,6 +333,17 @@ function Map() {
             .catch(() => setError('Could not publish'))
     }
 
+    // the publish menu's discard: the element goes back to how it's published, so reload the elements
+    const handleDiscardChange = (change: MapChange) => {
+        if (!id) return
+        discardChange(id, change)
+            .then(() => {
+                setElementsRevision((r) => r + 1)
+                refreshDraftStatus() // also reloads the publish menu
+            })
+            .catch(() => setError('Could not discard the change'))
+    }
+
     const handleTimeChange = (time: number) => {
         setLive(false);
         setNow(time);
@@ -260,10 +354,50 @@ function Map() {
     const handleLiveToggle = () => {
         if (live) {
             setLive(false)
+            // the timeline opens at the present, unless the map's dates end earlier (e.g. a 2006 map):
+            // then at its last date, so the handle and the date shown are on the bar
+            setNow((time) => Math.min(Math.max(time, min), max))
             return
         }
         setLive(true)
         setNow(Date.now())
+    }
+
+    // the edit tools, used by the desktop buttons and the phone menus alike. Pan = only move the map
+    // (no tool), Select = terra-draw's editing select; placing tools clear the others, so one click
+    // isn't handled twice
+    const pickPan = () => {
+        setIsPlacingEvent(false)
+        setIsPlacingAnnotation(false)
+        setDrawMode(null)
+    }
+    const pickSelect = () => {
+        setIsPlacingEvent(false)
+        setIsPlacingAnnotation(false)
+        setDrawMode('select')
+    }
+    const startAddEvent = () => {
+        setIsPlacingAnnotation(false)
+        setIsPlacingViewshed(false)
+        setIsPlacingEvent(true)
+    }
+    // no draw/select tool while placing, so that click isn't also handled by them
+    const startAddAnnotation = () => {
+        setDrawMode(null)
+        setIsPlacingEvent(false)
+        setIsPlacingViewshed(false)
+        setIsPlacingAnnotation(true)
+    }
+    const toggleViewshed = () => {
+        setIsPlacingEvent(false)
+        setIsPlacingAnnotation(false)
+        if (editMode) setDrawMode(null)
+        setIsPlacingViewshed((on) => !on)
+    }
+    const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation
+
+    const handleRelationsToggle = () => {
+
     }
 
     if (!id) return <p>Map not found</p>
@@ -274,8 +408,9 @@ function Map() {
                 <TerritoryLayer
                     mapId={id}
                     factions={factions}
+                    layers={layers}
                     territories={visibleTerritories}
-                    now={now}
+                    now={editTime}
                     active={editMode}
                     mode={drawMode}
                     onModeChange={setDrawMode}
@@ -287,6 +422,7 @@ function Map() {
                 <AddAnnotation
                     mapId={id}
                     factions={factions}
+                    layers={layers}
                     active={isPlacingAnnotation}
                     onExit={() => setIsPlacingAnnotation(false)}
                     onCreated={handleAnnotationCreated}
@@ -294,26 +430,31 @@ function Map() {
                 <AddEvent
                     mapId={id}
                     factions={factions}
+                    layers={layers}
                     events={events}
+                    now={editTime}
                     active={isPlacingEvent}
                     onExit={() => setIsPlacingEvent(false)}
                     onCreated={handleEventCreated}
                 />
-                <AnnotationLayer annotations={annotations} factions={factions} />
+                <AnnotationLayer annotations={shownAnnotations} factions={factions} />
                 <AnnotationEditor
-                    annotations={annotations}
+                    annotations={shownAnnotations}
+                    factions={factions}
+                    layers={layers}
                     active={editMode}
-                    canDrag={drawMode === 'select'}
+                    aboveTimeline={!live && !showAllTime}
                     onChange={handleAnnotationChange}
                     onCommit={handleAnnotationCommit}
                 />
-                <EventMarkers events={events} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId} 
-                onDelete={handleEventDeleted} now={now} editMode={editMode} />
+                <EventMarkers events={shownEvents} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId}
+                    onDelete={handleEventDeleted} now={now} editMode={editMode} showRelations={showRelations} allTime={showAllTime} />
                 {editingEvent && (
                     <EditEvent
                         mapId={id}
                         event={editingEvent}
                         factions={factions}
+                        layers={layers}
                         events={events}
                         onSaved={handleEventSaved}
                         onClose={() => setEditingEventId(null)}
@@ -322,23 +463,39 @@ function Map() {
                 {/* view mode is always selectable; in edit mode only with the Select tool */}
                 <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed} editMode={editMode} territories={visibleTerritories} />
                 <MapControls territories={territories} events={events} />
-                <PropertyPanel map={mapSummary} factions={factions} events={events} territories={territories} />
+                <PropertyPanel
+                    map={mapSummary}
+                    factions={factions}
+                    layers={layers}
+                    hiddenLayers={hiddenLayers}
+                    onToggleLayer={handleToggleLayer}
+                    onShowAllLayers={() => setHiddenLayers(new Set())}
+                    events={events}
+                    territories={territories}
+                    annotations={annotations}
+                    onFly={handleTimeChange}
+                />
                 <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
                 <TerrainLayer enabled={showTerrain} />
                 <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
-                {!live && <TimeLine min={min} max={max} now={now} onChange={handleTimeChange} />}
+                {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} />}
             </MapProvider>
 
 
 
-            <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 text-gray-300 text-base px-3 select-none">
-                <button
-                    type="button"
-                    onClick={handleEditClick}
-                    className={navButtonClass}
-                >
-                    {editMode ? 'Exit Edit Mode' : 'Edit'}
-                </button>
+            {/* desktop: every tool as its own button. Phones (below md): the edit tools and the map toggles
+                each fold into one menu, so the bar fits - plain show/hide classes, no checks in code */}
+            <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
+                <div className="contents max-md:hidden">
+                {canEdit && (
+                    <button
+                        type="button"
+                        onClick={handleEditClick}
+                        className={navButtonClass}
+                    >
+                        {editMode ? 'Exit Edit Mode' : 'Edit'}
+                    </button>
+                )}
 
 
 
@@ -350,29 +507,21 @@ function Map() {
                             type="button"
                             aria-label="Pan"
                             title="Pan - drag to move the map"
-                            aria-pressed={drawMode === null && !isPlacingEvent && !isPlacingAnnotation}
-                            onClick={() => {
-                                setIsPlacingEvent(false)
-                                setIsPlacingAnnotation(false)
-                                setDrawMode(null)
-                            }}
-                            className={`${navButtonClass} ${drawMode === null && !isPlacingEvent && !isPlacingAnnotation ? 'bg-accent-400/15 text-accent-300' : ''}`}
+                            aria-pressed={isPanning}
+                            onClick={pickPan}
+                            className={`${navButtonClass} ${isPanning ? navButtonActiveClass : ''}`}
                         >
-                            <HandIcon />
+                            <NavIcon src={handIcon} />
                         </button>
                         <button
                             type="button"
                             aria-label="Select"
                             title="Select - click territories and events"
                             aria-pressed={drawMode === 'select'}
-                            onClick={() => {
-                                setIsPlacingEvent(false)
-                                setIsPlacingAnnotation(false)
-                                setDrawMode('select')
-                            }}
-                            className={`${navButtonClass} ${drawMode === 'select' ? 'bg-accent-400/15 text-accent-300' : ''}`}
+                            onClick={pickSelect}
+                            className={`${navButtonClass} ${drawMode === 'select' ? navButtonActiveClass : ''}`}
                         >
-                            <CursorIcon />
+                            <NavIcon src={cursorIcon} />
                         </button>
                     </>
                 )}
@@ -381,24 +530,38 @@ function Map() {
                 {editMode && (
                     <button
                         type="button"
+                        aria-label="Add faction"
+                        title="Add faction"
                         onClick={() => setShowAddFaction(true)}
                         className={navButtonClass}
                     >
-                        Add Faction
+                        <NavIcon src={addFactionIcon} />
                     </button>
                 )}
 
                 {editMode && (
                     <button
                         type="button"
-                        onClick={() => {
-                            setIsPlacingAnnotation(false)
-                            setIsPlacingViewshed(false)
-                            setIsPlacingEvent(true)
-                        }}
+                        aria-label="Add layer"
+                        title="Add layer - group events, territories and annotations"
+                        onClick={() => setShowAddLayer(true)}
                         className={navButtonClass}
                     >
-                        {isPlacingEvent ? 'Click on the map...' : 'Add Event'}
+                        <NavIcon src={addLayerIcon} />
+                    </button>
+                )}
+
+                {/* pressed while waiting for the map click that places it */}
+                {editMode && (
+                    <button
+                        type="button"
+                        aria-label="Add event"
+                        aria-pressed={isPlacingEvent}
+                        title={isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
+                        onClick={startAddEvent}
+                        className={`${navButtonClass} ${isPlacingEvent ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={addEventIcon} />
                     </button>
                 )}
 
@@ -406,102 +569,182 @@ function Map() {
                 {editMode && (
                     <button
                         type="button"
-                        onClick={() => {
-                            setDrawMode(null)
-                            setIsPlacingEvent(false)
-                            setIsPlacingViewshed(false)
-                            setIsPlacingAnnotation(true)
-                        }}
-                        className={navButtonClass}
+                        aria-label="Add annotation"
+                        aria-pressed={isPlacingAnnotation}
+                        title={isPlacingAnnotation ? 'Add annotation - click on the map to place it' : 'Add annotation'}
+                        onClick={startAddAnnotation}
+                        className={`${navButtonClass} ${isPlacingAnnotation ? navButtonActiveClass : ''}`}
                     >
-                        {isPlacingAnnotation ? 'Click on the map...' : 'Add Annotation'}
+                        <NavIcon src={addAnnotationIcon} />
                     </button>
                 )}
 
                 {editMode && (
-                    <button
-                        type="button"
-                        onClick={handlePublishClick}
-                        className={`${navButtonClass} flex items-center gap-2`}
+                    <NavDropdown
+                        label={<NavIcon src={addTerritoryIcon} />}
+                        ariaLabel="Add territory"
+                        title="Add territory - draw it as a polygon or freehand"
+                        active={drawMode === 'polygon' || drawMode === 'freehand'}
                     >
-                        Publish
-                        {/* heartbeat square: there are draft changes waiting to be published */}
-                        {hasUnpublishedChanges && (
-                            <span
-                                title="Unpublished changes"
-                                className="h-2.5 w-2.5 bg-accent-400 animate-heartbeat motion-reduce:animate-none"
-                            />
-                        )}
-                    </button>
-                )}
-
-                {editMode && (
-                    <NavDropdown label="Draw">
                         <NavDropdownItem onClick={() => setDrawMode('polygon')}>Polygon</NavDropdownItem>
+                        <NavDropdownItem onClick={() => setDrawMode('freehand')}>Freehand</NavDropdownItem>
                     </NavDropdown>
                 )}
+                </div>
 
-                {/* map view toggles, pushed right together with the close button (ml-auto on the first one) */}
-                <button
-                    type="button"
-                    aria-pressed={live}
-                    title={live ? 'Showing the present - click to pick a date on the timeline' : 'Back to the present'}
-                    onClick={handleLiveToggle}
-                    className={`${navButtonClass} ml-auto flex items-center gap-1.5 ${live ? 'bg-accent-400/15 text-accent-300' : ''}`}
-                >
-                    <span className={`h-2 w-2 ${live ? 'bg-accent-400 animate-heartbeat motion-reduce:animate-none' : 'bg-gray-500'}`} />
-                    Live
-                </button>
-                <button
-                    type="button"
-                    aria-pressed={showTopo ? showTopo : false}
-                    aria-label="Topographic map"
-                    title="Topographic map"
-                    onClick={() => setShowTopo((on) => !on)}
-                    className={`${navButtonClass} ${showTopo ? 'bg-accent-400/15 text-accent-300' : ''}`}
-                >
-                    Topo
-                </button>
+                {/* phones: Edit, or in edit mode one Tools menu (no territory drawing: too fiddly by finger) */}
+                {canEdit && !editMode && (
+                    <button type="button" onClick={handleEditClick} className={`${navButtonClass} md:hidden`}>Edit</button>
+                )}
+                {editMode && (
+                    <div className="md:hidden">
+                        <NavDropdown
+                            label={<NavIcon src={isPlacingEvent ? addEventIcon : isPlacingAnnotation ? addAnnotationIcon : drawMode === 'select' ? cursorIcon : handIcon} />}
+                            ariaLabel="Edit tools"
+                            active={!isPanning}
+                        >
+                            <NavDropdownItem onClick={pickPan} active={isPanning}><NavIcon src={handIcon} /> Pan</NavDropdownItem>
+                            <NavDropdownItem onClick={pickSelect} active={drawMode === 'select'}><NavIcon src={cursorIcon} /> Select</NavDropdownItem>
+                            <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
+                            <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
+                            <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add faction</NavDropdownItem>
+                            <NavDropdownItem onClick={() => setShowAddLayer(true)}><NavIcon src={addLayerIcon} /> Add layer</NavDropdownItem>
+                            <NavDropdownItem onClick={handleEditClick}>Exit edit mode</NavDropdownItem>
+                        </NavDropdown>
+                    </div>
+                )}
 
-                {/* 3D terrain on/off: tilts the map when switched on, flat again when off */}
-                <button
-                    type="button"
-                    aria-pressed={showTerrain}
-                    aria-label="3D terrain"
-                    title="3D terrain (right-drag or Ctrl+drag to tilt)"
-                    onClick={() => setShowTerrain((on) => !on)}
-                    className={`${navButtonClass} ${showTerrain ? 'bg-accent-400/15 text-accent-300' : ''}`}
-                >
-                    3D
-                </button>
+                {editMode && (
+                    // opens the draft's changes for a last look; publishing happens from there
+                    <PublishMenu
+                        mapId={id}
+                        revision={draftRevision}
+                        hasChanges={hasUnpublishedChanges}
+                        onDiscard={handleDiscardChange}
+                        onPublish={handlePublishClick}
+                    />
+                )}
+                
+                <div className="ml-auto flex items-center gap-1 text-right max-md:text-xs">
+                    {/* All time shows every date at once, so there's no single date to show */}
+                    {showAllTime ? 'All time' : (
+                        <>
+                            <span className="md:hidden">{new Date(now).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                            <span className="max-md:hidden">{new Date(now).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                        </>
+                    )}
+                </div>
 
-                {/* line of sight: the next map click places an observer; what it can't see turns gray.
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-md:hidden" />
+
+                {/* the right side, pushed over by ml-auto: time, then map layers, then close - one group each,
+                    with a thin divider between them */}
+                <div className="flex items-center gap-1">
+                    {/* time: which dates the map shows */}
+                    <button
+                        type="button"
+                        aria-pressed={showAllTime}
+                        aria-label="All time"
+                        title="All time - show everything on the map, regardless of date"
+                        onClick={() => setShowAllTime((on) => !on)}
+                        className={`${navButtonClass} ${showAllTime ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={allTimeIcon} />
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={live}
+                        aria-label="Live"
+                        title={showAllTime ? 'Live - not available while All time shows every date'
+                            : live ? 'Live - showing the present; click to pick a date on the timeline' : 'Live - back to the present'}
+                        // locked while All time is on: no date is shown then, so there's nothing to follow or pick
+                        disabled={showAllTime}
+                        onClick={handleLiveToggle}
+                        className={`${navButtonClass} disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-transparent ${live && !showAllTime ? navButtonActiveClass : ''}`}
+                    >
+                        {/* beats while live, like the unpublished-changes square */}
+                        <NavIcon src={liveIcon} className={live && !showAllTime ? 'animate-heartbeat motion-reduce:animate-none' : ''} />
+                    </button>
+                </div>
+
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-md:hidden" />
+
+                {/* map layers and tools that only change the view */}
+                <div className="flex items-center gap-1 max-md:hidden">
+                    <button
+                        type="button"
+                        aria-pressed={showRelations}
+                        aria-label="Event relations"
+                        title="Relations - show how events relate (caused by, retaliation, part of), up to the timeline's date"
+                        onClick={() => setShowRelations((on) => !on)}
+                        className={`${navButtonClass} ${showRelations ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={relationsIcon} />
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={showTopo ? showTopo : false}
+                        aria-label="Topographic map"
+                        title="Topographic map"
+                        onClick={() => setShowTopo((on) => !on)}
+                        className={`${navButtonClass} ${showTopo ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={topoIcon} />
+                    </button>
+
+                    {/* 3D terrain on/off: tilts the map when switched on, flat again when off */}
+                    <button
+                        type="button"
+                        aria-pressed={showTerrain}
+                        aria-label="3D terrain"
+                        title="3D terrain (right-drag or Ctrl+drag to tilt)"
+                        onClick={() => setShowTerrain((on) => !on)}
+                        className={`${navButtonClass} ${showTerrain ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={terrainIcon} />
+                    </button>
+
+                    {/* line of sight: the next map click places an observer; what it can't see turns gray.
                     Clears the other placing tools / editing select so that click isn't handled twice */}
-                <button
-                    type="button"
-                    aria-pressed={isPlacingViewshed}
-                    aria-label="Line of sight"
-                    title="Line of sight - click a point to see what is visible from there"
-                    onClick={() => {
-                        setIsPlacingEvent(false)
-                        setIsPlacingAnnotation(false)
-                        if (editMode) setDrawMode(null)
-                        setIsPlacingViewshed((on) => !on)
-                    }}
-                    className={`${navButtonClass} ${isPlacingViewshed ? 'bg-accent-400/15 text-accent-300' : ''}`}
-                >
-                    <EyeIcon />
-                </button>
+                    <button
+                        type="button"
+                        aria-pressed={isPlacingViewshed}
+                        aria-label="Line of sight"
+                        title="Line of sight - click a point to see what is visible from there"
+                        onClick={toggleViewshed}
+                        className={`${navButtonClass} ${isPlacingViewshed ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={eyeIcon} />
+                    </button>
+                </div>
 
-                {/* back to the maps list; a draft in progress stays saved on the backend */}
+                {/* phones: the same map layers and tools, in one menu */}
+                <div className="md:hidden">
+                    <NavDropdown
+                        label={<NavIcon src={topoIcon} />}
+                        ariaLabel="Map layers and tools"
+                        active={showRelations || !!showTopo || showTerrain || isPlacingViewshed}
+                        align="right"
+                    >
+                        <NavDropdownItem onClick={() => setShowRelations((on) => !on)} active={showRelations}><NavIcon src={relationsIcon} /> Event relations</NavDropdownItem>
+                        <NavDropdownItem onClick={() => setShowTopo((on) => !on)} active={!!showTopo}><NavIcon src={topoIcon} /> Topographic map</NavDropdownItem>
+                        <NavDropdownItem onClick={() => setShowTerrain((on) => !on)} active={showTerrain}><NavIcon src={terrainIcon} /> 3D terrain</NavDropdownItem>
+                        <NavDropdownItem onClick={toggleViewshed} active={isPlacingViewshed}><NavIcon src={eyeIcon} /> Line of sight</NavDropdownItem>
+                    </NavDropdown>
+                </div>
+
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-md:hidden" />
+
+                {/* back to the maps list; a draft in progress stays saved on the backend. A visitor who
+                    isn't signed in has no list, so they go to the login page instead */}
                 <button
                     type="button"
                     aria-label="Close map"
-                    title="Back to maps"
-                    onClick={() => navigate('/maps')}
+                    title={auth.currentUser ? 'Back to maps' : 'Sign in'}
+                    onClick={() => navigate(auth.currentUser ? '/maps' : '/login')}
                     className={navButtonClass}
                 >
-                    <CloseIcon />
+                    <NavIcon src={closeIcon} />
                 </button>
             </nav>
 
@@ -510,6 +753,9 @@ function Map() {
 
             {showAddFaction && (
                 <AddFaction mapId={id} onCreated={handleFactionCreated} onClose={() => setShowAddFaction(false)} />
+            )}
+            {showAddLayer && (
+                <AddLayer mapId={id} onCreated={handleLayerCreated} onClose={() => setShowAddLayer(false)} />
             )}
         </div>
     )

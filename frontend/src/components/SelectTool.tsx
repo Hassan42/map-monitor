@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { GeoJSONSource, MapLayerMouseEvent, MapMouseEvent } from 'maplibre-gl'
 import { useMap, useSelection } from '../store/MapContext'
-import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID, EVENTS_SOURCE_ID } from '../map/mapLayers'
+import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID, EVENTS_SOURCE_ID, RELATIONS_END_LAYER_ID } from '../map/mapLayers'
 import { findAnnotationAt } from '../map/annotationHitTest'
 import { findTerritoryAt } from '../map/geometry'
 import type { Territory } from '../types/types'
@@ -52,11 +52,12 @@ function SelectTool({ active, editMode, territories }: { active: boolean; editMo
 
     const handleClick = (e: MapMouseEvent) => {
       // topmost first: events and clusters are drawn above annotations
-      const layers = [EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID].filter((id) => map.getLayer(id))
+      // (RELATIONS_END_LAYER_ID: the Relations toggle's faint markers for events that have ended)
+      const layers = [EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID, RELATIONS_END_LAYER_ID].filter((id) => map.getLayer(id))
       const hit = layers.length ? map.queryRenderedFeatures(e.point, { layers })[0] : undefined
 
       if (hit?.layer.id === EVENTS_CLUSTER_LAYER_ID) return // the cluster handler zooms in
-      if (hit?.layer.id === EVENTS_LAYER_ID) {
+      if (hit?.layer.id === EVENTS_LAYER_ID || hit?.layer.id === RELATIONS_END_LAYER_ID) {
         setSelected({ type: 'event', id: hit.properties.id as number })
         return
       }
