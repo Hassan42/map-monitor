@@ -33,7 +33,10 @@ export function territoryKey(territories: Territory[], now: number): string {
 // the territory with `shape` holding from `now` until its next state: replaces the state that starts
 // exactly at `now`, or adds a new one; later states are kept. The territory's own fields follow the
 // latest state, as the backend expects
-export function withShapeAt(t: Territory, shape: Omit<TerritoryState, 'from'>, now: number): Territory {
+export function withShapeAt(t: Territory, shape: Omit<TerritoryState, 'from'>, time: number): Territory {
+  // whole milliseconds: `from` is stored to the millisecond, so a fractional time (e.g. after playback)
+  // would never equal a saved state's time, and an edit would add a duplicate instead of replacing it
+  const now = Math.floor(time)
   const from = new Date(now).toISOString()
   let history = [...(t.history ?? [])]
 
