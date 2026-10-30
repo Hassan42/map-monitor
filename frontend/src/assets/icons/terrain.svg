@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- mountains with a snow line: 3D terrain -->
+  <path d="M2 20L9 6L13.5 14L16 10L22 20Z" stroke-linejoin="round"/>
+  <path d="M6.5 11L8 12.2L9.5 10.8L11 12.3" stroke-linejoin="round"/>
+</svg>

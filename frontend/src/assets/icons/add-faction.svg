@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- a person (a side in the conflict) with a plus: add a faction -->
+  <circle cx="9" cy="7" r="4"/>
+  <path d="M2 21V19A5 5 0 0 1 7 14H11A5 5 0 0 1 16 19V21" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19.5 9V16M16 12.5H23"/>
+</svg>

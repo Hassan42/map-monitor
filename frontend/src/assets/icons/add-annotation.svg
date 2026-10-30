@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- a tactical arrow (like the ARROW annotation) with a plus: add an annotation -->
+  <path d="M3 15C4.5 8.5 8.5 5 14 5"/>
+  <path d="M10.5 1.5L14 5L10.5 8.5"/>
+  <path d="M18.5 14V23M14 18.5H23"/>
+</svg>

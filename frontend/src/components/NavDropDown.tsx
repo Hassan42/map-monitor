@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { navButtonClass } from '../styles/navStyles'
+import { navButtonActiveClass, navButtonClass } from '../styles/navStyles'
 
 type Props = {
-    label: string
+    label: ReactNode // text or an icon
+    ariaLabel?: string // needed when the label is only an icon
+    title?: string
+    active?: boolean // one of its items is in use: the button shows pressed, like a toggle
+    align?: 'left' | 'right' // which edge the menu lines up with; 'right' near the screen's right edge
     children: ReactNode
 }
 
-function NavDropdown({ label, children }: Props) {
+function NavDropdown({ label, ariaLabel, title, active = false, align = 'left', children }: Props) {
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
 
@@ -28,15 +32,17 @@ function NavDropdown({ label, children }: Props) {
     }, [open])
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative shrink-0">
             <button
                 type="button"
                 aria-haspopup="menu"
                 aria-expanded={open}
+                aria-label={ariaLabel}
+                title={title}
                 onClick={() => setOpen((o) => !o)}
-                className={`${navButtonClass} ${open ? 'bg-accent-400/15 text-accent-300' : ''}`}
+                className={`${navButtonClass} flex items-center gap-1 ${open || active ? navButtonActiveClass : ''}`}
             >
-                {label} ▾
+                {label} <span aria-hidden="true" className="text-xs">▾</span>
             </button>
 
             {open && (
@@ -44,7 +50,7 @@ function NavDropdown({ label, children }: Props) {
                 <div
                     role="menu"
                     onClick={() => setOpen(false)}
-                    className="absolute left-0 top-full mt-1 min-w-40 py-1 bg-neutral-800 shadow-lg ring-1 ring-black/40"
+                    className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1 min-w-40 py-1 bg-neutral-800 shadow-lg ring-1 ring-black/40`}
                 >
                     {children}
                 </div>
@@ -53,13 +59,15 @@ function NavDropdown({ label, children }: Props) {
     )
 }
 
-export function NavDropdownItem({ onClick, children }: { onClick?: () => void; children: ReactNode }) {
+// active: a toggle that's on (e.g. a map layer), shown in the accent color
+export function NavDropdownItem({ onClick, active, children }: { onClick?: () => void; active?: boolean; children: ReactNode }) {
     return (
         <button
             type="button"
             role="menuitem"
+            aria-pressed={active}
             onClick={onClick}
-            className="block w-full text-left px-4 py-2 transition-colors hover:bg-accent-400/15 hover:text-accent-300"
+            className={`flex w-full items-center gap-3 text-left px-4 py-2.5 whitespace-nowrap transition-colors hover:bg-accent-400/15 hover:text-accent-300 ${active ? 'text-accent-300' : ''}`}
         >
             {children}
         </button>

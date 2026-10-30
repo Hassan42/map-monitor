@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- a map pin with a plus: add an event at a spot -->
+  <path d="M9 21C9 21 3 15 3 9.5A6 6 0 0 1 15 9.5C15 15 9 21 9 21Z" stroke-linejoin="round"/>
+  <rect x="7.5" y="8" width="3" height="3" fill="black"/>
+  <path d="M18.5 14V23M14 18.5H23"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="round">
+  <!-- irregular contour lines: topographic map -->
+  <path d="M3.5 9.5C4.8 4.5 11.5 2.2 16.8 3.8C21 5.2 22.3 10.5 20.4 14.8C18.4 19.2 12.5 21.3 8 19.8C3.8 18.3 2.6 13.3 3.5 9.5Z"/>
+  <path d="M7.8 10.3C8.8 7.2 12.8 6.4 15.4 7.9C17.6 9.2 17.4 12.8 15.4 14.6C13.4 16.3 9.6 16.4 8.4 14.3C7.6 13 7.4 11.6 7.8 10.3Z"/>
+  <path d="M11.2 10.6C12 9.9 13.5 10.2 13.6 11.4C13.7 12.6 12.2 13.2 11.3 12.6C10.6 12.1 10.6 11.1 11.2 10.6Z"/>
+</svg>

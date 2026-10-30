@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- an arrow going up out of a tray: publish the draft -->
+  <path d="M12 16V3"/>
+  <path d="M7 8L12 3L17 8"/>
+  <path d="M4 14V20H20V14"/>
+</svg>

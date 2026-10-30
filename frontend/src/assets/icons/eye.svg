@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- eye: line of sight -->
+  <path d="M2 12C5 6.5 19 6.5 22 12C19 17.5 5 17.5 2 12Z" stroke-linejoin="round"/>
+  <circle cx="12" cy="12" r="3" fill="black"/>
+</svg>
