@@ -1,6 +1,6 @@
 import type { AddLayerObject, Map, SourceSpecification } from 'maplibre-gl'
 import { ICON_MIN_SIZE, ICON_RADIUS_PX, MAX_ICON_SIZE, zoomScaled } from './annotationScale'
-import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
+import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_LABEL_LAYER_ID, ANNOTATIONS_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
 import { ACCENT } from '../styles/colors'
 
 // what annotations look like on the map: one GeoJSON source of points and one symbol layer
@@ -10,6 +10,10 @@ const annotationsSource: SourceSpecification = {
   type: 'geojson',
   data: { type: 'FeatureCollection', features: [] },
 }
+
+const LABEL_SIZE_PX = 15
+// further out than this, labels would crowd the map: only the icons show
+const LABEL_MIN_ZOOM = 8
 
 // in drawing order: later layers draw on top
 const annotationLayers: AddLayerObject[] = [
@@ -40,6 +44,29 @@ const annotationLayers: AddLayerObject[] = [
       'icon-rotation-alignment': 'map', // stays pointing the same way when the map is rotated
       'icon-allow-overlap': true, // annotations are placed on purpose: never hide one
       'icon-ignore-placement': true,
+    },
+  },
+  // the label under each annotation that has one. Its own layer, so it doesn't turn with the icon
+  {
+    id: ANNOTATIONS_LABEL_LAYER_ID,
+    type: 'symbol',
+    source: ANNOTATIONS_SOURCE_ID,
+    minzoom: LABEL_MIN_ZOOM,
+    filter: ['!=', ['get', 'label'], ''],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-font': ['Noto Sans Regular'], // a font the map style's glyph server provides
+      'text-size': LABEL_SIZE_PX,
+      // just under the icon: its radius in ems, growing with the icon like the selection ring
+      'text-variable-anchor': ['top'],
+      'text-radial-offset': zoomScaled(['*', ICON_RADIUS_PX / LABEL_SIZE_PX, ['get', 'scale']], ICON_MIN_SIZE * ICON_RADIUS_PX / LABEL_SIZE_PX, MAX_ICON_SIZE * ICON_RADIUS_PX / LABEL_SIZE_PX),
+      'text-allow-overlap': true, // like the icons: never hide one
+      'text-ignore-placement': true,
+    },
+    paint: {
+      'text-color': '#e5e7eb',
+      'text-halo-color': '#1c1f23', // dark outline: readable on the light map, like the relation labels
+      'text-halo-width': 2,
     },
   },
 ]

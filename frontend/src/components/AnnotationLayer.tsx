@@ -49,7 +49,7 @@ function annotationsToGeoJSON(annotations: Annotation[], factions: Faction[]): G
       type: 'Feature',
       geometry,
       // the layer picks its image from kind + color (see annotationImageId) and sizes it by scale
-      properties: { id: a.id, kind: a.kind, color: colorOf(a, colorByFaction), scale: a.scale ?? 1, rotation: a.rotation ?? 0 },
+      properties: { id: a.id, kind: a.kind, color: colorOf(a, colorByFaction), scale: a.scale ?? 1, rotation: a.rotation ?? 0, label: a.label ?? '' },
     })
   }
   return { type: 'FeatureCollection', features }

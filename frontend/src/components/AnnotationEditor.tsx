@@ -1,35 +1,43 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MapMouseEvent, MapTouchEvent } from 'maplibre-gl'
-import { useMap, useSelection } from '../store/MapContext'
-import type { Annotation } from '../types/types'
+import { useContextMenu, useMap, useSelection } from '../store/MapContext'
+import type { Annotation, Faction, Layer } from '../types/types'
 import { ANNOTATION_KINDS } from '../map/annotationKinds'
 import { findAnnotationAt } from '../map/annotationHitTest'
+import AnnotationForm from './AnnotationForm'
+import { annotationToFormValues } from './annotationFormValues'
 
-// what dragging on the map does while an annotation is selected
+// what dragging on the map does while an annotation is selected ('move': nothing - moving is the
+// follow-the-pointer Move, from the panel or the right-click menu)
 type Mode = 'move' | 'rotate' | 'scale'
 
 const SCALE_DRAG_PX = 150 // dragging up this far doubles the size, down halves it
 
 const normalizeRotation = (degrees: number) => ((degrees % 360) + 360) % 360
 
-// edit mode: drag annotations to move them (Select tool). The selected one gets a panel with Rotate
-// and Scale modes: in those, dragging anywhere on the map rotates it (around its center) or resizes it
-// (up = bigger, down = smaller). onChange updates the map live; onCommit saves once a drag ends
+// edit mode: right-click an annotation > Move (or the panel's Move) makes it follow the pointer until a
+// click puts it down; dragging doesn't move it, so a stray drag can't shift it. The selected one gets a
+// panel with Rotate and Scale modes: in those, dragging anywhere on the map rotates it (around its
+// center) or resizes it (up = bigger, down = smaller). onChange updates the map live; onCommit saves
 function AnnotationEditor({
   annotations,
+  factions,
+  layers,
   active,
-  canDrag,
+  aboveTimeline,
   onChange,
   onCommit,
 }: {
   annotations: Annotation[]
+  factions: Faction[]
+  layers: Layer[]
   active: boolean
-  canDrag: boolean
+  aboveTimeline: boolean // the timeline is showing: sit above it instead of on top of it
   onChange: (annotation: Annotation) => void
   onCommit: (annotation: Annotation) => void
 }) {
   const map = useMap()
-  const [selected, setSelected] = useSelection()
+  const [selected] = useSelection()
 
   // the mode belongs to the annotation it was picked for: selecting another one starts in 'move'
   const selectedId = active && selected?.type === 'annotation' ? selected.id : null
@@ -45,79 +53,20 @@ function AnnotationEditor({
     setModeFor({ id: selectedId, mode: 'move' })
   }, [selectedId])
 
-  // the drag listeners are attached once per drag-enabled period; they read the latest values from here
+  // right-click menu on an annotation (from the map or the property panel); Move makes it follow the pointer
+  const [contextMenu, setContextMenu] = useContextMenu()
+  const menu = contextMenu?.type === 'annotation' ? contextMenu : null
+  const [movingId, setMovingId] = useState<number | null>(null)
+  // the annotation whose edit form is open (right-click > Edit)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  // leaving edit mode mid-move cancels it (set while rendering, not in an effect)
+  if (!active && movingId != null) setMovingId(null)
+
+  // the map listeners are attached once per move or drag mode; they read the latest values from here
   const latestRef = useRef({ annotations, onChange, onCommit })
   useEffect(() => {
     latestRef.current = { annotations, onChange, onCommit }
   }, [annotations, onChange, onCommit])
-
-  // drag to move: press on an annotation (selects it), move, release to save the new position
-  useEffect(() => {
-    if (!map || !active || !canDrag || mode !== 'move') return
-    const container = map.getContainer()
-    let dragged: Annotation | null = null // as it was when the drag started
-    let moved: Annotation | null = null // with its latest position
-
-    const moveTo = (e: MapMouseEvent | MapTouchEvent) => {
-      if (!dragged) return
-      moved = { ...dragged, geometry: JSON.stringify({ type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] }) }
-      latestRef.current.onChange(moved)
-    }
-    const handleMove = (e: MapMouseEvent | MapTouchEvent) => moveTo(e)
-
-    const handleUp = (e: MapMouseEvent | MapTouchEvent) => {
-      // the release point is the final position: the last move event can lag behind a fast drag
-      if (moved) moveTo(e)
-      map.off('mousemove', handleMove)
-      map.off('touchmove', handleMove)
-      // only one of mouseup/touchend fires; drop the other so they don't pile up across drags
-      map.off('mouseup', handleUp)
-      map.off('touchend', handleUp)
-      container.classList.remove('annotation-dragging')
-      if (moved) latestRef.current.onCommit(moved) // a press without moving saves nothing
-      dragged = null
-      moved = null
-    }
-
-    // presses anywhere on the map: only ones within an annotation's drawn circle start a drag
-    // (see annotationHitTest.ts - MapLibre's own icon hit boxes are larger than what's drawn)
-    const handleDown = (e: MapMouseEvent | MapTouchEvent) => {
-      if ('points' in e && e.points.length !== 1) return // leave two-finger gestures (pinch zoom) to the map
-      const id = findAnnotationAt(map, e.point)
-      const annotation = latestRef.current.annotations.find((a) => a.id === id)
-      if (!annotation) return
-
-      e.preventDefault() // MapLibre: no map panning for this gesture
-      setSelected({ type: 'annotation', id: annotation.id })
-      dragged = annotation
-      container.classList.add('annotation-dragging')
-      map.on('mousemove', handleMove)
-      map.on('touchmove', handleMove)
-      map.once('mouseup', handleUp)
-      map.once('touchend', handleUp)
-    }
-
-    // move cursor over annotations (same drawn-circle check); a class, not the canvas's inline
-    // cursor, because terra-draw's select mode resets the inline cursor on every mouse move
-    const handleHover = (e: MapMouseEvent) => {
-      if (dragged) return
-      container.classList.toggle('annotation-hover', findAnnotationAt(map, e.point) != null)
-    }
-
-    map.on('mousedown', handleDown)
-    map.on('touchstart', handleDown)
-    map.on('mousemove', handleHover)
-    return () => {
-      map.off('mousedown', handleDown)
-      map.off('touchstart', handleDown)
-      map.off('mousemove', handleHover)
-      map.off('mousemove', handleMove)
-      map.off('touchmove', handleMove)
-      map.off('mouseup', handleUp)
-      map.off('touchend', handleUp)
-      container.classList.remove('annotation-hover', 'annotation-dragging')
-    }
-  }, [map, active, canDrag, mode, setSelected])
 
   // rotate / scale mode: a drag anywhere on the map transforms the selected annotation
   useEffect(() => {
@@ -180,8 +129,126 @@ function AnnotationEditor({
     }
   }, [map, selectedId, mode])
 
+  // right-click an annotation in edit mode: open its menu (the territory menu skips annotations)
+  useEffect(() => {
+    if (!map || !active) return
+    const handleRightClick = (e: MapMouseEvent) => {
+      const id = findAnnotationAt(map, e.point)
+      if (id == null) return
+      e.preventDefault()
+      setContextMenu({ type: 'annotation', id, x: e.originalEvent.clientX, y: e.originalEvent.clientY, lngLat: e.lngLat })
+    }
+    map.on('contextmenu', handleRightClick)
+    return () => {
+      map.off('contextmenu', handleRightClick)
+    }
+  }, [map, active, setContextMenu])
+
+  // the menu closes on a click elsewhere, when the map moves, or on Escape
+  useEffect(() => {
+    if (!map || !menu) return
+    const close = () => setContextMenu(null)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
+    }
+    map.on('click', close)
+    map.on('movestart', close)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      map.off('click', close)
+      map.off('movestart', close)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [map, menu, setContextMenu])
+
+  // moving (right-click > Move): the annotation follows the pointer, a click puts it down and saves it,
+  // Escape puts it back. No need to select it first
+  useEffect(() => {
+    const original = latestRef.current.annotations.find((a) => a.id === movingId)
+    if (!map || !original) return
+    const container = map.getContainer()
+    container.classList.add('map-moving')
+    let moved: Annotation | null = null
+    let placed = false
+
+    const handleMove = (e: MapMouseEvent) => {
+      moved = { ...original, geometry: JSON.stringify({ type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] }) }
+      latestRef.current.onChange(moved)
+    }
+    const handleClick = (e: MapMouseEvent) => {
+      handleMove(e) // the click's own spot is the final one
+      placed = true
+      setMovingId(null)
+      if (moved) latestRef.current.onCommit(moved)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMovingId(null)
+    }
+    map.on('mousemove', handleMove)
+    map.on('click', handleClick)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      map.off('mousemove', handleMove)
+      map.off('click', handleClick)
+      window.removeEventListener('keydown', onKey)
+      container.classList.remove('map-moving')
+      if (!placed && moved) latestRef.current.onChange(original) // Escape or leaving edit mode: put it back
+    }
+  }, [map, movingId])
+
+  const editing = active ? annotations.find((a) => a.id === editingId) : undefined
+
+  const overlays = (
+    <>
+      {menu && active && (
+      <div
+        className="fixed z-50 min-w-40 bg-neutral-900 py-1 text-sm text-gray-300 shadow-xl ring-1 ring-white/10"
+        style={{ left: menu.x, top: menu.y }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setEditingId(menu.id)
+            setContextMenu(null)
+          }}
+          className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMovingId(menu.id)
+            setContextMenu(null)
+          }}
+          className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
+        >
+          Move
+        </button>
+      </div>
+      )}
+      {editing && (
+        <AnnotationForm
+          key={editing.id}
+          heading="Edit Annotation"
+          submitLabel="Save"
+          initial={annotationToFormValues(editing)}
+          factions={factions}
+          layers={layers}
+          onSubmit={async (fields) => {
+            const updated = { ...editing, ...fields }
+            latestRef.current.onChange(updated) // shows right away; onCommit saves it
+            latestRef.current.onCommit(updated)
+            setEditingId(null)
+          }}
+          onCancel={() => setEditingId(null)}
+        />
+      )}
+    </>
+  )
+
   const annotation = selectedId != null ? annotations.find((a) => a.id === selectedId) : undefined
-  if (!annotation) return null
+  if (!annotation) return overlays
 
   // clicking the active mode again goes back to moving
   const toggleMode = (next: Mode) => setModeFor({ id: annotation.id, mode: mode === next ? 'move' : next })
@@ -190,28 +257,40 @@ function AnnotationEditor({
     }`
 
   return (
-    // centered over the map area (the property panel takes the right 18rem)
-    <div className="fixed bottom-6 left-[calc((100%-18rem)/2)] z-40 flex -translate-x-1/2 items-center gap-2 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10">
-      <span className="mr-2 font-semibold text-white">{annotation.label || ANNOTATION_KINDS[annotation.kind].label}</span>
-      <button type="button" aria-pressed={mode === 'move'} onClick={() => toggleMode('move')} className={modeButtonClass('move')}>
-        ⊹ Move
-        {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
-      </button>
-      <button type="button" aria-pressed={mode === 'rotate'} onClick={() => toggleMode('rotate')} className={modeButtonClass('rotate')}>
-        ⟳ Rotate
-        {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
-      </button>
-      <button type="button" aria-pressed={mode === 'scale'} onClick={() => toggleMode('scale')} className={modeButtonClass('scale')}>
-        ⇕ Scale
-        <span className="tabular-nums text-gray-400">{annotation.scale.toFixed(2)}x</span>
-      </button>
+    <>
+      {overlays}
+      {/* centered over the map area (the property panel takes the right 24rem) */}
+      {/* phones: across the screen, above the timeline or the property sheet's bar */}
+      <div className={`fixed ${aboveTimeline ? 'bottom-[10.5rem] md:bottom-40' : 'bottom-14 md:bottom-6'} left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center z-40 flex -translate-x-1/2 items-center gap-2 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10`}>
+        <span className="mr-2 font-semibold text-white">{annotation.label || ANNOTATION_KINDS[annotation.kind].label}</span>
+        <button
+          type="button"
+          aria-pressed={movingId === annotation.id}
+          onClick={() => {
+            setModeFor({ id: annotation.id, mode: 'move' }) // rotate/scale would grab the placing click
+            setMovingId(movingId === annotation.id ? null : annotation.id)
+          }}
+          className={`flex items-center gap-2 px-3 py-1.5 transition-colors ${movingId === annotation.id ? 'bg-accent-400/15 text-accent-300' : 'hover:bg-accent-400/15 hover:text-accent-300'}`}
+        >
+          ⊹ Move
+          {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
+        </button>
+        <button type="button" aria-pressed={mode === 'rotate'} onClick={() => toggleMode('rotate')} className={modeButtonClass('rotate')}>
+          ⟳ Rotate
+          {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
+        </button>
+        <button type="button" aria-pressed={mode === 'scale'} onClick={() => toggleMode('scale')} className={modeButtonClass('scale')}>
+          ⇕ Scale
+          <span className="tabular-nums text-gray-400">{annotation.scale.toFixed(2)}x</span>
+        </button>
 
-      <span className="ml-2 text-xs text-gray-500">
-        {mode === 'rotate' && 'Drag to rotate'}
-        {mode === 'scale' && 'Drag up or down to resize'}
-        {mode === 'move' && 'Drag to move'}
-      </span>
-    </div>
+        <span className="ml-2 text-xs text-gray-500 max-md:hidden">
+          {mode === 'rotate' && 'Drag to rotate'}
+          {mode === 'scale' && 'Drag up or down to resize'}
+          {mode === 'move' && (movingId === annotation.id ? 'Click to put it down, Esc to cancel' : 'Pick Move, Rotate or Scale')}
+        </span>
+      </div>
+    </>
   )
 }
 

@@ -13,10 +13,13 @@ function toAnnotation(a: Annotation & { stableId: number }): Annotation {
     kind: a.kind,
     geometry: a.geometry,
     factionId: a.factionId,
+    layerId: a.layerId ?? null,
     label: a.label,
     color: a.color,
     scale: a.scale,
     rotation: a.rotation,
+    startTime: a.startTime ?? null,
+    endTime: a.endTime ?? null,
   })
 }
 

@@ -10,7 +10,7 @@ import objectiveIcon from '../assets/annotations/Objective.svg'
 export const ANNOTATION_KINDS: Record<AnnotationKind, { label: string; icon: string }> = {
   AMBUSH: { label: 'Ambush', icon: ambushIcon },
   ARROW: { label: 'Arrow', icon: arrowIcon },
-  DESTROY: { label: 'Destroy', icon: destroyIcon },
+  DESTROY: { label: 'Mark point', icon: destroyIcon }, // the enum keeps its old name
   OBJECTIVE: { label: 'Objective', icon: objectiveIcon },
 }
 
