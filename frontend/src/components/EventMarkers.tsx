@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import type { GeoJSONSource, MapLayerMouseEvent } from 'maplibre-gl'
 import { Popup } from 'maplibre-gl'
-import { useMap, useSelection } from '../store/MapContext'
+import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import type { EventCategory, EventMarker as EventMarkerType, Faction } from '../types/types'
-import { EVENTS_LAYER_ID, EVENTS_SELECTED_LAYER_ID, EVENTS_SOURCE_ID, eventImageId } from '../map/mapLayers'
+import {
+  EVENTS_LAYER_ID,
+  EVENTS_SELECTED_LAYER_ID,
+  EVENTS_SOURCE_ID,
+  RELATIONS_END_LAYER_ID,
+  RELATIONS_SELECTED_LAYER_ID,
+  RELATIONS_SOURCE_ID,
+  eventImageId,
+} from '../map/mapLayers'
 import { addEventLayers, removeEventLayers } from '../map/eventLayers'
 import { EVENT_CATEGORIES, EVENT_CATEGORY_LIST, categoryOf } from '../map/eventCategories'
 import { createEventPopupContent } from '../map/EventPopup'
-import { eventOpacity } from '../map/eventTime'
+import { EVENT_RELATION_LABELS } from '../map/eventRelations'
+import { eventOpacity, parseServerTime } from '../map/eventTime'
 import ConfirmDialog from './ConfirmDialog'
 import type { MapMouseEvent } from 'maplibre-gl'
 
@@ -23,13 +32,14 @@ const OUTLINE_PX = 4
 type CategoryIcons = Partial<Record<EventCategory, HTMLImageElement>>
 
 // only events visible at `now` become features: expired ones never reach the map (nor its clusters),
-// they stay in the app's event list and come back when `now` moves back in time
-function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: number): GeoJSON.FeatureCollection {
+// they stay in the app's event list and come back when `now` moves back in time. allTime: every event,
+// fully visible, whatever its date
+function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: number, allTime: boolean): GeoJSON.FeatureCollection {
   const colorByFaction = new Map(factions.map((f) => [f.id, f.color]))
   return {
     type: 'FeatureCollection',
     features: events.flatMap((e): GeoJSON.Feature[] => {
-      const opacity = eventOpacity(e, now)
+      const opacity = allTime ? 1 : eventOpacity(e, now)
       if (opacity === null) return []
       return [{
         type: 'Feature',
@@ -39,6 +49,43 @@ function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: nu
       }]
     }),
   }
+}
+
+// the Relations toggle: every relation whose two events have both happened by `now` (the timeline's
+// date) - nothing that's still in the future. One line per relation, running from the related-to event to
+// the one holding the relation (a cause toward its effect). Of the events involved, the ones the timeline
+// no longer shows (they've ended) get a faint marker (a Point with their id, category and color).
+// allTime: every relation, and no faint markers (every event has its normal one)
+function relationsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: number, allTime: boolean): GeoJSON.FeatureCollection {
+  const happened = new Map(events.filter((e) => allTime || parseServerTime(e.timestamp) <= now).map((e) => [e.id, e]))
+  const colorByFaction = new Map(factions.map((f) => [f.id, f.color]))
+  const at = (e: EventMarkerType): [number, number] => [e.longitude, e.latitude]
+
+  const features: GeoJSON.Feature[] = []
+  const involved = new Set<number>()
+  for (const e of happened.values()) {
+    for (const r of e.relations ?? []) {
+      const other = happened.get(r.relatedEventId)
+      if (!other) continue // the related event is still in the future (or deleted)
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [at(other), at(e)] },
+        properties: { type: r.type, label: EVENT_RELATION_LABELS[r.type] }, // label: shown on the line
+      })
+      involved.add(e.id).add(other.id)
+    }
+  }
+
+  for (const id of involved) {
+    const e = happened.get(id)!
+    if (allTime || eventOpacity(e, now) !== null) continue // still shown at this date: it has its normal marker
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: at(e) },
+      properties: { id: e.id, category: categoryOf(e), color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR },
+    })
+  }
+  return { type: 'FeatureCollection', features }
 }
 
 async function loadImage(url: string) {
@@ -105,6 +152,8 @@ function EventMarkers({
   onDelete,
   now,
   editMode,
+  showRelations,
+  allTime,
 }: {
   events: EventMarkerType[]
   factions: Faction[]
@@ -113,19 +162,18 @@ function EventMarkers({
   onDelete: (id: number) => void
   now: number // the map's date (ms): decides which events show and how faded
   editMode: boolean // the right-click menu (move/edit/delete) is for editing only
+  showRelations: boolean // the nav bar's Relations toggle
+  allTime: boolean // the nav bar's All time toggle: every event, whatever `now` is
 }) {
   const map = useMap()
   const [selected, setSelected] = useSelection()
   // the icons every marker image is drawn from; markers wait until they've loaded
   const [icons, setIcons] = useState<CategoryIcons | null>(null)
-  const [menu, setMenu] = useState<{ x: number, y: number, eventId: number } | null>(null)
+  // right-click menu on an event (from the map or the property panel)
+  const [contextMenu, setContextMenu] = useContextMenu()
+  const menu = contextMenu?.type === 'event' ? contextMenu : null
   // the event waiting for "really delete?" (ConfirmDialog)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  // edit mode for the right-click handler, which is only registered once per map
-  const editModeRef = useRef(editMode)
-  useEffect(() => {
-    editModeRef.current = editMode
-  }, [editMode])
   const [movingId, setMovingId] = useState<number | null>(null)
   // same value for the map's click handlers, which keep the state from when they were registered
   const movingRef = useRef<number | null>(null)
@@ -158,20 +206,24 @@ function EventMarkers({
     const source = map.getSource(EVENTS_SOURCE_ID) as GeoJSONSource | undefined
     if (!source) return
 
-    const data = eventsToGeoJSON(events, factions, now)
+    const data = eventsToGeoJSON(events, factions, now, allTime)
     for (const feature of data.features) {
       const { category, color } = feature.properties as { category: EventCategory; color: string }
       const imageId = eventImageId(category, color)
       if (!map.hasImage(imageId)) map.addImage(imageId, drawMarkerImage(icons[category], color), { pixelRatio: 2 })
     }
     source.setData(data)
-  }, [map, icons, events, factions, now])
+  }, [map, icons, events, factions, now, allTime])
 
   // selected event: show the accent ring under it
   useEffect(() => {
     if (!map?.getLayer(EVENTS_SELECTED_LAYER_ID)) return
     const selectedId = selected?.type === 'event' ? selected.id : -1
     map.setFilter(EVENTS_SELECTED_LAYER_ID, ['==', ['get', 'id'], selectedId])
+    // the same event may be a faint marker of the Relations toggle instead
+    if (map.getLayer(RELATIONS_SELECTED_LAYER_ID)) {
+      map.setFilter(RELATIONS_SELECTED_LAYER_ID, ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'id'], selectedId]])
+    }
   }, [map, selected])
 
 
@@ -202,10 +254,12 @@ function EventMarkers({
     }
 
     map.on('click', EVENTS_LAYER_ID, handlePopUp)
+    map.on('click', RELATIONS_END_LAYER_ID, handlePopUp) // the Relations toggle's faint markers too
     // remove it before the next run (events change often): otherwise every run adds one more
     // handler and a single click opens a popup per handler, stacked on top of each other
     return () => {
       map.off('click', EVENTS_LAYER_ID, handlePopUp)
+      map.off('click', RELATIONS_END_LAYER_ID, handlePopUp)
     }
   }, [map, events])
 
@@ -227,15 +281,15 @@ function EventMarkers({
     }
 
     const handleRightClick = (e: MapLayerMouseEvent) => {
-      if (!editModeRef.current) return // view mode: no menu
-
       e.preventDefault() // no browser right-click menu
       const feature = e.features?.[0]
       if (!feature) return
-      setMenu({
+      setContextMenu({
+        type: 'event',
+        id: feature.properties.id as number,
         x: e.originalEvent.clientX,
         y: e.originalEvent.clientY,
-        eventId: feature.properties.id as number
+        lngLat: e.lngLat,
       });
       setSelected({ type: 'event', id: feature.properties.id as number });
 
@@ -243,7 +297,7 @@ function EventMarkers({
 
 
     // map.off only removes the same function that was passed to map.on, so keep it in a const
-    const closeMenu = () => setMenu(null)
+    const closeMenu = () => setContextMenu(null)
 
     map.on('contextmenu', EVENTS_LAYER_ID, handleRightClick)
     map.on('click', closeMenu)
@@ -253,13 +307,13 @@ function EventMarkers({
       map.off('click', closeMenu)
       map.off('contextmenu', EVENTS_LAYER_ID, handleRightClick)
     }
-  }, [map])
+  }, [map, setContextMenu])
 
   // movement of evetn on map
   useEffect(() => {
     if (!map || movingId === null) return
     const source = map.getSource(EVENTS_SOURCE_ID) as GeoJSONSource
-    const data = eventsToGeoJSON(events, factions, now)
+    const data = eventsToGeoJSON(events, factions, now, allTime)
     const feature = data.features.find((f) => f.properties?.id === movingId)
     if (!feature) return
     const point = feature.geometry as GeoJSON.Point
@@ -282,21 +336,41 @@ function EventMarkers({
       map.off('mousemove', handleMove)
       map.off('click', handleRelease)
     }
-  }, [map, movingId, events, factions, now, onMoved])
+  }, [map, movingId, events, factions, now, allTime, onMoved])
 
+
+  // the Relations toggle: draw (or clear) the lines; they follow the timeline and event changes
+  useEffect(() => {
+    if (!map || !icons) return
+    const source = map.getSource(RELATIONS_SOURCE_ID) as GeoJSONSource | undefined
+    if (!source) return
+    const data: GeoJSON.FeatureCollection = showRelations
+      ? relationsToGeoJSON(events, factions, now, allTime)
+      : { type: 'FeatureCollection', features: [] }
+    // the faint markers use the same images as the normal ones; ended events may not have theirs yet
+    for (const feature of data.features) {
+      if (feature.geometry.type !== 'Point') continue
+      const { category, color } = feature.properties as { category: EventCategory; color: string }
+      const imageId = eventImageId(category, color)
+      if (!map.hasImage(imageId)) map.addImage(imageId, drawMarkerImage(icons[category], color), { pixelRatio: 2 })
+    }
+    source.setData(data)
+  }, [map, icons, showRelations, events, factions, now, allTime])
 
   return (
     <>
-      {menu != null && movingId === null && editMode &&
+      {menu != null && editMode && movingId === null && // everything in it is for editing
         (< div
           className="fixed z-50 min-w-40 bg-neutral-900 py-1 text-sm text-gray-300 shadow-xl ring-1 ring-white/10"
           style={{ left: menu.x, top: menu.y }}
         >
+          {/* changing the map: edit mode only */}
+          {editMode && (<>
           <button
             type="button"
             onClick={() => {
               document.querySelectorAll('.event-popup').forEach((p) => p.remove()) // close open popups
-              setMovingId(menu.eventId)
+              setMovingId(menu.id)
             }}
             className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
           >
@@ -306,8 +380,8 @@ function EventMarkers({
           <button
             type="button"
             onClick={() => {
-              onEdit(menu.eventId)
-              setMenu(null)
+              onEdit(menu.id)
+              setContextMenu(null)
             }}
             className="block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300"
           >
@@ -326,15 +400,14 @@ function EventMarkers({
           <button
             type="button"
             onClick={() => {
-              setMenu(null)
-              setDeletingId(menu.eventId)
+              setContextMenu(null)
+              setDeletingId(menu.id)
             }}
             className="block w-full px-3 py-1.5 text-left hover:bg-red-500/15 hover:text-red-400"
           >
             Delete
           </button>
-
-
+          </>)}
         </div >)}
 
       {deletingId !== null && (
