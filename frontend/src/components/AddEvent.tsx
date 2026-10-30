@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMap } from '../store/MapContext'
 import { createEvent } from '../api/event'
-import type { EventMarker, Faction } from '../types/types'
+import type { EventMarker, Faction, Layer } from '../types/types'
 import EventForm from './EventForm'
 import { emptyEventForm, endTimeForServer, startTimeMs } from './eventFormValues'
 import type { EventFormValues } from './eventFormValues'
@@ -10,14 +10,18 @@ import type { EventFormValues } from './eventFormValues'
 function AddEvent({
   mapId,
   factions,
+  layers,
   events,
+  now,
   active,
   onExit,
   onCreated,
 }: {
   mapId: string
   factions: Faction[]
+  layers: Layer[]
   events: EventMarker[] // the map's events, to pick related events from
+  now: number // the map's date: the form's default start and end
   active: boolean
   onExit: () => void
   onCreated: (event: EventMarker) => void
@@ -71,9 +75,10 @@ function AddEvent({
       key={`${pendingLocation.lat},${pendingLocation.lng}`}
       heading="New Event"
       submitLabel="Add Event"
-      initial={emptyEventForm()}
+      initial={emptyEventForm(now)}
       location={pendingLocation}
       factions={factions}
+      layers={layers}
       events={events}
       onSubmit={handleSubmit}
       onCancel={() => setPendingLocation(null)}

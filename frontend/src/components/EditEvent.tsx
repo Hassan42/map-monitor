@@ -1,5 +1,5 @@
 import { editEvent } from '../api/event'
-import type { EventMarker, Faction } from '../types/types'
+import type { EventMarker, Faction, Layer } from '../types/types'
 import EventForm from './EventForm'
 import { endTimeForServer, eventToFormValues, startTimeMs } from './eventFormValues'
 import { parseServerTime } from '../map/eventTime'
@@ -10,6 +10,7 @@ function EditEvent({
   mapId,
   event,
   factions,
+  layers,
   events,
   onSaved,
   onClose,
@@ -17,6 +18,7 @@ function EditEvent({
   mapId: string
   event: EventMarker
   factions: Faction[]
+  layers: Layer[]
   events: EventMarker[] // the map's events, to pick related events from
   onSaved: (event: EventMarker) => void
   onClose: () => void
@@ -44,6 +46,7 @@ function EditEvent({
       initial={eventToFormValues(event)}
       location={{ lat: event.latitude, lng: event.longitude }}
       factions={factions}
+      layers={layers}
       events={events.filter((ev) => ev.id !== event.id)} // an event can't be related to itself
       onSubmit={handleSubmit}
       onCancel={onClose}

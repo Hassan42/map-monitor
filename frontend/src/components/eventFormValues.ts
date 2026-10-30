@@ -8,6 +8,7 @@ export interface EventFormValues {
   sourceURL: string
   category: EventCategory
   factionId: number | ''
+  layerId: number | null
   relations: EventRelation[]
   startTime: string // when it happened, a datetime-local value ("YYYY-MM-DDTHH:mm", local time)
   endTime: string // a datetime-local value
@@ -21,19 +22,24 @@ export const toLocalInput = (time: number): string => {
   return new Date(time - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
 }
 
-// a function, not a constant: the default end time is "now", taken when the form opens
-export const emptyEventForm = (): EventFormValues => ({
-  title: '',
-  description: '',
-  sourceURL: '',
-  category: 'OTHER',
-  factionId: '',
-  relations: [],
-  startTime: toLocalInput(Date.now()), // by default an event happens when it's created...
-  endTime: toLocalInput(Date.now()), // ...and ends right away
-  ongoing: false,
-  visibleDays: DEFAULT_VISIBLE_DAYS,
-})
+// a function, not a constant: the default start and end are `time` - the map's date when the form
+// opens (the timeline's, or the real clock when Live) - but never later than now (All time passes Infinity)
+export const emptyEventForm = (mapTime: number): EventFormValues => {
+  const time = Math.min(mapTime, Date.now())
+  return {
+    title: '',
+    description: '',
+    sourceURL: '',
+    category: 'OTHER',
+    factionId: '',
+    layerId: null,
+    relations: [],
+    startTime: toLocalInput(time), // by default an event happens at the map's date...
+    endTime: toLocalInput(time), // ...and ends right away
+    ongoing: false,
+    visibleDays: DEFAULT_VISIBLE_DAYS,
+  }
+}
 
 export const eventToFormValues = (event: EventMarker): EventFormValues => ({
   title: event.title ?? '',
@@ -41,6 +47,7 @@ export const eventToFormValues = (event: EventMarker): EventFormValues => ({
   sourceURL: event.sourceURL ?? '',
   category: event.category ?? 'OTHER',
   factionId: event.factionId,
+  layerId: event.layerId ?? null,
   relations: event.relations ?? [],
   startTime: toLocalInput(parseServerTime(event.timestamp)),
   endTime: toLocalInput(parseServerTime(event.endTime ?? event.timestamp)),

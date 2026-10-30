@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import type { EventCategory, EventMarker, EventRelation, EventRelationType, Faction } from '../types/types'
+import type { EventCategory, EventMarker, EventRelation, EventRelationType, Faction, Layer } from '../types/types'
 import type { EventFormValues } from './eventFormValues'
 import { toLocalInput } from './eventFormValues'
 import { DAY_MS, DEFAULT_VISIBLE_DAYS } from '../map/eventTime'
-import { EVENT_CATEGORIES, EVENT_CATEGORY_LIST } from '../map/eventCategories'
+import CategoryPicker from './CategoryPicker'
+import LayerSelect from './LayerSelect'
 import { EVENT_RELATION_LABELS, EVENT_RELATION_LIST } from '../map/eventRelations'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
@@ -17,6 +18,7 @@ function EventForm({
   initial,
   location,
   factions,
+  layers,
   events,
   onSubmit,
   onCancel,
@@ -26,6 +28,7 @@ function EventForm({
   initial: EventFormValues
   location: { lat: number; lng: number }
   factions: Faction[]
+  layers: Layer[]
   events: EventMarker[] // events this one can be related to
   onSubmit: (values: EventFormValues & { factionId: number }) => Promise<void>
   onCancel: () => void
@@ -33,6 +36,7 @@ function EventForm({
   const [title, setTitle] = useState(initial.title)
   const [description, setDescription] = useState(initial.description)
   const [factionId, setFactionId] = useState<number | ''>(initial.factionId)
+  const [layerId, setLayerId] = useState<number | null>(initial.layerId)
   const [category, setCategory] = useState<EventCategory>(initial.category)
   const [sourceURL, setSourceURL] = useState(initial.sourceURL)
   const [startTime, setStartTime] = useState(initial.startTime)
@@ -69,7 +73,7 @@ function EventForm({
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault()
-    if (factionId === '') return
+    if (factionId === '') return setError('Pick a faction')
     const startMs = new Date(startTime).getTime()
     if (Number.isNaN(startMs)) return setError('Pick when it happened')
     if (startMs > Date.now()) return setError("The event can't start in the future")
@@ -77,7 +81,7 @@ function EventForm({
     setError('')
     setLoading(true)
     try {
-      await onSubmit({ title, description, sourceURL, category, factionId, relations, startTime, endTime, ongoing, visibleDays })
+      await onSubmit({ title, description, sourceURL, category, factionId, layerId, relations, startTime, endTime, ongoing, visibleDays })
     } catch {
       setError('Could not save event')
       setLoading(false)
@@ -86,95 +90,98 @@ function EventForm({
 
   return (
     <div className={formOverlayClass}>
-      <form onSubmit={handleSubmit} className={formClass}>
-        <h2 className={formTitleClass}>{heading}</h2>
-        <p className="text-sm text-gray-400">
-          Location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-        </p>
-        <div className={formFieldClass}>
-          <label htmlFor="event-title">Title:</label>
-          <input type="text" id="event-title" value={title} onChange={(e) => setTitle(e.target.value)} className={formInputClass} />
-        </div>
-        <div className={formFieldClass}>
-          <label htmlFor="event-description">Description:</label>
-          <input type="text" id="event-description" value={description} onChange={(e) => setDescription(e.target.value)} className={formInputClass} />
-        </div>
-        <div className={formFieldClass}>
-          <label htmlFor="event-source">Source (URL):</label>
-          <input type="text" id="event-source" value={sourceURL} onChange={(e) => setSourceURL(e.target.value)} className={formInputClass} />
-        </div>
-        <div className={formFieldClass}>
-          <label htmlFor="event-category">Category:</label>
-          {/* options come from the category mapping, so they always match what the map can draw */}
-          <select
-            id="event-category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as EventCategory)}
-            className={formInputClass}
-          >
-            {EVENT_CATEGORY_LIST.map((c) => (
-              <option key={c} value={c}>{EVENT_CATEGORIES[c].label}</option>
-            ))}
-          </select>
-        </div>
-        <div className={formFieldClass}>
-          <label htmlFor="event-faction">Faction:</label>
-          {factions.length === 0 ? (
-            <p className={formErrorClass}>Create a faction first.</p>
-          ) : (
-            <select
-              id="event-faction"
-              value={factionId}
-              onChange={(e) => setFactionId(Number(e.target.value))}
-              className={formInputClass}
-            >
-              <option value="" disabled>Select a faction</option>
-              {factions.map((faction) => (
-                <option key={faction.id} value={faction.id}>{faction.name}</option>
-              ))}
-            </select>
-          )}
+      {/* wider than the other forms (two columns), and scrolls inside if it's still taller than the window */}
+      <form onSubmit={handleSubmit} className={`${formClass.replace('w-80', 'w-[36rem] max-w-[calc(100vw-2rem)]').replace('gap-4', 'gap-3')} max-h-[90vh] overflow-y-auto`}>
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className={formTitleClass}>{heading}</h2>
+          <span className="text-xs text-gray-500">
+            {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+          </span>
         </div>
 
-        <div className={formFieldClass}>
-          <label htmlFor="event-start">Date:</label>
-          <input
-            type="datetime-local"
-            id="event-start"
-            value={startTime}
-            max={latestStart}
-            onChange={(e) => setStartTime(e.target.value)}
-            className={formInputClass}
-          />
-        </div>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={ongoing}
-            onChange={(e) => setOngoing(e.target.checked)}
-            className="accent-accent-400"
-          />
-          Ongoing (no end yet, stays on the map)
-        </label>
-
-        {!ongoing && (
+        {/* two columns: related fields side by side keep the form short */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-3 max-md:flex max-md:flex-col"> {/* phones: one column */}
           <div className={formFieldClass}>
-            <label htmlFor="event-end">End date:</label>
+            <label htmlFor="event-title">Title:</label>
+            <input type="text" id="event-title" value={title} onChange={(e) => setTitle(e.target.value)} className={formInputClass} />
+          </div>
+          <div className={formFieldClass}>
+            <label htmlFor="event-source">Source (URL):</label>
+            <input type="text" id="event-source" value={sourceURL} onChange={(e) => setSourceURL(e.target.value)} className={formInputClass} />
+          </div>
+
+          <div className={`${formFieldClass} col-span-2`}>
+            <label htmlFor="event-description">Description:</label>
+            <input type="text" id="event-description" value={description} onChange={(e) => setDescription(e.target.value)} className={formInputClass} />
+          </div>
+
+          <div className={formFieldClass}>
+            <label htmlFor="event-category">Category:</label>
+            {/* the options come from the category mapping, so they always match what the map can draw */}
+            <CategoryPicker id="event-category" value={category} onChange={setCategory} />
+          </div>
+          <div className={formFieldClass}>
+            <label htmlFor="event-faction">Faction:</label>
+            {factions.length === 0 ? (
+              <p className={formErrorClass}>Create a faction first.</p>
+            ) : (
+              <select
+                id="event-faction"
+                value={factionId}
+                onChange={(e) => setFactionId(Number(e.target.value))}
+                className={formInputClass}
+              >
+                <option value="" disabled>Select a faction</option>
+                {factions.map((faction) => (
+                  <option key={faction.id} value={faction.id}>{faction.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <LayerSelect id="event-layer" layers={layers} value={layerId} onChange={setLayerId} className="col-span-2" />
+
+          <div className={formFieldClass}>
+            <label htmlFor="event-start">Date:</label>
+            <input
+              type="datetime-local"
+              id="event-start"
+              value={startTime}
+              max={latestStart}
+              onChange={(e) => setStartTime(e.target.value)}
+              className={formInputClass}
+            />
+          </div>
+          <div className={formFieldClass}>
+            <label htmlFor="event-end" className={ongoing ? 'text-gray-500' : ''}>End date:</label>
+            {/* disabled rather than hidden while ongoing, so the form doesn't jump */}
             <input
               type="datetime-local"
               id="event-end"
               value={endTime}
+              disabled={ongoing}
               onChange={(e) => setEndTime(e.target.value)}
-              className={formInputClass}
+              className={`${formInputClass} disabled:cursor-not-allowed disabled:opacity-40`}
             />
-            {visibleUntil && (
-              <p className="text-xs text-gray-500">
-                Visible until {visibleUntil.toLocaleString()} (end + {visibleDays} {visibleDays === 1 ? 'day' : 'days'})
-              </p>
-            )}
           </div>
-        )}
+
+          <div className="col-span-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={ongoing}
+                onChange={(e) => setOngoing(e.target.checked)}
+                className="accent-accent-400"
+              />
+              Ongoing (no end yet)
+            </label>
+            <span className="text-xs text-gray-500">
+              {ongoing
+                ? 'Stays on the map'
+                : visibleUntil && `Visible until ${visibleUntil.toLocaleString()} (end + ${visibleDays} ${visibleDays === 1 ? 'day' : 'days'})`}
+            </span>
+          </div>
+        </div>
 
         <button
           type="button"
@@ -186,17 +193,18 @@ function EventForm({
         </button>
 
         {showAdvanced && (
-          <div className={formFieldClass}>
-            <label htmlFor="event-visible-days">Visible after end (days):</label>
+          <label htmlFor="event-visible-days" className="flex items-center gap-2 text-sm">
+            Visible after end:
             <input
               type="number"
               id="event-visible-days"
               min={1}
               value={visibleDays}
               onChange={(e) => setVisibleDays(Math.max(1, Math.round(Number(e.target.value)) || 1))}
-              className={formInputClass}
+              className={`${formInputClass} w-20`}
             />
-          </div>
+            days
+          </label>
         )}
 
         {showAdvanced && (
