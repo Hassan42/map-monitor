@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { getUserMaps, deleteUserMap } from '../api/map'
-import type { MapSummary } from '../types/types'
+import { getUserMaps, deleteUserMap, changeVisibility } from '../api/map'
+import type { MapSummary, MapVisibility } from '../types/types'
 import AddMap from './AddMap'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../store/AuthContext'
 import { navButtonClass } from '../styles/navStyles'
+import NavIcon from './NavIcon'
+import publicIcon from '../assets/icons/visibility-public.svg'
+import privateIcon from '../assets/icons/visibility-private.svg'
 
 function Maps() {
     const [maps, setMaps] = useState<MapSummary[]>([])
@@ -38,6 +41,15 @@ function Maps() {
                 setMaps((prev) => prev.filter((m) => m.id !== map.id))
             })
             .catch(() => setError('Could not delete map'))
+    }
+
+    // flips public <-> private, then updates the list in place (the maps are only fetched once)
+    const handleVisibility = (map: MapSummary) => {
+        const next: MapVisibility = map.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC'
+        if (!window.confirm(`Make "${map.title}" ${next.toLowerCase()}?`)) return
+        changeVisibility(map.id, next)
+            .then(() => setMaps((prev) => prev.map((m) => (m.id === map.id ? { ...m, visibility: next } : m))))
+            .catch(() => setError('Could not change map visibility'))
     }
 
     return (
@@ -108,6 +120,16 @@ function Maps() {
                                         className="px-4 py-2 text-gray-500 transition-colors hover:bg-red-500/15 hover:text-red-400"
                                     >
                                         Delete
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVisibility(map)}
+                                        // open eye = public, closed eye = private; the title says which and what a click does
+                                        aria-label={map.visibility === 'PUBLIC' ? 'Public - make private' : 'Private - make public'}
+                                        title={map.visibility === 'PUBLIC' ? 'Public - click to make private' : 'Private - click to make public'}
+                                        className={`flex items-center px-4 py-2 text-gray-500 transition-colors ${map.visibility === 'PUBLIC' ? " hover:bg-green-500/15 hover:text-green-400 ": "hover:bg-blue-500/15 hover:text-blue-400" } `}
+                                    >
+                                        <NavIcon src={map.visibility === 'PUBLIC' ? publicIcon : privateIcon} />
                                     </button>
                                 </div>
                             </li>
