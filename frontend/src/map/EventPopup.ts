@@ -1,4 +1,15 @@
 import type { EventMarker } from "../types/types"
+import { parseServerTime } from "./eventTime"
+
+const formatTime = (time: number) => new Date(time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+
+// when the event happened: one date for a moment, start - end for a stretch, "since" while ongoing
+function eventDateText(event: EventMarker): string {
+  const start = parseServerTime(event.timestamp)
+  if (event.ongoing) return `Since ${formatTime(start)} · ongoing`
+  const end = event.endTime ? parseServerTime(event.endTime) : start
+  return end > start ? `${formatTime(start)} – ${formatTime(end)}` : formatTime(start)
+}
 
 export function createEventPopupContent(event: EventMarker) {
   const root = document.createElement('div')
@@ -8,6 +19,11 @@ export function createEventPopupContent(event: EventMarker) {
   title.className = 'font-semibold text-white'
   title.textContent = event.title || `Event #${event.id}`
   root.append(title)
+
+  const date = document.createElement('p')
+  date.className = 'text-xs text-gray-400'
+  date.textContent = eventDateText(event)
+  root.append(date)
 
   if (event.description) {
     const description = document.createElement('p')
