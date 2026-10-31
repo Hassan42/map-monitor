@@ -1,6 +1,7 @@
 package com.example.mapmonitor.config;
 
 import com.example.mapmonitor.security.FirebaseAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -44,10 +45,15 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // the frontend's addresses, from app.cors.allowed-origins (comma-separated): the dev server, the
+    // production preview, and once deployed the real site (e.g. via the APP_CORS_ALLOWED_ORIGINS env var)
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("*"));
         config.setAllowedHeaders(List.of("*"));
 
