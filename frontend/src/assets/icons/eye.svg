@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
-  <!-- eye: line of sight -->
-  <path d="M2 12C5 6.5 19 6.5 22 12C19 17.5 5 17.5 2 12Z" stroke-linejoin="round"/>
-  <circle cx="12" cy="12" r="3" fill="black"/>
+  <!-- eye seen from the side, looking right, with its field of view: line of sight -->
+  <path d="M8 7L2 12L8 17" stroke-linejoin="round"/>
+  <path d="M8 7A6 6 0 0 1 8 17"/>
+  <circle cx="8.5" cy="12" r="1.6" fill="black" stroke="none"/>
+  <path d="M13.5 10L22 5M13.5 14L22 19"/>
 </svg>
