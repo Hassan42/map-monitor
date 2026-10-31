@@ -18,6 +18,18 @@ public class User {
     @Column(nullable = false, unique = true)
     private String firebaseUid;
 
+    // unique and 3-30 characters 
+    @Column (nullable = false, unique = true, length = 30)
+    private String username;
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
     public Long getId() {
         return id;
     }

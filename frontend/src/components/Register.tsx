@@ -7,6 +7,7 @@ import { formClass, formTitleClass, formFieldClass, formInputClass, formPrimaryB
 
 function Register() {
     const [email, setEmail] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const { signUp, loading } = useAuth()
     const [error, setError] = useState('')
@@ -14,7 +15,7 @@ function Register() {
     const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault()
         try {
-            await signUp({ email, password })
+            await signUp({ email, username, password })
         } catch (error) {
             //TODO: Custom error message
             setError((error as FirebaseError).message);
@@ -29,6 +30,10 @@ function Register() {
                 <div className={formFieldClass}>
                     <label htmlFor="email">Email</label>
                     <input type="email" id="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={formInputClass} />
+                </div>
+                <div className={formFieldClass}>
+                    <label htmlFor="username">Username</label>
+                    <input type="text" id="username" name="username" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} className={formInputClass} />
                 </div>
                 <div className={formFieldClass}>
                     <label htmlFor="password">Password</label>

@@ -7,13 +7,14 @@ export interface LoginFormValues {
 
 export interface UserFormValues {
  email: string;
+ username: string;
  password: string;
- displayName?: string;
 }
 
 export interface IAuth {
  user: User | null;
  loading: boolean;
+ username: string | null;
  signIn: (creds: LoginFormValues) => Promise<void>;
  signUp: (creds: UserFormValues) => Promise<void>;
  signOut: () => void;

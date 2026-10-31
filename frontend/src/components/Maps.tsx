@@ -15,7 +15,7 @@ function Maps() {
     const [error, setError] = useState('')
     const [showAddMap, setShowAddMap] = useState(false)
     const navigate = useNavigate()
-    const { signOut } = useAuth()
+    const { username, signOut } = useAuth()
 
     useEffect(() => {
         getUserMaps()
@@ -57,6 +57,7 @@ function Maps() {
             {/* same bar as the map view */}
             <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
                 <span className="px-2 font-mono text-sm font-bold uppercase tracking-widest text-accent-300">Map Monitor</span>
+                <span className="px-2 text-sm">{username}</span>
                 <button type="button" onClick={() => setShowAddMap(true)} className={`${navButtonClass} ml-auto`}>
                     + New Map
                 </button>

@@ -13,11 +13,19 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User syncUser(String firebaseUid) {
+    public User syncUser(String firebaseUid, String username) {
+
+        userRepository.findByUsername(username).ifPresent(existingUser -> {
+            if (!existingUser.getFirebaseUid().equals(firebaseUid)){
+                throw new IllegalArgumentException("Username is not available.");
+            }
+        });
+
         return userRepository.findByFirebaseUid(firebaseUid)
                 .orElseGet(() -> {
                     User user = new User();
                     user.setFirebaseUid(firebaseUid);
+                    user.setUsername(username);
                     return userRepository.save(user);
                 });
     }

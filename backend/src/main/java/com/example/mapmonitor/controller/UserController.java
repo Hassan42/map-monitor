@@ -1,5 +1,7 @@
 package com.example.mapmonitor.controller;
 
+import com.example.mapmonitor.dto.CreateUserRequest;
+import com.example.mapmonitor.dto.UserResponse;
 import com.example.mapmonitor.model.User;
 import com.example.mapmonitor.service.UserService;
 import org.springframework.security.core.Authentication;
@@ -21,14 +23,15 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public String getCurrentUser(Authentication authentication) {
+    public UserResponse getCurrentUser(Authentication authentication) {
         String uid = (String) authentication.getPrincipal();
-        return "Hello, your Firebase UID is: " + uid;
+        User user = userService.syncUser(uid, null);
+        return UserResponse.from(user);
     }
 
     @PostMapping
-    public User createUserProfile(Authentication authentication) {
+    public User createUserProfile(Authentication authentication, @RequestBody CreateUserRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return userService.syncUser(uid);
+        return userService.syncUser(uid, request.username());
     }
 }

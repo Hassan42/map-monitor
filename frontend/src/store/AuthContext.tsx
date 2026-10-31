@@ -6,11 +6,12 @@ import { useNavigate } from 'react-router'
 import { auth } from '../firebase/BaseConfig'
 import { firebaseSignIn, firebaseSignUp, firebaseSignOut } from '../firebase/AuthService'
 import type { IAuth, LoginFormValues, UserFormValues } from '../types/types'
-import { createUserProfile } from '../api/user'
+import { createUserProfile, getMe } from '../api/user'
 
 export const AuthContext = createContext<IAuth>({
   user: auth.currentUser,
   loading: false,
+  username: '',
   signIn: () => Promise.resolve(),
   signUp: () => Promise.resolve(),
   signOut: () => {},
@@ -20,6 +21,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true)
+  const [username, setUsername] = useState<string | null>('')
   const navigate = useNavigate()
 
   const signIn = async (creds: LoginFormValues) => {
@@ -37,7 +39,8 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     return firebaseSignUp(creds)
       .then(async (result) => {
         setCurrentUser(result.user)
-        await createUserProfile()
+        await createUserProfile(creds.username)
+        setUsername(creds.username)
         navigate('/', { replace: true })
       })
       .finally(() => setIsLoading(false));
@@ -48,6 +51,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     firebaseSignOut()
       .then(() => {
         setCurrentUser(null)
+        setUsername('')
         navigate('/login', { replace: true })
       })
       .catch((error) => {
@@ -57,8 +61,9 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      setUsername(user ? (await getMe()).username : null)
       setIsAuthLoading(false);
     })
     return unsubscribe;
@@ -66,6 +71,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const authValues: IAuth = {
     user: currentUser,
+    username,
     loading: isLoading,
     signIn,
     signUp,
