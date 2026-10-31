@@ -396,10 +396,6 @@ function Map() {
     }
     const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation
 
-    const handleRelationsToggle = () => {
-
-    }
-
     if (!id) return <p>Map not found</p>
 
     return (

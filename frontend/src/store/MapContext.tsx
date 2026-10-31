@@ -67,6 +67,8 @@ function MapProvider({ children }: { children: ReactNode }) {
       zoom: 2,
       // default 60; 85 lets you tilt down to nearly the horizon (above 60 MapLibre calls experimental)
       maxPitch: 85,
+      // show each tile as soon as it arrives, instead of fading it in over 300ms
+      fadeDuration: 0,
     })
 
     const resizeObserver = new ResizeObserver(() => mapInstance.resize())
