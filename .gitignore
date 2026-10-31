@@ -32,4 +32,5 @@ dist-ssr
 
 # Claude Code: local settings, session data
 .claude/
+CLAUDE.md
 CLAUDE.local.md
