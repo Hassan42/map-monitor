@@ -13,3 +13,10 @@ export function getMapLayers(mapId: string, draft: boolean): Promise<Layer[]> {
     method: 'GET',
   })
 }
+
+export function importLayers(mapId: string, sourceMapId: string, layerIds: number[]): Promise<Layer[]> {
+  return apiFetch(`/api/maps/${mapId}/layers/import`, {
+    method: 'POST',
+    body: JSON.stringify({ sourceMapId, layerIds }),
+  })
+}

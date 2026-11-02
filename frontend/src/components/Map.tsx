@@ -173,7 +173,7 @@ function Map() {
             .then(setFactions)
             .catch(() => setError('Could not load factions'))
             .finally(() => setLoading(false))
-    }, [id, editMode])
+    }, [id, editMode, elementsRevision])
 
     // Fetching map layers from db - draft copies while editing, published otherwise
     useEffect(() => {
@@ -342,6 +342,13 @@ function Map() {
                 refreshDraftStatus() // also reloads the publish menu
             })
             .catch(() => setError('Could not discard the change'))
+    }
+
+    // import handle: the backend copied elements (and maybe factions) too, so reload them all
+    const handleLayersImported = () => {
+        setElementsRevision((r) => r + 1)
+        refreshDraftStatus()
+        setShowAddLayer(false)
     }
 
     const handleTimeChange = (time: number) => {
@@ -751,7 +758,8 @@ function Map() {
                 <AddFaction mapId={id} onCreated={handleFactionCreated} onClose={() => setShowAddFaction(false)} />
             )}
             {showAddLayer && (
-                <AddLayer mapId={id} onCreated={handleLayerCreated} onClose={() => setShowAddLayer(false)} />
+                <AddLayer mapId={id} onCreated={handleLayerCreated} onImported={handleLayersImported}
+                    onClose={() => setShowAddLayer(false)} />
             )}
         </div>
     )

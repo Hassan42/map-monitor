@@ -40,6 +40,14 @@ export interface Layer {
   id: number;
   title: string;
   description: string;
+  credit?: LayerCredit | null; // set when the layer was imported from another map
+}
+
+// where an imported layer came from: set by the server, never edited
+export interface LayerCredit {
+  mapId: number;
+  mapTitle: string;
+  username: string | null;
 }
 
 export interface Faction {
