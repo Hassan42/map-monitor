@@ -8,7 +8,7 @@ public final class LayerSummaryResponse implements ElementSummary {
     private final String description;
 
     private LayerSummaryResponse(Layer layer) {
-        this.id = layer.getId();
+        this.id = layer.getStableId();
         this.title = layer.getTitle();
         this.description = layer.getDescription();
     }

@@ -22,7 +22,7 @@ public final class AnnotationSummaryResponse implements ElementSummary {
         this.kind = annotation.getKind();
         this.geometry = annotation.getGeometry();
         this.factionId = annotation.getFactionId();
-        this.layerId = annotation.layerId();
+        this.layerId = annotation.getLayerId();
         this.label = annotation.getLabel();
         this.color = annotation.getColor();
         this.scale = annotation.getScale();

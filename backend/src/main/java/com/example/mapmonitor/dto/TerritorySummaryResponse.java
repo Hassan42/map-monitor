@@ -20,7 +20,7 @@ public final class TerritorySummaryResponse implements ElementSummary {
         this.color = territory.getColor();
         this.points = territory.getPoints();
         this.factionId = territory.getFactionId();
-        this.layerId = territory.layerId();
+        this.layerId = territory.getLayerId();
         this.history = territory.getHistory().stream().map(TerritoryStateDto::from).toList();
         this.endTime = territory.getEndTime();
     }

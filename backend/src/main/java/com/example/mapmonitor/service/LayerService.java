@@ -21,8 +21,7 @@ public class LayerService {
     private final LayerRepository layerRepository;
     private final MapService mapService;
 
-
-    public LayerService(LayerRepository layerRepository, MapService mapService){
+    public LayerService(LayerRepository layerRepository, MapService mapService) {
         this.layerRepository = layerRepository;
         this.mapService = mapService;
     }
@@ -40,33 +39,38 @@ public class LayerService {
         return layerRepository.save(saved);
     }
 
-    // the layers as of the version being viewed: draft while editing, published otherwise
+    // the layers as of the version being viewed: draft while editing, published
+    // otherwise
     public List<LayerSummaryResponse> getLayersForMap(String firebaseUid, Long mapId, boolean draft) {
         MapVersion version = mapService.resolveVersion(firebaseUid, mapId, draft);
-        return resolveLayers(version).values().stream()
-                .filter(l -> !l.isDeleted())
+
+        return getVisibleLayers(version).stream()
                 .map(LayerSummaryResponse::from)
                 .toList();
+
     }
 
-//    public Layer editLayer(String)
-
-
-    // the layer an element is put in: null for none; otherwise it must exist and belong to this map
-    // (an element can't be put in another map's layer)
-    public Layer findLayerOfMap(Long mapId, Long layerId) {
-        if (layerId == null) return null;
-        Layer layer = layerRepository.findById(layerId)
+    // the layer an element is put in, by the layer's stableId (the id the frontend gets): null for none;
+    // otherwise it must be a visible layer of this version, so an element can't be put in another
+    // map's layer or a deleted one
+    public Layer findLayerOfMap(MapVersion version, Long layerStableId) {
+        if (layerStableId == null)
+            return null;
+        return getVisibleLayers(version).stream()
+                .filter(l -> l.getStableId().equals(layerStableId))
+                .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Layer not found"));
-        if (!layer.getMapVersion().getMap().getId().equals(mapId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Layer belongs to another map");
-        }
-        return layer;
     }
 
-    private void applyRequest(Layer layer, CreateLayerRequest request){
+    private void applyRequest(Layer layer, CreateLayerRequest request) {
         layer.setTitle(request.getTitle());
         layer.setDescription(request.getDescription());
+    }
+
+    public List<Layer> getVisibleLayers(MapVersion version) {
+        return resolveLayers(version).values().stream()
+                .filter(l -> !l.isDeleted())
+                .toList();
     }
 
     /**

@@ -101,7 +101,8 @@ public class ChangeService {
 
     private <T extends MapElement> void leaveLayer(MapVersion draft, Function<Long, List<T>> rows, Layer layer) {
         for (T element : rows.apply(draft.getId())) {
-            if (layer.getId().equals(element.layerId())) element.setLayer(null);
+            // by row id, not stableId: only elements in this draft row lose their layer
+            if (element.getLayer() != null && layer.getId().equals(element.getLayer().getId())) element.setLayer(null);
         }
     }
 

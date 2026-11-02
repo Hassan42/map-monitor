@@ -74,8 +74,7 @@ public abstract class MapElement {
 
     // the layer's id for responses; null when the element is in no layer. getId() on the lazy
     // proxy doesn't load the layer
-    @JsonProperty("layerId")
-    public Long layerId() {
-        return layer != null ? layer.getId() : null;
+    public Long getLayerId() {
+        return layer != null ? layer.getStableId() : null;
     }
 }

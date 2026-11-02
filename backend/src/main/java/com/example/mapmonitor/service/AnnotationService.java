@@ -40,7 +40,7 @@ public class AnnotationService extends MapElementService<Annotation> {
 
         Annotation annotation = new Annotation();
         applyRequest(annotation, request);
-        annotation.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
+        annotation.setLayer(layerService.findLayerOfMap(draft, request.getLayerId()));
         annotation.setMapVersion(draft);
         Annotation saved = annotationRepository.save(annotation);
 
@@ -61,7 +61,7 @@ public class AnnotationService extends MapElementService<Annotation> {
         shadow.setStableId(stableId);
         shadow.setMapVersion(draft);
         applyRequest(shadow, request);
-        shadow.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
+        shadow.setLayer(layerService.findLayerOfMap(draft, request.getLayerId()));
         return annotationRepository.save(shadow);
     }
 

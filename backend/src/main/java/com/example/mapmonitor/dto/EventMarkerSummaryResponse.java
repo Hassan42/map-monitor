@@ -34,7 +34,7 @@ public final class EventMarkerSummaryResponse implements ElementSummary {
         this.timestamp = event.getTimestamp();
         this.category = event.getCategory();
         this.factionId = event.getFactionId();
-        this.layerId = event.layerId();
+        this.layerId = event.getLayerId();
         this.sourceURL = event.getSourceURL();
         this.relations = event.getRelations().stream().map(EventRelationDto::from).toList();
         this.endTime = event.getEndTime();

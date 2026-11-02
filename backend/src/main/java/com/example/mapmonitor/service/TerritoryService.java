@@ -66,7 +66,7 @@ public class TerritoryService extends MapElementService<Territory> {
         territory.setColor(color);
         territory.setPoints(points);
         territory.setFactionId(factionId);
-        territory.setLayer(layerService.findLayerOfMap(mapId, layerId));
+        territory.setLayer(layerService.findLayerOfMap(draft, layerId));
         applyHistory(territory, history);
         territory.setEndTime(endTime);
         territory.setMapVersion(draft);
@@ -95,7 +95,7 @@ public class TerritoryService extends MapElementService<Territory> {
         shadow.setColor(color);
         shadow.setPoints(points);
         shadow.setFactionId(factionId);
-        shadow.setLayer(layerService.findLayerOfMap(mapId, layerId));
+        shadow.setLayer(layerService.findLayerOfMap(draft, layerId));
         applyHistory(shadow, history);
         shadow.setEndTime(endTime);
         return territoryRepository.save(shadow);

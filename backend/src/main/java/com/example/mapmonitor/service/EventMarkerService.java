@@ -47,7 +47,7 @@ public class EventMarkerService extends MapElementService<EventMarker> {
 
         EventMarker event = new EventMarker();
         applyRequest(event, request);
-        event.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
+        event.setLayer(layerService.findLayerOfMap(draft, request.getLayerId()));
         event.setMapVersion(draft);
         EventMarker saved = eventMarkerRepository.save(event);
 
@@ -74,7 +74,7 @@ public class EventMarkerService extends MapElementService<EventMarker> {
         }
 
         applyRequest(shadow, request);
-        shadow.setLayer(layerService.findLayerOfMap(mapId, request.getLayerId()));
+        shadow.setLayer(layerService.findLayerOfMap(draft, request.getLayerId()));
         return eventMarkerRepository.save(shadow);
     }
 
