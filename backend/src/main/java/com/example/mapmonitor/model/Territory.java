@@ -84,4 +84,15 @@ public class Territory extends MapElement {
     public String displayName() {
         return name;
     }
+
+    @Override 
+    public Territory copy() {
+        Territory copy = new Territory();
+        copy.setName(this.name);
+        copy.setColor(this.color);
+        copy.setPoints(this.points);
+        copy.setFactionId(this.factionId);
+        copy.setEndTime(this.endTime);
+        return copy;
+    }
 }

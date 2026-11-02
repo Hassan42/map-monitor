@@ -147,4 +147,21 @@ public class EventMarker extends MapElement {
     public String displayName() {
         return title;
     }
+
+    @Override 
+    public EventMarker copy() {
+        EventMarker copy = new EventMarker();
+        copy.setTitle(this.title);
+        copy.setDescription(this.description);
+        copy.setLatitude(this.latitude);
+        copy.setLongitude(this.longitude);
+        copy.setTimestamp(this.timestamp);
+        copy.setCategory(this.category);
+        copy.setFactionId(this.factionId);
+        copy.setSourceURL(this.sourceURL);
+        copy.setEndTime(this.endTime);
+        copy.setOngoing(this.ongoing);
+        copy.setVisibleDays(this.visibleDays);
+        return copy;
+    }
 }

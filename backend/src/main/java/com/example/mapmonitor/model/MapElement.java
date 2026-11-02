@@ -77,4 +77,6 @@ public abstract class MapElement {
     public Long getLayerId() {
         return layer != null ? layer.getStableId() : null;
     }
+
+    public abstract MapElement copy();
 }

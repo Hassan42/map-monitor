@@ -12,23 +12,24 @@ public class Annotation extends MapElement {
     private AnnotationKind kind;
 
     @Column(nullable = false, columnDefinition = "text")
-    private String geometry;   // GeoJSON geometry, e.g. {"type":"LineString","coordinates":[[lng,lat],...]}
+    private String geometry; // GeoJSON geometry, e.g. {"type":"LineString","coordinates":[[lng,lat],...]}
 
-    private Long factionId;    // optional, the owning Faction's stableId, not its row id
+    private Long factionId; // optional, the owning Faction's stableId, not its row id
 
-    private String label;      // optional
+    private String label; // optional
 
     private String color;
 
     @Column(nullable = false)
     @ColumnDefault("1.0")
-    private Double scale;      // size multiplier for the drawn icon/arrow, 1.0 = default
+    private Double scale; // size multiplier for the drawn icon/arrow, 1.0 = default
 
     @Column(nullable = false)
     @ColumnDefault("0")
-    private Double rotation;   // clockwise degrees from north (the icon's up direction), 0 = unrotated
+    private Double rotation; // clockwise degrees from north (the icon's up direction), 0 = unrotated
 
-    // when it's on the map: null start = it has always been there, null end = still there
+    // when it's on the map: null start = it has always been there, null end = still
+    // there
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
@@ -113,5 +114,20 @@ public class Annotation extends MapElement {
     @Override
     public String displayName() {
         return label;
+    }
+
+    @Override
+    public Annotation copy() {
+        Annotation copy = new Annotation();
+        copy.setKind(this.kind);
+        copy.setGeometry(this.geometry);
+        copy.setFactionId(this.factionId);
+        copy.setLabel(this.label);
+        copy.setColor(this.color);
+        copy.setScale(this.scale);
+        copy.setRotation(this.rotation);
+        copy.setStartTime(this.startTime);
+        copy.setEndTime(this.endTime);
+        return copy;
     }
 }
