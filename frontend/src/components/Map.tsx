@@ -88,7 +88,7 @@ function Map() {
     // for now, refreshed every minute so events fade as time passes; a timeline slider can set it later
     const [now, setNow] = useState(() => Date.now())
     const [today] = useState(() => Date.now()) // real time in case there was no events, we use it as fallback
-    const [live, setLive] = useState<boolean>(true)
+    const [live, setLive] = useState<boolean>(false)
 
     // territories as they were at the timeline's date: earlier shapes from their history, ones that
     // didn't exist yet or had ended left out. Rebuilt only when some territory switches state

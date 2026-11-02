@@ -62,7 +62,7 @@ function MapProvider({ children }: { children: ReactNode }) {
 
     const mapInstance = new Map({
       container: containerRef.current,
-      style: 'https://tiles.openfreemap.org/styles/positron',
+      style: 'https://tiles.openfreemap.org/styles/bright',
       center: [0, 0],
       zoom: 2,
       // default 60; 85 lets you tilt down to nearly the horizon (above 60 MapLibre calls experimental)
