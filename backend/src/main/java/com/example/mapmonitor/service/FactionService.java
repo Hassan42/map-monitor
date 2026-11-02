@@ -57,6 +57,11 @@ public class FactionService {
         return factionRepository.save(shadow);
     }
 
+    // the factions as of this version, newest row per stableId
+    public List<Faction> getVisibleFactions(MapVersion version) {
+        return resolveVisibleFactions(version);
+    }
+
     private List<Faction> resolveVisibleFactions(MapVersion version) {
         var resolved = new LinkedHashMap<Long, Faction>();
 

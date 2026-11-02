@@ -26,12 +26,18 @@ public class LayerService {
         this.mapService = mapService;
     }
 
+    // the Add layer form: check the map, fill from the form, save
     public Layer addLayer(String firebaseUid, Long mapId, CreateLayerRequest request) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
         Layer layer = new Layer();
         applyRequest(layer, request);
-        layer.setMapVersion(draft);
+        return saveNew(layer, draft);
+    }
+
+    // only the save: a layer already filled in, into a version already found
+    public Layer saveNew(Layer layer, MapVersion version) {
+        layer.setMapVersion(version);
 
         Layer saved = layerRepository.save(layer);
 
