@@ -12,12 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
-public class TerritoryService {
+public class TerritoryService extends MapElementService<Territory> {
 
     private final TerritoryRepository territoryRepository;
     private final MapService mapService;
@@ -54,7 +52,7 @@ public class TerritoryService {
     public List<TerritorySummaryResponse> getTerritoriesForMap(String firebaseUid, Long mapId, boolean draft) {
         MapVersion version = mapService.resolveVersion(firebaseUid, mapId, draft);
 
-        return resolveVisibleTerritories(version).stream()
+        return getVisible(version).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -106,13 +104,13 @@ public class TerritoryService {
     public Long deleteTerritory(String firebaseUid, Long mapId, Long stableId) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
-        Territory visible = resolveTerritories(draft).get(stableId);
+        Territory visible = resolve(draft).get(stableId);
         if (visible == null || visible.isDeleted()) {
             throw new RuntimeException("Territory not found");
         }
 
         boolean inheritedFromOlderVersion = draft.getBasedOnVersion() != null
-                && resolveTerritories(draft.getBasedOnVersion()).containsKey(stableId);
+                && resolve(draft.getBasedOnVersion()).containsKey(stableId);
 
         if (!inheritedFromOlderVersion) {
             // only ever existed in this draft -- nothing to hide, just remove the row
@@ -138,26 +136,8 @@ public class TerritoryService {
         return stableId;
     }
 
-    private List<Territory> resolveVisibleTerritories(MapVersion version) {
-        return resolveTerritories(version).values().stream()
-                .filter(t -> !t.isDeleted())
-                .toList();
-    }
-
-    /**
-     * Newest row per stableId across the version chain, including deleted shadows.
-     */
-    private Map<Long, Territory> resolveTerritories(MapVersion version) {
-        var resolved = new LinkedHashMap<Long, Territory>();
-
-        MapVersion current = version;
-        while (current != null) {
-            for (Territory t : territoryRepository.findByMapVersionId(current.getId())) {
-                resolved.putIfAbsent(t.getStableId(), t);
-            }
-            current = current.getBasedOnVersion();
-        }
-
-        return resolved;
+    @Override
+    protected List<Territory> findRows(Long versionId) {
+        return territoryRepository.findByMapVersionId(versionId);
     }
 }

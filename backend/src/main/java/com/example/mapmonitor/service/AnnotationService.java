@@ -9,12 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
-public class AnnotationService {
+public class AnnotationService extends MapElementService<Annotation> {
 
     private static final double DEFAULT_SCALE = 1.0;
     private static final double DEFAULT_ROTATION = 0.0;
@@ -32,7 +30,7 @@ public class AnnotationService {
     public List<AnnotationSummaryResponse> getAnnotationsForMap(String firebaseUid, Long mapId, boolean draft) {
         MapVersion version = mapService.resolveVersion(firebaseUid, mapId, draft);
 
-        return resolveVisibleAnnotations(version).stream()
+        return getVisible(version).stream()
                 .map(AnnotationSummaryResponse::from)
                 .toList();
     }
@@ -53,7 +51,7 @@ public class AnnotationService {
     public Annotation editAnnotation(String firebaseUid, Long mapId, Long stableId, CreateAnnotationRequest request) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
-        Annotation visible = resolveAnnotations(draft).get(stableId);
+        Annotation visible = resolve(draft).get(stableId);
         if (visible == null || visible.isDeleted()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Annotation not found");
         }
@@ -70,13 +68,13 @@ public class AnnotationService {
     public Long deleteAnnotation(String firebaseUid, Long mapId, Long stableId) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
-        Annotation visible = resolveAnnotations(draft).get(stableId);
+        Annotation visible = resolve(draft).get(stableId);
         if (visible == null || visible.isDeleted()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Annotation not found");
         }
 
         boolean inheritedFromOlderVersion = draft.getBasedOnVersion() != null
-                && resolveAnnotations(draft.getBasedOnVersion()).containsKey(stableId);
+                && resolve(draft.getBasedOnVersion()).containsKey(stableId);
 
         if (!inheritedFromOlderVersion) {
             // only ever existed in this draft -- nothing to hide, just remove the row
@@ -128,26 +126,8 @@ public class AnnotationService {
         annotation.setEndTime(request.getEndTime());
     }
 
-    private List<Annotation> resolveVisibleAnnotations(MapVersion version) {
-        return resolveAnnotations(version).values().stream()
-                .filter(a -> !a.isDeleted())
-                .toList();
-    }
-
-    /**
-     * Newest row per stableId across the version chain, including deleted shadows.
-     */
-    private Map<Long, Annotation> resolveAnnotations(MapVersion version) {
-        var resolved = new LinkedHashMap<Long, Annotation>();
-
-        MapVersion current = version;
-        while (current != null) {
-            for (Annotation a : annotationRepository.findByMapVersionId(current.getId())) {
-                resolved.putIfAbsent(a.getStableId(), a);
-            }
-            current = current.getBasedOnVersion();
-        }
-
-        return resolved;
+    @Override
+    protected List<Annotation> findRows(Long versionId) {
+        return annotationRepository.findByMapVersionId(versionId);
     }
 }

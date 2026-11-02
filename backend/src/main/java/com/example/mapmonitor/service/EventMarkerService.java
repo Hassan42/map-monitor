@@ -15,12 +15,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
-public class EventMarkerService {
+public class EventMarkerService extends MapElementService<EventMarker> {
 
     private static final int DEFAULT_VISIBLE_DAYS = 7;
     // a browser clock a little ahead of the server's shouldn't make "now" count as the future
@@ -39,7 +37,7 @@ public class EventMarkerService {
     public List<EventMarkerSummaryResponse> getEventsForMap(String firebaseUid, Long mapId, boolean draft) {
         MapVersion version = mapService.resolveVersion(firebaseUid, mapId, draft);
 
-        return resolveVisibleEvents(version).stream()
+        return getVisible(version).stream()
                 .map(EventMarkerSummaryResponse::from)
                 .toList();
     }
@@ -60,7 +58,7 @@ public class EventMarkerService {
     public EventMarker editEvent(String firebaseUid, Long mapId, Long stableId, CreateEventMarkerRequest request) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
-        EventMarker visible = resolveEvents(draft).get(stableId);
+        EventMarker visible = resolve(draft).get(stableId);
         if (visible == null || visible.isDeleted()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
         }
@@ -83,13 +81,13 @@ public class EventMarkerService {
     public Long deleteEvent(String firebaseUid, Long mapId, Long stableId) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
-        EventMarker visible = resolveEvents(draft).get(stableId);
+        EventMarker visible = resolve(draft).get(stableId);
         if (visible == null || visible.isDeleted()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
         }
 
         boolean inheritedFromOlderVersion = draft.getBasedOnVersion() != null
-                && resolveEvents(draft.getBasedOnVersion()).containsKey(stableId);
+                && resolve(draft.getBasedOnVersion()).containsKey(stableId);
 
         if (!inheritedFromOlderVersion) {
             // only ever existed in this draft -- nothing to hide, just remove the row (and its relations)
@@ -157,26 +155,8 @@ public class EventMarkerService {
         }
     }
 
-    private List<EventMarker> resolveVisibleEvents(MapVersion version) {
-        return resolveEvents(version).values().stream()
-                .filter(e -> !e.isDeleted())
-                .toList();
-    }
-
-    /**
-     * Newest row per stableId across the version chain, including deleted shadows.
-     */
-    private Map<Long, EventMarker> resolveEvents(MapVersion version) {
-        var resolved = new LinkedHashMap<Long, EventMarker>();
-
-        MapVersion current = version;
-        while (current != null) {
-            for (EventMarker e : eventMarkerRepository.findByMapVersionId(current.getId())) {
-                resolved.putIfAbsent(e.getStableId(), e);
-            }
-            current = current.getBasedOnVersion();
-        }
-
-        return resolved;
+    @Override
+    protected List<EventMarker> findRows(Long versionId) {
+        return eventMarkerRepository.findByMapVersionId(versionId);
     }
 }
