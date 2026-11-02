@@ -23,6 +23,35 @@ public class Layer {
     @ColumnDefault("false")
     private boolean deleted;
 
+    // where an imported layer came from, set by the server at import and never edited.
+    // A snapshot, so it still reads right if that map is renamed or deleted
+    private Long creditMapId;
+    private String creditMapTitle;
+    private String creditUsername;
+
+    public Long getCreditMapId() {
+        return creditMapId;
+    }
+
+    public void setCreditMapId(Long creditMapId) {
+        this.creditMapId = creditMapId;
+    }
+
+    public String getCreditMapTitle() {
+        return creditMapTitle;
+    }
+
+    public void setCreditMapTitle(String creditMapTitle) {
+        this.creditMapTitle = creditMapTitle;
+    }
+
+    public String getCreditUsername() {
+        return creditUsername;
+    }
+
+    public void setCreditUsername(String creditUsername) {
+        this.creditUsername = creditUsername;
+    }
 
     @ManyToOne
     @JoinColumn(name = "map_version_id", nullable = false)

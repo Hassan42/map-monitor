@@ -39,6 +39,21 @@ public class LayerService {
         return layerRepository.save(saved);
     }
 
+    // an imported layer's credit: the source's own credit if it was imported itself (the original
+    // author stays), otherwise the source map and its owner
+    public void credit(Layer target, Layer source) {
+        if (source.getCreditMapId() != null) {
+            target.setCreditMapId(source.getCreditMapId());
+            target.setCreditMapTitle(source.getCreditMapTitle());
+            target.setCreditUsername(source.getCreditUsername());
+            return;
+        }
+        var map = source.getMapVersion().getMap();
+        target.setCreditMapId(map.getId());
+        target.setCreditMapTitle(map.getTitle());
+        target.setCreditUsername(map.getUser().getUsername());
+    }
+
     // the layers as of the version being viewed: draft while editing, published
     // otherwise
     public List<LayerSummaryResponse> getLayersForMap(String firebaseUid, Long mapId, boolean draft) {
