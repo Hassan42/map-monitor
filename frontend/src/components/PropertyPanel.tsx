@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import type { Annotation, EventCategory, EventMarker, Faction, Layer, MapSummary, Territory } from '../types/types'
+import type { Annotation, EventCategory, EventMarker, Faction, Layer, LayerCredit, MapSummary, Territory } from '../types/types'
+import { creditText } from '../map/layerCredit'
 import type { LngLatBoundsLike } from 'maplibre-gl'
 import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import { EVENTS_CLUSTER_MAX_ZOOM } from '../map/mapLayers'
@@ -227,7 +228,7 @@ function PropertyPanel({
             {tab === 'elements' && (
                 <div className="flex flex-wrap gap-1 border-b border-neutral-800 p-3">
                     {layers.map((l) => (
-                        <LayerChip key={l.id} label={l.title} description={l.description} hidden={hiddenLayers.has(l.id)} onClick={() => onToggleLayer(l.id)} />
+                        <LayerChip key={l.id} label={l.title} description={l.description} credit={l.credit} hidden={hiddenLayers.has(l.id)} onClick={() => onToggleLayer(l.id)} />
                     ))}
                     <LayerChip label="No layer" hidden={hiddenLayers.has(null)} onClick={() => onToggleLayer(null)} />
                     {/* only while something is hidden */}
@@ -300,21 +301,39 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 // a layer's show/hide toggle; the description, if any, is its tooltip
-function LayerChip({ label, description, hidden, onClick }: { label: string; description?: string; hidden: boolean; onClick: () => void }) {
+function LayerChip({ label, description, credit, hidden, onClick }: { label: string; description?: string; credit?: LayerCredit | null; hidden: boolean; onClick: () => void }) {
+    // the pill look sits on a wrapper: a link can't go inside the toggle button, so the arrow sits beside it
     return (
-        <button
-            type="button"
-            aria-pressed={!hidden}
-            title={`${description ? `${description}\n` : ''}Click to ${hidden ? 'show' : 'hide'}`}
-            onClick={onClick}
-            className={`flex max-w-full items-center gap-1.5 px-2 py-1 text-xs ring-1 transition-colors ${hidden
-                ? 'text-gray-500 ring-white/10 hover:text-gray-300'
-                : 'bg-accent-400/15 text-accent-200 ring-accent-400/40 hover:bg-accent-400/25'
+        <span
+            className={`flex max-w-full items-center text-xs ring-1 transition-colors ${hidden
+                ? 'text-gray-500 ring-white/10'
+                : 'bg-accent-400/15 text-accent-200 ring-accent-400/40'
                 }`}
         >
-            <NavIcon src={hidden ? hiddenIcon : shownIcon} className="!h-3.5 !w-3.5" />
-            <span className={`truncate ${hidden ? 'line-through' : ''}`}>{label}</span>
-        </button>
+            <button
+                type="button"
+                aria-pressed={!hidden}
+                title={`${description ? `${description}\n` : ''}Click to ${hidden ? 'show' : 'hide'}`}
+                onClick={onClick}
+                className={`flex min-w-0 items-center gap-1.5 px-2 py-1 ${hidden ? 'hover:text-gray-300' : 'hover:bg-accent-400/25'}`}
+            >
+                <NavIcon src={hidden ? hiddenIcon : shownIcon} className="!h-3.5 !w-3.5" />
+                <span className={`truncate ${hidden ? 'line-through' : ''}`}>{label}</span>
+            </button>
+            {/* imported from another map: the arrow opens that map */}
+            {credit && (
+                <a
+                    href={`/maps/${credit.mapId}`}
+                    target="_blank" // the current map stays open
+                    rel="noopener noreferrer"
+                    title={creditText(credit)}
+                    aria-label={creditText(credit)}
+                    className="py-1 pr-2 pl-0.5 hover:text-accent-300"
+                >
+                    ↗
+                </a>
+            )}
+        </span>
     )
 }
 
