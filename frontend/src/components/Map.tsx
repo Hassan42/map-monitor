@@ -490,109 +490,109 @@ function Map() {
                 each fold into one menu, so the bar fits - plain show/hide classes, no checks in code */}
             <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
                 <div className="contents max-md:hidden">
-                {canEdit && (
-                    <button
-                        type="button"
-                        onClick={handleEditClick}
-                        className={navButtonClass}
-                    >
-                        {editMode ? 'Exit Edit Mode' : 'Edit'}
-                    </button>
-                )}
+                    {canEdit && (
+                        <button
+                            type="button"
+                            onClick={handleEditClick}
+                            className={navButtonClass}
+                        >
+                            {editMode ? 'Exit Edit Mode' : 'Edit'}
+                        </button>
+                    )}
 
 
 
-                {/* tools, edit mode only (view mode is always Select): Pan = only move the map (no tool),
+                    {/* tools, edit mode only (view mode is always Select): Pan = only move the map (no tool),
                     Select = terra-draw's editing select; leaving it deselects, which saves any reshaped territory */}
-                {editMode && (
-                    <>
+                    {editMode && (
+                        <>
+                            <button
+                                type="button"
+                                aria-label="Pan"
+                                title="Pan - drag to move the map"
+                                aria-pressed={isPanning}
+                                onClick={pickPan}
+                                className={`${navButtonClass} ${isPanning ? navButtonActiveClass : ''}`}
+                            >
+                                <NavIcon src={handIcon} />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Select"
+                                title="Select - click territories and events"
+                                aria-pressed={drawMode === 'select'}
+                                onClick={pickSelect}
+                                className={`${navButtonClass} ${drawMode === 'select' ? navButtonActiveClass : ''}`}
+                            >
+                                <NavIcon src={cursorIcon} />
+                            </button>
+                        </>
+                    )}
+
+
+                    {editMode && (
                         <button
                             type="button"
-                            aria-label="Pan"
-                            title="Pan - drag to move the map"
-                            aria-pressed={isPanning}
-                            onClick={pickPan}
-                            className={`${navButtonClass} ${isPanning ? navButtonActiveClass : ''}`}
+                            aria-label="Add faction"
+                            title="Add faction"
+                            onClick={() => setShowAddFaction(true)}
+                            className={navButtonClass}
                         >
-                            <NavIcon src={handIcon} />
+                            <NavIcon src={addFactionIcon} />
                         </button>
+                    )}
+
+                    {editMode && (
                         <button
                             type="button"
-                            aria-label="Select"
-                            title="Select - click territories and events"
-                            aria-pressed={drawMode === 'select'}
-                            onClick={pickSelect}
-                            className={`${navButtonClass} ${drawMode === 'select' ? navButtonActiveClass : ''}`}
+                            aria-label="Add layer"
+                            title="Add layer - group events, territories and annotations"
+                            onClick={() => setShowAddLayer(true)}
+                            className={navButtonClass}
                         >
-                            <NavIcon src={cursorIcon} />
+                            <NavIcon src={addLayerIcon} />
                         </button>
-                    </>
-                )}
+                    )}
 
+                    {/* pressed while waiting for the map click that places it */}
+                    {editMode && (
+                        <button
+                            type="button"
+                            aria-label="Add event"
+                            aria-pressed={isPlacingEvent}
+                            title={isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
+                            onClick={startAddEvent}
+                            className={`${navButtonClass} ${isPlacingEvent ? navButtonActiveClass : ''}`}
+                        >
+                            <NavIcon src={addEventIcon} />
+                        </button>
+                    )}
 
-                {editMode && (
-                    <button
-                        type="button"
-                        aria-label="Add faction"
-                        title="Add faction"
-                        onClick={() => setShowAddFaction(true)}
-                        className={navButtonClass}
-                    >
-                        <NavIcon src={addFactionIcon} />
-                    </button>
-                )}
+                    {/* place an annotation: the next map click picks the spot (no draw/select tool, so that click isn't also handled by them) */}
+                    {editMode && (
+                        <button
+                            type="button"
+                            aria-label="Add annotation"
+                            aria-pressed={isPlacingAnnotation}
+                            title={isPlacingAnnotation ? 'Add annotation - click on the map to place it' : 'Add annotation'}
+                            onClick={startAddAnnotation}
+                            className={`${navButtonClass} ${isPlacingAnnotation ? navButtonActiveClass : ''}`}
+                        >
+                            <NavIcon src={addAnnotationIcon} />
+                        </button>
+                    )}
 
-                {editMode && (
-                    <button
-                        type="button"
-                        aria-label="Add layer"
-                        title="Add layer - group events, territories and annotations"
-                        onClick={() => setShowAddLayer(true)}
-                        className={navButtonClass}
-                    >
-                        <NavIcon src={addLayerIcon} />
-                    </button>
-                )}
-
-                {/* pressed while waiting for the map click that places it */}
-                {editMode && (
-                    <button
-                        type="button"
-                        aria-label="Add event"
-                        aria-pressed={isPlacingEvent}
-                        title={isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
-                        onClick={startAddEvent}
-                        className={`${navButtonClass} ${isPlacingEvent ? navButtonActiveClass : ''}`}
-                    >
-                        <NavIcon src={addEventIcon} />
-                    </button>
-                )}
-
-                {/* place an annotation: the next map click picks the spot (no draw/select tool, so that click isn't also handled by them) */}
-                {editMode && (
-                    <button
-                        type="button"
-                        aria-label="Add annotation"
-                        aria-pressed={isPlacingAnnotation}
-                        title={isPlacingAnnotation ? 'Add annotation - click on the map to place it' : 'Add annotation'}
-                        onClick={startAddAnnotation}
-                        className={`${navButtonClass} ${isPlacingAnnotation ? navButtonActiveClass : ''}`}
-                    >
-                        <NavIcon src={addAnnotationIcon} />
-                    </button>
-                )}
-
-                {editMode && (
-                    <NavDropdown
-                        label={<NavIcon src={addTerritoryIcon} />}
-                        ariaLabel="Add territory"
-                        title="Add territory - draw it as a polygon or freehand"
-                        active={drawMode === 'polygon' || drawMode === 'freehand'}
-                    >
-                        <NavDropdownItem onClick={() => setDrawMode('polygon')}>Polygon</NavDropdownItem>
-                        <NavDropdownItem onClick={() => setDrawMode('freehand')}>Freehand</NavDropdownItem>
-                    </NavDropdown>
-                )}
+                    {editMode && (
+                        <NavDropdown
+                            label={<NavIcon src={addTerritoryIcon} />}
+                            ariaLabel="Add territory"
+                            title="Add territory - draw it as a polygon or freehand"
+                            active={drawMode === 'polygon' || drawMode === 'freehand'}
+                        >
+                            <NavDropdownItem onClick={() => setDrawMode('polygon')}>Polygon</NavDropdownItem>
+                            <NavDropdownItem onClick={() => setDrawMode('freehand')}>Freehand</NavDropdownItem>
+                        </NavDropdown>
+                    )}
                 </div>
 
                 {/* phones: Edit, or in edit mode one Tools menu (no territory drawing: too fiddly by finger) */}
@@ -627,7 +627,8 @@ function Map() {
                         onPublish={handlePublishClick}
                     />
                 )}
-                
+
+
                 <div className="ml-auto flex items-center gap-1 text-right max-md:text-xs">
                     {/* All time shows every date at once, so there's no single date to show */}
                     {showAllTime ? 'All time' : (
