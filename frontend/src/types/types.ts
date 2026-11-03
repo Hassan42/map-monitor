@@ -1,28 +1,17 @@
 import type { User } from 'firebase/auth';
 
-export interface LoginFormValues {
- email: string;
- password: string;
-}
-
-export interface UserFormValues {
- email: string;
- username: string;
- password: string;
-}
-
 export interface IAuth {
- user: User | null;
- loading: boolean;
- username: string | null;
- signIn: (creds: LoginFormValues) => Promise<void>;
- signUp: (creds: UserFormValues) => Promise<void>;
- signOut: () => void;
+  user: User | null;
+  loading: boolean;
+  username: string | null;
+  chooseUsername: (username: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => void;
 }
 
-export type MapVisibility = 
-| 'PUBLIC'
-| 'PRIVATE'
+export type MapVisibility =
+  | 'PUBLIC'
+  | 'PRIVATE'
 
 
 export interface MapSummary {

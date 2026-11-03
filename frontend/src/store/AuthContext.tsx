@@ -4,17 +4,18 @@ import { onAuthStateChanged } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { useNavigate } from 'react-router'
 import { auth } from '../firebase/BaseConfig'
-import { firebaseSignIn, firebaseSignUp, firebaseSignOut } from '../firebase/AuthService'
-import type { IAuth, LoginFormValues, UserFormValues } from '../types/types'
-import { createUserProfile, getMe } from '../api/user'
+import { firebaseSignOut, firebaseGoogleSignIn } from '../firebase/AuthService'
+import type { IAuth } from '../types/types'
+import { getMe, saveUsername } from '../api/user'
+import type { FirebaseError } from 'firebase/app'
 
 export const AuthContext = createContext<IAuth>({
   user: auth.currentUser,
   loading: false,
   username: '',
-  signIn: () => Promise.resolve(),
-  signUp: () => Promise.resolve(),
-  signOut: () => {},
+  chooseUsername: () => Promise.resolve(),
+  signInWithGoogle: () => Promise.resolve(),
+  signOut: () => { },
 })
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -24,26 +25,22 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [username, setUsername] = useState<string | null>('')
   const navigate = useNavigate()
 
-  const signIn = async (creds: LoginFormValues) => {
-    setIsLoading(true);
-    return firebaseSignIn(creds)
-      .then((result) => {
-        setCurrentUser(result.user)
-        navigate('/', { replace: true })
-      })
-      .finally(() => setIsLoading(false));
+  const signInWithGoogle = async () => {
+    setIsLoading(true)
+    try {
+      await firebaseGoogleSignIn() // onAuthStateChanged loads the user and username
+    } catch (e) {
+      if ((e as FirebaseError).code !== 'auth/popup-closed-by-user') throw e
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const signUp = async (creds: UserFormValues) => {
-    setIsLoading(true);
-    return firebaseSignUp(creds)
-      .then(async (result) => {
-        setCurrentUser(result.user)
-        await createUserProfile(creds.username)
-        setUsername(creds.username)
-        navigate('/', { replace: true })
-      })
-      .finally(() => setIsLoading(false));
+  // the one-time username pick after the first sign in; throws the server's error (400 format, 409 taken)
+  const chooseUsername = async (name: string) => {
+    const saved = await saveUsername(name)
+    setUsername(saved.username)
+    navigate('/', { replace: true })
   }
 
   const signOut = () => {
@@ -61,20 +58,32 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   useEffect(() => {
+    // listen for sign in / sign out; Firebase calls this once right away, then on every change
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      setUsername(user ? (await getMe()).username : null)
-      setIsAuthLoading(false);
+      setIsAuthLoading(true) // a new sign in: wait for its username before redirecting
+      try {
+        setCurrentUser(user)
+        setUsername(user ? (await getMe()).username : null)
+      } finally {
+        setIsAuthLoading(false) // also when getMe fails, so the app never hangs
+      }
     })
-    return unsubscribe;
+    return unsubscribe // stop listening when AuthProvider unmounts
   }, [])
+
+  //redirect to /choose-username if the user is signed in but has no username, or to / if the user is signed in and has a username
+  useEffect(() => {
+    if (isAuthLoading || !currentUser) return
+    if (username === null && location.pathname !== '/choose-username') navigate('/choose-username', { replace: true })
+    else if (username && (location.pathname === '/login' || location.pathname === '/choose-username')) navigate('/', { replace: true })
+  }, [isAuthLoading, currentUser, username, location.pathname])
 
   const authValues: IAuth = {
     user: currentUser,
     username,
     loading: isLoading,
-    signIn,
-    signUp,
+    chooseUsername,
+    signInWithGoogle,
     signOut,
   }
 

@@ -1,22 +1,14 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { auth } from './BaseConfig';
-import type { LoginFormValues, UserFormValues } from '../types/types';
+import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth'
+import { auth } from './BaseConfig'
 
-setPersistence(auth,  browserLocalPersistence);
+setPersistence(auth, browserLocalPersistence)
 
-//Sign in functionality
-export const firebaseSignIn = async ({ email, password }: LoginFormValues) => {
- const result = await signInWithEmailAndPassword(auth, email, password);
- return result;
-};
+// Google is the only sign-in: the same popup signs up and signs in
+const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({ prompt: 'select_account' }) // always let them pick the account
 
-//Sign up functionality
-export const firebaseSignUp = async ({ email, password }: UserFormValues) => {
- const  result = await createUserWithEmailAndPassword(auth, email, password);
- return result;
-};
+export const firebaseGoogleSignIn = () => signInWithPopup(auth, googleProvider)
 
-//Sign out functionality
-export const  firebaseSignOut  =  async () => {
- await  signOut(auth);
-};
+export const firebaseSignOut = async () => {
+  await signOut(auth)
+}
