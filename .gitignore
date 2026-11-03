@@ -34,3 +34,7 @@ dist-ssr
 .claude/
 CLAUDE.md
 CLAUDE.local.md
+
+# research data and scenario seed scripts: kept locally, not published
+ontology/
+scripts/
