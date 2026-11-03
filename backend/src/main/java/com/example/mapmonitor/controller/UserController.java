@@ -24,14 +24,14 @@ public class UserController {
 
     @GetMapping("/me")
     public UserResponse getCurrentUser(Authentication authentication) {
-        String uid = (String) authentication.getPrincipal();
-        User user = userService.syncUser(uid, null);
-        return UserResponse.from(user);
+        return UserResponse.from(userService.findOrCreate((String) authentication.getPrincipal()));
     }
 
-    @PostMapping
-    public User createUserProfile(Authentication authentication, @RequestBody CreateUserRequest request) {
+
+    @PatchMapping("/me")
+    public UserResponse chooseUsername(Authentication authentication, @RequestBody CreateUserRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return userService.syncUser(uid, request.username());
+        User user = userService.chooseUsername(uid, request.username());
+        return UserResponse.from(user);
     }
 }

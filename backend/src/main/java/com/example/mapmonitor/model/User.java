@@ -19,7 +19,7 @@ public class User {
     private String firebaseUid;
 
     // unique and 3-30 characters 
-    @Column (nullable = false, unique = true, length = 30)
+    @Column (unique = true, length = 30)
     private String username;
 
     public void setUsername(String username) {
