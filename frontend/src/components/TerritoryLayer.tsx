@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw'
-import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
-import { TerraDrawPolygonMode, TerraDrawSelectMode, TerraDrawFreehandMode } from 'terra-draw'
-import type { TerraDrawMouseEvent } from 'terra-draw'
 import { LngLatBounds, MercatorCoordinate } from 'maplibre-gl'
 import type { LngLat, MapMouseEvent } from 'maplibre-gl'
-import type { TerraDraw, GeoJSONStoreFeatures, HexColor } from 'terra-draw'
+import type { TerraDraw, GeoJSONStoreFeatures } from 'terra-draw'
 import { useContextMenu, useMap, useSelection } from '../store/MapContext'
+import { useTerraDraw } from '../store/TerraDrawContext'
+import { EDIT_ACTIONS, RULER_MODE, isHighlighted } from '../map/territoryDraw'
 import { createTerritory, deleteTerritory, editTerritory } from '../api/territory'
 import { toLocalInput } from './eventFormValues'
 import { carryEditForward, withShapeAt } from '../map/territoryTime'
@@ -17,16 +15,6 @@ import TerritoryForm from './TerritoryForm'
 import type { TerritoryFormValues } from './TerritoryForm'
 import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID } from '../map/mapLayers'
 import { findAnnotationAt } from '../map/annotationHitTest'
-
-// saved territories carry their color in properties; new unsaved drawings fall back to blue
-const territoryColor = (f: GeoJSONStoreFeatures) => (f.properties.color as HexColor | undefined) ?? '#3f97e0'
-
-// view-mode selection (set by the highlight effect); styled like terra-draw's edit-mode selection
-const isHighlighted = (f: GeoJSONStoreFeatures) => f.properties.highlighted === true
-
-
-// select-mode finish actions that change a polygon's shape
-const EDIT_ACTIONS = ['edit', 'deleteCoordinate', 'insertMidpoint', 'dragCoordinate', 'dragFeature', 'dragCoordinateResize']
 
 // polygon rings with 7 decimals (about 1 cm): freehand smoothing produces more decimals than terra-draw's
 // polygon mode accepts (9), and it silently refuses such shapes when they're loaded back
@@ -90,6 +78,7 @@ function TerritoryLayer({
   onDeleted,
   onError,
   now,
+  measuring,
 }: {
   mapId: string
   factions: Faction[]
@@ -103,8 +92,10 @@ function TerritoryLayer({
   onDeleted: (territoryId: number) => void
   onError: (message: string) => void
   now: number // the timeline's date: a reshaped polygon is saved as its shape from this date on
+  measuring: boolean // the ruler is on: terra-draw draws measured lines, territories can't be picked
 }) {
   const map = useMap()
+  const draw = useTerraDraw()
   const [selected, setSelected] = useSelection()
   const [pendingPoints, setPendingPoints] = useState<string | null>(null)
   const [pendingFeatureId, setPendingFeatureId] = useState<string | number | null>(null)
@@ -161,93 +152,10 @@ function TerritoryLayer({
     territoriesRef.current = territories
   }, [territories])
 
-  // create terra-draw once per map; it stays alive in both view and edit mode
+  // listen to the shared terra-draw (TerraDrawProvider creates it once per map, for view and edit mode)
   useEffect(() => {
-    if (!map) return
-
-    const isOverEvent = (e: TerraDrawMouseEvent) => {
-      const layers = [EVENTS_LAYER_ID, EVENTS_CLUSTER_LAYER_ID].filter((id) => map.getLayer(id))
-      const eventSelected =
-        (layers.length > 0 && map.queryRenderedFeatures([e.containerX, e.containerY], { layers }).length > 0) ||
-        findAnnotationAt(map, [e.containerX, e.containerY]) != null
-      const selectedFeature = terraDraw
-        ?.getSnapshot()
-        .find((f) => f.properties.selected === true && f.geometry.type === 'Polygon')
-      const selectedFeatureID = selectedFeature?.id
-      if (selectedFeatureID != null && eventSelected) terraDraw?.deselectFeature(selectedFeatureID)
-      return eventSelected
-    }
-
-    const draw = new MaplibreTerradrawControl({
-      modes: [
-        'polygon',
-        'freehand',
-        'select',
-        'delete-selection',
-      ],
-      open: true,
-      // deleting now removes the territory on the backend, so ask first
-      showDeleteConfirmation: true,
-      modeOptions: {
-        freehand: new TerraDrawFreehandMode({
-          minDistance: 5,
-          smoothing: 0.4,
-          styles: { /* same territory styling as polygon, so it matches */ },
-        }),
-
-        polygon: new TerraDrawPolygonMode({
-          styles: {
-            fillColor: territoryColor,
-            fillOpacity: (f) => (isHighlighted(f) ? 0.6 : 0.4),
-            outlineColor: (f) => (isHighlighted(f) ? '#ffffff' : territoryColor(f)),
-            outlineWidth: 1,
-          },
-        }),
-        select: new TerraDrawSelectMode({
-          // the control fills in its default flags (drag/edit rules) for any mode not listed. Territories
-          // (polygon; freehand before they're saved) keep those defaults, except dragging the whole
-          // shape: that's right-click > Move, so a stray drag can't shift a territory
-          flags: {
-            polygon: {
-              feature: {
-                draggable: false,
-                rotateable: true,
-                scaleable: true,
-                coordinates: { midpoints: true, draggable: true, deletable: true },
-              },
-            },
-            freehand: {
-              feature: {
-                draggable: false,
-                coordinates: { midpoints: true, draggable: true, deletable: true },
-              },
-            },
-          },
-          styles: {
-            selectedPolygonColor: territoryColor,
-            selectedPolygonFillOpacity: 0.6,
-            selectedPolygonOutlineColor: '#ffffff',
-            selectedPolygonOutlineWidth: 1,
-          },
-          pointerEvents: {
-            leftClick: (e) => !isOverEvent(e),
-            onDragStart: (e) => !isOverEvent(e),
-            rightClick: true,
-            contextMenu: false,
-            onDrag: true,
-            onDragEnd: true,
-          }
-        }),
-      },
-    })
-
-    map.addControl(draw, 'bottom-left')
-
-    const terraDraw = draw.getTerraDrawInstance()
-    if (!terraDraw) {
-      map.removeControl(draw)
-      return
-    }
+    const terraDraw = draw?.getTerraDrawInstance()
+    if (!draw || !terraDraw) return
     terraDrawRef.current = terraDraw
 
     // polygons reshaped since they were selected; saved once on deselect instead of on every drag
@@ -279,7 +187,8 @@ function TerritoryLayer({
     const handleFinish = (id: string | number, context: { action: string }) => {
       if (context.action === 'draw') {
         const feature = terraDraw.getSnapshot().find((f) => f.id === id)
-        if (!feature) return
+        // a ruler line: the control measures it, it's no territory
+        if (!feature || feature.properties.mode === RULER_MODE) return
         setPendingPoints(JSON.stringify(roundRings(feature.geometry.coordinates as number[][][])))
         setPendingFeatureId(id)
         setDrawnAt(Date.now())
@@ -334,18 +243,17 @@ function TerritoryLayer({
       terraDraw.off('finish', handleFinish)
       draw.off('feature-deleted', handleFeatureDeleted)
       terraDrawRef.current = null
-      // map.remove() (MapProvider, on leaving the page) may have removed it already
-      if (map.hasControl(draw)) map.removeControl(draw)
     }
-  }, [map, mapId, setSelected, onModeChange, onUpdated, onDeleted, onError])
+  }, [draw, mapId, setSelected, onModeChange, onUpdated, onDeleted, onError])
 
   // view mode = display only ('default'); edit mode = whatever the dropdown picked
   useEffect(() => {
     const terraDraw = terraDrawRef.current
     if (!terraDraw) return
     if (!terraDraw.enabled) terraDraw.start()
-    terraDraw.setMode(active && mode ? mode : 'default')
-  }, [map, active, mode])
+    // the ruler takes over terra-draw while it's on, in view and edit mode
+    terraDraw.setMode(measuring ? RULER_MODE : active && mode ? mode : 'default')
+  }, [draw, active, mode, measuring])
 
   // hide the draw toolbar outside edit mode (see index.css)
   useEffect(() => {
@@ -375,7 +283,8 @@ function TerritoryLayer({
       properties: { mode: 'polygon', territoryId: t.id, color: t.color },
     }))
     reloadingRef.current = true
-    terraDraw.clear()
+    // only the territories: clear() would also wipe the ruler's lines
+    terraDraw.removeFeatures(terraDraw.getSnapshot().filter((f) => f.geometry.type === 'Polygon').map((f) => f.id!))
     // terra-draw silently skips features that fail its checks: say which ones, and why
     const rejected = terraDraw.addFeatures(features).filter((r) => !r.valid)
     for (const r of rejected) {
@@ -393,7 +302,7 @@ function TerritoryLayer({
       const feature = features.find((f) => f.properties.territoryId === current.id)
       if (feature) terraDraw.selectFeature(feature.id!)
     }
-  }, [map, territories])
+  }, [draw, territories])
 
   // highlight the territory picked with the view-mode Select tool. Runs after the reload effect
   // (and on territories changes) because a reload re-adds features without the flag.
@@ -408,7 +317,7 @@ function TerritoryLayer({
       const highlight = f.properties.territoryId === highlightedId
       if (isHighlighted(f) !== highlight) terraDraw.updateFeatureProperties(f.id!, { highlighted: highlight })
     }
-  }, [map, active, selected, territories])
+  }, [draw, active, selected, territories])
 
   // right-click a territory in edit mode: open its menu. Events and annotations on top have their own
   useEffect(() => {
