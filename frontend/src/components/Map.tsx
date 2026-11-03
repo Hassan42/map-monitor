@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import MapProvider from '../store/MapContext'
+import TerraDrawProvider from '../store/TerraDrawContext'
 import TerritoryLayer from './TerritoryLayer'
 import AddFaction from './AddFaction'
 import AddLayer from './AddLayer'
@@ -23,6 +24,7 @@ import relationsIcon from '../assets/icons/relations.svg'
 import topoIcon from '../assets/icons/topo.svg'
 import terrainIcon from '../assets/icons/terrain.svg'
 import eyeIcon from '../assets/icons/eye.svg'
+import rulerIcon from '../assets/icons/ruler.svg'
 import closeIcon from '../assets/icons/close.svg'
 import allTimeIcon from '../assets/icons/all-time.svg'
 import liveIcon from '../assets/icons/live.svg'
@@ -43,6 +45,7 @@ import type { DrawMode } from '../types/types'
 import TopoLayer from './TopoLayer'
 import TerrainLayer from './TerrainLayer'
 import Viewshed from './Viewshed'
+import Ruler from './Ruler'
 import TimeLine from './TimeLine'
 import PublishMenu from './PublishMenu'
 import { territoryAt, territoryKey } from '../map/territoryTime'
@@ -67,6 +70,8 @@ function Map() {
     const [isPlacingEvent, setIsPlacingEvent] = useState(false)
     const [isPlacingAnnotation, setIsPlacingAnnotation] = useState(false)
     const [isPlacingViewshed, setIsPlacingViewshed] = useState(false)
+    // the ruler: map clicks draw measured lines instead of selecting or drawing territories
+    const [isMeasuring, setIsMeasuring] = useState(false)
     const [mapSummary, setMapSummary] = useState<MapSummary | null>(null)
     const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
     const [showTopo, setShowTopo] = useState<boolean | null>(null)
@@ -374,16 +379,19 @@ function Map() {
     // (no tool), Select = terra-draw's editing select; placing tools clear the others, so one click
     // isn't handled twice
     const pickPan = () => {
+        setIsMeasuring(false)
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         setDrawMode(null)
     }
     const pickSelect = () => {
+        setIsMeasuring(false)
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         setDrawMode('select')
     }
     const startAddEvent = () => {
+        setIsMeasuring(false)
         setIsPlacingAnnotation(false)
         setIsPlacingViewshed(false)
         setIsPlacingEvent(true)
@@ -391,6 +399,7 @@ function Map() {
     // no draw/select tool while placing, so that click isn't also handled by them
     const startAddAnnotation = () => {
         setDrawMode(null)
+        setIsMeasuring(false)
         setIsPlacingEvent(false)
         setIsPlacingViewshed(false)
         setIsPlacingAnnotation(true)
@@ -399,8 +408,17 @@ function Map() {
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         if (editMode) setDrawMode(null)
+        setIsMeasuring(false)
         setIsPlacingViewshed((on) => !on)
     }
+    const toggleRuler = () => {
+        setIsPlacingEvent(false)
+        setIsPlacingAnnotation(false)
+        setIsPlacingViewshed(false)
+        if (editMode) setDrawMode(null)
+        setIsMeasuring((on) => !on)
+    }
+    const closeRuler = useCallback(() => setIsMeasuring(false), [])
     const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation
 
     if (!id) return <p>Map not found</p>
@@ -408,80 +426,84 @@ function Map() {
     return (
         <div className="relative">
             <MapProvider>
-                <TerritoryLayer
-                    mapId={id}
-                    factions={factions}
-                    layers={layers}
-                    territories={visibleTerritories}
-                    now={editTime}
-                    active={editMode}
-                    mode={drawMode}
-                    onModeChange={setDrawMode}
-                    onCreated={handleTerritoryCreated}
-                    onUpdated={handleTerritoryUpdated}
-                    onDeleted={handleTerritoryDeleted}
-                    onError={setError}
-                />
-                <AddAnnotation
-                    mapId={id}
-                    factions={factions}
-                    layers={layers}
-                    active={isPlacingAnnotation}
-                    onExit={() => setIsPlacingAnnotation(false)}
-                    onCreated={handleAnnotationCreated}
-                />
-                <AddEvent
-                    mapId={id}
-                    factions={factions}
-                    layers={layers}
-                    events={events}
-                    now={editTime}
-                    active={isPlacingEvent}
-                    onExit={() => setIsPlacingEvent(false)}
-                    onCreated={handleEventCreated}
-                />
-                <AnnotationLayer annotations={shownAnnotations} factions={factions} />
-                <AnnotationEditor
-                    annotations={shownAnnotations}
-                    factions={factions}
-                    layers={layers}
-                    active={editMode}
-                    aboveTimeline={!live && !showAllTime}
-                    onChange={handleAnnotationChange}
-                    onCommit={handleAnnotationCommit}
-                />
-                <EventMarkers events={shownEvents} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId}
-                    onDelete={handleEventDeleted} now={now} editMode={editMode} showRelations={showRelations} allTime={showAllTime} />
-                {editingEvent && (
-                    <EditEvent
+                <TerraDrawProvider>
+                    <TerritoryLayer
                         mapId={id}
-                        event={editingEvent}
+                        factions={factions}
+                        layers={layers}
+                        territories={visibleTerritories}
+                        now={editTime}
+                        active={editMode}
+                        mode={drawMode}
+                        onModeChange={setDrawMode}
+                        onCreated={handleTerritoryCreated}
+                        onUpdated={handleTerritoryUpdated}
+                        onDeleted={handleTerritoryDeleted}
+                        onError={setError}
+                        measuring={isMeasuring}
+                    />
+                    <AddAnnotation
+                        mapId={id}
+                        factions={factions}
+                        layers={layers}
+                        active={isPlacingAnnotation}
+                        onExit={() => setIsPlacingAnnotation(false)}
+                        onCreated={handleAnnotationCreated}
+                    />
+                    <AddEvent
+                        mapId={id}
                         factions={factions}
                         layers={layers}
                         events={events}
-                        onSaved={handleEventSaved}
-                        onClose={() => setEditingEventId(null)}
+                        now={editTime}
+                        active={isPlacingEvent}
+                        onExit={() => setIsPlacingEvent(false)}
+                        onCreated={handleEventCreated}
                     />
-                )}
-                {/* view mode is always selectable; in edit mode only with the Select tool */}
-                <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed} editMode={editMode} territories={visibleTerritories} />
-                <MapControls territories={territories} events={events} />
-                <PropertyPanel
-                    map={mapSummary}
-                    factions={factions}
-                    layers={layers}
-                    hiddenLayers={hiddenLayers}
-                    onToggleLayer={handleToggleLayer}
-                    onShowAllLayers={() => setHiddenLayers(new Set())}
-                    events={events}
-                    territories={territories}
-                    annotations={annotations}
-                    onFly={handleTimeChange}
-                />
-                <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
-                <TerrainLayer enabled={showTerrain} />
-                <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
-                {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} />}
+                    <AnnotationLayer annotations={shownAnnotations} factions={factions} />
+                    <AnnotationEditor
+                        annotations={shownAnnotations}
+                        factions={factions}
+                        layers={layers}
+                        active={editMode}
+                        aboveTimeline={!live && !showAllTime}
+                        onChange={handleAnnotationChange}
+                        onCommit={handleAnnotationCommit}
+                    />
+                    <EventMarkers events={shownEvents} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId}
+                        onDelete={handleEventDeleted} now={now} editMode={editMode} showRelations={showRelations} allTime={showAllTime} />
+                    {editingEvent && (
+                        <EditEvent
+                            mapId={id}
+                            event={editingEvent}
+                            factions={factions}
+                            layers={layers}
+                            events={events}
+                            onSaved={handleEventSaved}
+                            onClose={() => setEditingEventId(null)}
+                        />
+                    )}
+                    {/* view mode is always selectable; in edit mode only with the Select tool */}
+                    <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed && !isMeasuring} editMode={editMode} territories={visibleTerritories} />
+                    <MapControls territories={territories} events={events} />
+                    <PropertyPanel
+                        map={mapSummary}
+                        factions={factions}
+                        layers={layers}
+                        hiddenLayers={hiddenLayers}
+                        onToggleLayer={handleToggleLayer}
+                        onShowAllLayers={() => setHiddenLayers(new Set())}
+                        events={events}
+                        territories={territories}
+                        annotations={annotations}
+                        onFly={handleTimeChange}
+                    />
+                    <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
+                    <TerrainLayer enabled={showTerrain} />
+                    <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
+                    <Ruler measuring={isMeasuring} onClose={closeRuler} />
+                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} />}
+                </TerraDrawProvider>
             </MapProvider>
 
 
@@ -720,6 +742,18 @@ function Map() {
                     >
                         <NavIcon src={eyeIcon} />
                     </button>
+
+                    {/* ruler: map clicks draw lines labelled with their distances */}
+                    <button
+                        type="button"
+                        aria-pressed={isMeasuring}
+                        aria-label="Ruler"
+                        title="Ruler - measure distances on the map"
+                        onClick={toggleRuler}
+                        className={`${navButtonClass} ${isMeasuring ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={rulerIcon} />
+                    </button>
                 </div>
 
                 {/* phones: the same map layers and tools, in one menu */}
@@ -727,13 +761,14 @@ function Map() {
                     <NavDropdown
                         label={<NavIcon src={topoIcon} />}
                         ariaLabel="Map layers and tools"
-                        active={showRelations || !!showTopo || showTerrain || isPlacingViewshed}
+                        active={showRelations || !!showTopo || showTerrain || isPlacingViewshed || isMeasuring}
                         align="right"
                     >
                         <NavDropdownItem onClick={() => setShowRelations((on) => !on)} active={showRelations}><NavIcon src={relationsIcon} /> Event relations</NavDropdownItem>
                         <NavDropdownItem onClick={() => setShowTopo((on) => !on)} active={!!showTopo}><NavIcon src={topoIcon} /> Topographic map</NavDropdownItem>
                         <NavDropdownItem onClick={() => setShowTerrain((on) => !on)} active={showTerrain}><NavIcon src={terrainIcon} /> 3D terrain</NavDropdownItem>
                         <NavDropdownItem onClick={toggleViewshed} active={isPlacingViewshed}><NavIcon src={eyeIcon} /> Line of sight</NavDropdownItem>
+                        <NavDropdownItem onClick={toggleRuler} active={isMeasuring}><NavIcon src={rulerIcon} /> Ruler</NavDropdownItem>
                     </NavDropdown>
                 </div>
 

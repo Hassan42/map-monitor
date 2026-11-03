@@ -26,7 +26,12 @@
 }
 
 /* hide the terra-draw toolbar outside edit mode (toggled by TerritoryLayer) */
-.draw-locked .maplibregl-ctrl-group:has(.maplibregl-terradraw-render-button, .maplibregl-terradraw-add-control) {
+.draw-locked .maplibregl-ctrl-group:has(.maplibregl-terradraw-measure-render-button, .maplibregl-terradraw-measure-add-control) {
+  display: none;
+}
+
+/* the ruler's line tool: driven by the nav bar's Ruler button, not the draw toolbar */
+.maplibregl-ctrl-group .maplibregl-terradraw-measure-add-linestring-button {
   display: none;
 }
 
@@ -166,7 +171,7 @@
   .maplibregl-map .maplibregl-ctrl-bottom-left {
     bottom: 48px;
   }
-  .maplibregl-ctrl-group:has(.maplibregl-terradraw-render-button, .maplibregl-terradraw-add-control) {
+  .maplibregl-ctrl-group:has(.maplibregl-terradraw-measure-render-button, .maplibregl-terradraw-measure-add-control) {
     display: none;
   }
 }
