@@ -7,7 +7,7 @@ import { useTerraDraw } from '../store/TerraDrawContext'
 import { EDIT_ACTIONS, RULER_MODE, isHighlighted } from '../map/territoryDraw'
 import { createTerritory, deleteTerritory, editTerritory } from '../api/territory'
 import { toLocalInput } from './eventFormValues'
-import { carryEditForward, withShapeAt } from '../map/territoryTime'
+import { carryEditForward, shapeStart, withShapeAt } from '../map/territoryTime'
 import { parseServerTime } from '../map/eventTime'
 import ConfirmDialog from './ConfirmDialog'
 import type { DrawMode, Faction, Layer, Territory } from '../types/types'
@@ -41,26 +41,34 @@ function translateRings(rings: number[][][], from: LngLat, to: LngLat): number[]
 }
 
 // the edit form's starting values: faction and color of the latest shape, creation = the first shape's date
-// (empty for "always", a 1970 `from`), end = the territory's end or now
+// (empty for an undated first shape), end = the territory's end or now
 function territoryToFormValues(t: Territory): TerritoryFormValues {
   const history = t.history ?? []
-  const latest = history[history.length - 1] ?? t
-  const created = history.length > 0 ? parseServerTime(history[0].from) : 0
+  const created = history[0]?.from
   return {
-    factionId: latest.factionId,
+    // `t` is the territory as shown at the map's date, so the form opens on the faction you're looking at
+    factionId: t.factionId,
     layerId: t.layerId ?? null,
-    color: latest.color,
-    createdAt: created > 0 ? toLocalInput(created) : '',
+    color: t.color,
+    createdAt: created ? toLocalInput(parseServerTime(created)) : '',
     ongoing: !t.endTime,
     endTime: toLocalInput(t.endTime ? parseServerTime(t.endTime) : Date.now()),
   }
 }
 
+// when a faction change made in the form starts: the map's date, or with All time (Infinity) the latest
+// shape's own date. null: All time on an undated shape, there's no date to offer
+function factionChangeTime(t: Territory, now: number): number | null {
+  if (now !== Number.POSITIVE_INFINITY) return Math.min(now, Date.now())
+  const latest = t.history?.at(-1)
+  return latest?.from ? parseServerTime(latest.from) : null
+}
+
 // the creation can't be in the future, nor at or after the territory's second shape
 function latestCreation(t: Territory): { time: number; message: string } {
   const second = t.history?.[1]
-  if (second && parseServerTime(second.from) <= Date.now()) {
-    return { time: parseServerTime(second.from) - 60_000, message: "Creation must be before the territory's next shape" }
+  if (second && shapeStart(second) <= Date.now()) {
+    return { time: shapeStart(second) - 60_000, message: "Creation must be before the territory's next shape" }
   }
   return { time: Date.now(), message: "Creation can't be in the future" }
 }
@@ -118,7 +126,13 @@ function TerritoryLayer({
   // edit into later shapes wherever they still have the changed stretches (carryEditForward) - their
   // own changes stay. `territory` is the version shown at that date; it carries the full history
   const saveShape = (territory: Territory, points: string) => {
-    const at = Math.min(nowRef.current, Date.now()) // never in the future: Live would show an older shape until then
+    // on the timeline: a new shape from its date, never in the future (Live would show an older shape until
+    // then). With All time there's no date: the edit replaces the latest shape in place, so a territory
+    // without dates keeps one shape for all time instead of getting a new one dated today
+    const latest = territory.history?.at(-1)
+    const at = nowRef.current === Number.POSITIVE_INFINITY
+      ? (latest ? shapeStart(latest) : Number.NEGATIVE_INFINITY)
+      : Math.min(nowRef.current, Date.now())
     const shaped = withShapeAt(territory, { points, factionId: territory.factionId, color: territory.color }, at)
     const updated = carryEditForward(shaped, territory.points, points, at)
     // PUT replaces every field, so send the whole territory
@@ -417,21 +431,25 @@ function TerritoryLayer({
 
   // PUT replaces every field. Faction and color apply to the territory on every date (all its shapes);
   // the creation date moves its first shape. The territory's own fields follow its latest shape
-  const handleEditSubmit = async (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null) => {
+  const handleEditSubmit = async (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null, wholePeriod: boolean) => {
     if (!editing) return
     const { factionId, color, layerId } = values
-    let history = (editing.history ?? []).map((s) => ({ ...s, factionId, color }))
-    const from = new Date(createdMs ?? 0).toISOString() // 1970 = "always" (see withShapeAt)
+    let history = (editing.history ?? []).map((s) => (wholePeriod ? { ...s, factionId, color } : s))
+    const from = createdMs === null ? null : new Date(createdMs).toISOString() // null: it has always been there
     if (history.length > 0) history[0] = { ...history[0], from }
     else if (createdMs !== null) history = [{ from, points: editing.points, factionId, color }]
-    const latest = history[history.length - 1]
+    // not the whole period: the same shape, with this faction, from that date until its next change
+    const changeTime = factionChangeTime(editing, now)
+    const updated = !wholePeriod && changeTime !== null
+      ? withShapeAt({ ...editing, history }, { points: editing.points, factionId, color }, changeTime)
+      : { ...editing, history, factionId, color, points: history.at(-1)?.points ?? editing.points }
     const saved = await editTerritory(mapId, editing.id, {
       name: editing.name,
-      points: latest?.points ?? editing.points,
-      factionId,
-      color,
+      points: updated.points,
+      factionId: updated.factionId,
+      color: updated.color,
       layerId,
-      history,
+      history: updated.history,
       endTime: endMs === null ? null : new Date(endMs).toISOString(),
     })
     onUpdated(saved)
@@ -440,6 +458,14 @@ function TerritoryLayer({
 
   const overlays = (
     <>
+      {/* how to edit the selected shape; phones have no right-click, so no hint there */}
+      {active && mode === 'select' && selected?.type === 'territory' && !moving && !measuring && (
+        <div className="pointer-events-none fixed top-16 left-[calc((100%-24rem)/2)] z-40 flex -translate-x-1/2 items-center gap-3 whitespace-nowrap bg-neutral-900 px-3 py-1.5 text-xs text-gray-400 shadow-xl ring-1 ring-white/10 max-md:hidden">
+          <span><span className="font-semibold text-gray-200">Drag</span> a point to move it</span>
+          <span><span className="font-semibold text-gray-200">Click</span> a midpoint to add one</span>
+          <span><span className="font-semibold text-gray-200">Right-click</span> a point to delete it</span>
+        </div>
+      )}
       {menu && active && (
         <div
           className="fixed z-50 min-w-40 bg-neutral-900 py-1 text-sm text-gray-300 shadow-xl ring-1 ring-white/10"
@@ -504,6 +530,8 @@ function TerritoryLayer({
           layers={layers}
           requireCreated={false}
           maxCreated={latestCreation(editing)}
+          factionFrom={factionChangeTime(editing, now)}
+          severalOwners={new Set((editing.history ?? []).map((s) => s.factionId)).size > 1}
           onSubmit={handleEditSubmit}
           onCancel={() => setEditingId(null)}
         />
@@ -520,15 +548,14 @@ function TerritoryLayer({
 
   const handleSubmit = async (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null) => {
     const { factionId, color, layerId } = values
-    const created = createdMs ?? 0 // empty = it has always been there: a 1970 first shape (see withShapeAt)
     const territory = await createTerritory(mapId, {
       name: '',
       color,
       points: pendingPoints,
       factionId,
       layerId,
-      // the creation time is the first history entry's `from`
-      history: [{ from: new Date(created).toISOString(), points: pendingPoints, factionId, color }],
+      // the creation time is the first history entry's `from`; null: it has always been there
+      history: [{ from: createdMs === null ? null : new Date(createdMs).toISOString(), points: pendingPoints, factionId, color }],
       endTime: endMs === null ? null : new Date(endMs).toISOString(),
     })
     // territories changes -> reload effect replaces the drawn shape with the saved one

@@ -25,6 +25,8 @@ function TerritoryForm({
   layers,
   requireCreated = true,
   maxCreated,
+  factionFrom,
+  severalOwners = false,
   onSubmit,
   onCancel,
 }: {
@@ -35,13 +37,20 @@ function TerritoryForm({
   layers: Layer[]
   requireCreated?: boolean
   maxCreated: { time: number; message: string } // the latest allowed creation, and why
-  // createdMs is null for "always"; endMs is null while ongoing
-  onSubmit: (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null) => Promise<void>
+  // editing only: the date a faction change can start from (null: no date to offer, it's undated). Left
+  // out for a new territory, which has no period yet
+  factionFrom?: number | null
+  severalOwners?: boolean // its faction changes over time: "whole period" would replace them all
+  // createdMs is null for "always"; endMs is null while ongoing; wholePeriod: the faction and color apply
+  // to every date, otherwise from factionFrom until the next change
+  onSubmit: (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null, wholePeriod: boolean) => Promise<void>
   onCancel: () => void
 }) {
   const [factionId, setFactionId] = useState<number | ''>(initial.factionId)
   const [layerId, setLayerId] = useState<number | null>(initial.layerId)
   const [color, setColor] = useState(initial.color)
+  // never ticked by default on a territory that changes hands, so a save can't wipe that out by accident
+  const [wholePeriod, setWholePeriod] = useState(!severalOwners || factionFrom == null)
   const [createdAt, setCreatedAt] = useState(initial.createdAt)
   const [ongoing, setOngoing] = useState(initial.ongoing)
   const [endTime, setEndTime] = useState(initial.endTime)
@@ -61,7 +70,7 @@ function TerritoryForm({
     setError('')
     setLoading(true)
     try {
-      await onSubmit({ factionId, layerId, color, createdAt, ongoing, endTime }, createdMs, ongoing ? null : endMs)
+      await onSubmit({ factionId, layerId, color, createdAt, ongoing, endTime }, createdMs, ongoing ? null : endMs, wholePeriod)
     } catch {
       setError('Could not save territory')
       setLoading(false)
@@ -94,6 +103,26 @@ function TerritoryForm({
                 <option key={faction.id} value={faction.id}>{faction.name}</option>
               ))}
             </select>
+          )}
+          {factionFrom !== undefined && (
+            <>
+              <label className="mt-1 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={wholePeriod}
+                  disabled={factionFrom === null}
+                  onChange={(e) => setWholePeriod(e.target.checked)}
+                  className="accent-accent-400 disabled:opacity-40"
+                />
+                Whole period
+              </label>
+              {!wholePeriod && factionFrom !== null && (
+                <span className="text-xs text-gray-500">
+                  From {new Date(factionFrom).toLocaleDateString(undefined, { dateStyle: 'medium' })}, until its next change
+                </span>
+              )}
+              {wholePeriod && severalOwners && <span className="text-xs text-amber-400">Replaces every faction it has had, on all dates</span>}
+            </>
           )}
         </div>
         <LayerSelect id="territory-layer" layers={layers} value={layerId} onChange={setLayerId} />
