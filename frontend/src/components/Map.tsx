@@ -532,7 +532,7 @@ function Map() {
                     <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
                     <Ruler measuring={isMeasuring} onClose={closeRuler} />
                     {isCapturing && <ScreenshotTool mapTitle={mapSummary?.title ?? 'map'} showTopo={!!showTopo} onClose={closeScreenshot} />}
-                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} noPanel={isDemo} />}
+                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} demo={isDemo} />}
                 </TerraDrawProvider>
             </MapProvider>
 
