@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import MapProvider from '../store/MapContext'
 import TerraDrawProvider from '../store/TerraDrawContext'
 import TerritoryLayer from './TerritoryLayer'
@@ -22,9 +22,11 @@ import handIcon from '../assets/icons/hand.svg'
 import cursorIcon from '../assets/icons/cursor.svg'
 import relationsIcon from '../assets/icons/relations.svg'
 import topoIcon from '../assets/icons/topo.svg'
+import toolsIcon from '../assets/icons/tools.svg'
 import terrainIcon from '../assets/icons/terrain.svg'
 import eyeIcon from '../assets/icons/eye.svg'
 import rulerIcon from '../assets/icons/ruler.svg'
+import cameraIcon from '../assets/icons/camera.svg'
 import closeIcon from '../assets/icons/close.svg'
 import allTimeIcon from '../assets/icons/all-time.svg'
 import liveIcon from '../assets/icons/live.svg'
@@ -46,6 +48,8 @@ import TopoLayer from './TopoLayer'
 import TerrainLayer from './TerrainLayer'
 import Viewshed from './Viewshed'
 import Ruler from './Ruler'
+import ScreenshotTool from './ScreenshotTool'
+import DemoDirector from './DemoDirector'
 import TimeLine from './TimeLine'
 import PublishMenu from './PublishMenu'
 import { territoryAt, territoryKey } from '../map/territoryTime'
@@ -59,11 +63,18 @@ function Map() {
     const [layers, setLayers] = useState<Layer[]>([])
     const [events, setEvents] = useState<EventMarker[]>([])
     const [territories, setTerritories] = useState<Territory[]>([])
+    // both first loads are done (even if one failed): the map can open on what's there
+    const [eventsLoaded, setEventsLoaded] = useState(false)
+    const [territoriesLoaded, setTerritoriesLoaded] = useState(false)
     const [annotations, setAnnotations] = useState<Annotation[]>([])
     const [showAddFaction, setShowAddFaction] = useState(false)
     const [showAddLayer, setShowAddLayer] = useState(false)
     // layers switched off in the property panel (null = elements in no layer): their elements leave the map
     const [hiddenLayers, setHiddenLayers] = useState<Set<LayerKey>>(() => new Set())
+    const [searchParams] = useSearchParams()
+    // ?demo: the landing page's demo, this same page played like a film from the date in ?from
+    const demoFrom = searchParams.has('demo') ? Date.parse(searchParams.get('from') ?? '') : null
+    const isDemo = demoFrom !== null && !Number.isNaN(demoFrom)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(true)
     const [editMode, setEditMode] = useState(false)
@@ -72,15 +83,16 @@ function Map() {
     const [isPlacingViewshed, setIsPlacingViewshed] = useState(false)
     // the ruler: map clicks draw measured lines instead of selecting or drawing territories
     const [isMeasuring, setIsMeasuring] = useState(false)
+    const [isCapturing, setIsCapturing] = useState(false)
     const [mapSummary, setMapSummary] = useState<MapSummary | null>(null)
     const [drawMode, setDrawMode] = useState<DrawMode | null>("select")
-    const [showTopo, setShowTopo] = useState<boolean | null>(null)
-    const [showTerrain, setShowTerrain] = useState(false)
+    const [showTopo, setShowTopo] = useState<boolean | null>(true)
+    const [showTerrain, setShowTerrain] = useState(isDemo)
     // nav bar toggle: lines between related events that have happened by the timeline's date
-    const [showRelations, setShowRelations] = useState(false)
+    const [showRelations, setShowRelations] = useState(isDemo)
     // nav bar toggle: every element at once, ignoring the timeline's date. Territories then show their
     // latest shape, so edits made meanwhile are saved as of the present (`editTime` below)
-    const [showAllTime, setShowAllTime] = useState(true) // opens showing every date
+    const [showAllTime, setShowAllTime] = useState(!isDemo) // opens showing every date
     // bumped to reload the map's elements from the backend (after a change is discarded)
     const [elementsRevision, setElementsRevision] = useState(0)
     // bumped after every draft status refresh, i.e. after every edit: tells the open publish menu to reload
@@ -91,7 +103,7 @@ function Map() {
     const [editingEventId, setEditingEventId] = useState<number | null>(null)
     // the date the map shows (ms): decides which events are visible and how faded. The real clock
     // for now, refreshed every minute so events fade as time passes; a timeline slider can set it later
-    const [now, setNow] = useState(() => Date.now())
+    const [now, setNow] = useState(() => (isDemo ? demoFrom : Date.now()))
     const [today] = useState(() => Date.now()) // real time in case there was no events, we use it as fallback
     const [live, setLive] = useState<boolean>(false)
 
@@ -99,8 +111,8 @@ function Map() {
     // didn't exist yet or had ended left out. Rebuilt only when some territory switches state
     // (shownTerritoriesKey), not on every timeline tick - a new list makes TerritoryLayer redraw all polygons
     const shownTerritoriesKey = territoryKey(territories, now)
-    // the date edits are made at: the timeline's, or with All time (no date shown, latest shapes) the
-    // present - Infinity, which the save clamps to the real clock
+    // the date edits are made at: the timeline's, or with All time (no date shown, latest shapes)
+    // Infinity - a territory edit then replaces its latest shape instead of adding a dated one
     const editTime = showAllTime ? Number.POSITIVE_INFINITY : now
     const visibleTerritories = useMemo(
         () => (showAllTime
@@ -136,8 +148,8 @@ function Map() {
     const times = [
         ...events.flatMap((e) => (e.endTime ? [parseServerTime(e.timestamp), parseServerTime(e.endTime)] : [parseServerTime(e.timestamp)])),
         ...territories.flatMap((t) => [
-            // a state from 1970 means "always" (see withShapeAt): not a real date, leave it out of the range
-            ...(t.history ?? []).map((s) => parseServerTime(s.from)).filter((time) => time > 0),
+            // an undated state has no date to put in the range
+            ...(t.history ?? []).flatMap((s) => (s.from ? [parseServerTime(s.from)] : [])),
             ...(t.endTime ? [parseServerTime(t.endTime)] : []),
         ]),
     ]
@@ -194,6 +206,7 @@ function Map() {
         getMapEvents(id, editMode)
             .then(setEvents)
             .catch(() => setError('Could not load events'))
+            .finally(() => setEventsLoaded(true))
     }, [id, editMode, elementsRevision])
 
     // Fetching map territories from db - draft copies while editing, published otherwise
@@ -202,6 +215,7 @@ function Map() {
         getMapTerritories(id, editMode)
             .then(setTerritories)
             .catch(() => setError('Could not load territories'))
+            .finally(() => setTerritoriesLoaded(true))
     }, [id, editMode, elementsRevision])
 
     // Fetching map annotations from db - draft copies while editing, published otherwise
@@ -380,18 +394,21 @@ function Map() {
     // isn't handled twice
     const pickPan = () => {
         setIsMeasuring(false)
+        setIsCapturing(false)
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         setDrawMode(null)
     }
     const pickSelect = () => {
         setIsMeasuring(false)
+        setIsCapturing(false)
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         setDrawMode('select')
     }
     const startAddEvent = () => {
         setIsMeasuring(false)
+        setIsCapturing(false)
         setIsPlacingAnnotation(false)
         setIsPlacingViewshed(false)
         setIsPlacingEvent(true)
@@ -400,6 +417,7 @@ function Map() {
     const startAddAnnotation = () => {
         setDrawMode(null)
         setIsMeasuring(false)
+        setIsCapturing(false)
         setIsPlacingEvent(false)
         setIsPlacingViewshed(false)
         setIsPlacingAnnotation(true)
@@ -409,6 +427,7 @@ function Map() {
         setIsPlacingAnnotation(false)
         if (editMode) setDrawMode(null)
         setIsMeasuring(false)
+        setIsCapturing(false)
         setIsPlacingViewshed((on) => !on)
     }
     const toggleRuler = () => {
@@ -416,8 +435,17 @@ function Map() {
         setIsPlacingAnnotation(false)
         setIsPlacingViewshed(false)
         if (editMode) setDrawMode(null)
+        setIsCapturing(false)
         setIsMeasuring((on) => !on)
     }
+    const toggleScreenshot = () => {
+        setIsPlacingEvent(false)
+        setIsPlacingAnnotation(false)
+        setIsPlacingViewshed(false)
+        setIsMeasuring(false)
+        setIsCapturing((on) => !on)
+    }
+    const closeScreenshot = useCallback(() => setIsCapturing(false), [])
     const closeRuler = useCallback(() => setIsMeasuring(false), [])
     const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation
 
@@ -425,7 +453,7 @@ function Map() {
 
     return (
         <div className="relative">
-            <MapProvider>
+            <MapProvider collapseCredits={isDemo}>
                 <TerraDrawProvider>
                     <TerritoryLayer
                         mapId={id}
@@ -485,8 +513,9 @@ function Map() {
                     )}
                     {/* view mode is always selectable; in edit mode only with the Select tool */}
                     <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed && !isMeasuring} editMode={editMode} territories={visibleTerritories} />
-                    <MapControls territories={territories} events={events} />
-                    <PropertyPanel
+                    {!isDemo && <MapControls territories={territories} events={events} loaded={eventsLoaded && territoriesLoaded} />}
+                    {isDemo && <DemoDirector events={shownEvents} loaded={eventsLoaded && territoriesLoaded} from={demoFrom} onTime={handleTimeChange} />}
+                    {!isDemo && <PropertyPanel
                         map={mapSummary}
                         factions={factions}
                         layers={layers}
@@ -497,12 +526,13 @@ function Map() {
                         territories={territories}
                         annotations={annotations}
                         onFly={handleTimeChange}
-                    />
+                    />}
                     <TopoLayer visible={showTopo ? showTopo : false}></TopoLayer>
                     <TerrainLayer enabled={showTerrain} />
                     <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
                     <Ruler measuring={isMeasuring} onClose={closeRuler} />
-                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} />}
+                    {isCapturing && <ScreenshotTool mapTitle={mapSummary?.title ?? 'map'} showTopo={!!showTopo} onClose={closeScreenshot} />}
+                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} noPanel={isDemo} />}
                 </TerraDrawProvider>
             </MapProvider>
 
@@ -510,7 +540,19 @@ function Map() {
 
             {/* desktop: every tool as its own button. Phones (below md): the edit tools and the map toggles
                 each fold into one menu, so the bar fits - plain show/hide classes, no checks in code */}
-            <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
+            {/* the demo has no nav bar, where the date normally is */}
+            {isDemo && (
+                <div className="fixed right-3 top-3 z-40 bg-neutral-900 px-4 py-2 text-right font-mono uppercase shadow-xl ring-1 ring-white/10">
+                    <div className="text-lg font-bold leading-tight tracking-widest text-accent-300 md:text-2xl">
+                        {new Date(now).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    </div>
+                    <div className="text-xs tracking-widest text-gray-400 max-md:hidden">
+                        {new Date(now).toLocaleTimeString(undefined, { timeStyle: 'short' })}
+                    </div>
+                </div>
+            )}
+
+            {!isDemo && <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
                 <div className="contents max-md:hidden">
                     {canEdit && (
                         <button
@@ -754,14 +796,27 @@ function Map() {
                     >
                         <NavIcon src={rulerIcon} />
                     </button>
+
+                    {/* screenshot: drag a box over the map, pick a background, download a picture */}
+                    <button
+                        type="button"
+                        aria-pressed={isCapturing}
+                        aria-label="Screenshot"
+                        title="Screenshot - save a picture of part of the map"
+                        onClick={toggleScreenshot}
+                        className={`${navButtonClass} ${isCapturing ? navButtonActiveClass : ''}`}
+                    >
+                        <NavIcon src={cameraIcon} />
+                    </button>
                 </div>
 
                 {/* phones: the same map layers and tools, in one menu */}
                 <div className="md:hidden">
                     <NavDropdown
-                        label={<NavIcon src={topoIcon} />}
+                        label={<NavIcon src={toolsIcon} />}
                         ariaLabel="Map layers and tools"
-                        active={showRelations || !!showTopo || showTerrain || isPlacingViewshed || isMeasuring}
+                        // not topo: it's on by default, which would leave this lit all the time
+                        active={showRelations || showTerrain || isPlacingViewshed || isMeasuring || isCapturing}
                         align="right"
                     >
                         <NavDropdownItem onClick={() => setShowRelations((on) => !on)} active={showRelations}><NavIcon src={relationsIcon} /> Event relations</NavDropdownItem>
@@ -769,6 +824,7 @@ function Map() {
                         <NavDropdownItem onClick={() => setShowTerrain((on) => !on)} active={showTerrain}><NavIcon src={terrainIcon} /> 3D terrain</NavDropdownItem>
                         <NavDropdownItem onClick={toggleViewshed} active={isPlacingViewshed}><NavIcon src={eyeIcon} /> Line of sight</NavDropdownItem>
                         <NavDropdownItem onClick={toggleRuler} active={isMeasuring}><NavIcon src={rulerIcon} /> Ruler</NavDropdownItem>
+                        <NavDropdownItem onClick={toggleScreenshot} active={isCapturing}><NavIcon src={cameraIcon} /> Screenshot</NavDropdownItem>
                     </NavDropdown>
                 </div>
 
@@ -780,12 +836,12 @@ function Map() {
                     type="button"
                     aria-label="Close map"
                     title={auth.currentUser ? 'Back to maps' : 'Sign in'}
-                    onClick={() => navigate(auth.currentUser ? '/maps' : '/login')}
+                    onClick={() => navigate(auth.currentUser ? '/maps' : '/')}
                     className={navButtonClass}
                 >
                     <NavIcon src={closeIcon} />
                 </button>
-            </nav>
+            </nav>}
 
             {loading && <p className="absolute bottom-4 left-4 bg-white px-2 py-1">Loading...</p>}
             {error && <p className="absolute bottom-4 left-4 text-red-600 bg-white px-2 py-1">{error}</p>}

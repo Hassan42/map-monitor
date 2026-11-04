@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- three sliders: the map's layers and tools -->
+  <path d="M3 6H11M17 6H21M3 12H5M11 12H21M3 18H13M19 18H21"/>
+  <rect x="11" y="3.5" width="5" height="5" fill="black"/>
+  <rect x="5" y="9.5" width="5" height="5" fill="black"/>
+  <rect x="13" y="15.5" width="5" height="5" fill="black"/>
+</svg>
