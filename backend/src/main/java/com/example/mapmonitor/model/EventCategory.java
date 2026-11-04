@@ -8,6 +8,7 @@ public enum EventCategory {
     ATTACK,
     CAPTURE,
     MARITIME_ATTACK,
+    PLANE_CRASH,
     // explosions / remote violence
     EXPLOSION,
     AIR_STRIKE,
@@ -24,6 +25,7 @@ public enum EventCategory {
     HEADQUARTERS_ESTABLISHED,
     NON_VIOLENT_TERRITORY_TRANSFER,
     OPERATION,
+    LEGISLATION,
     // protests
     PEACEFUL_PROTEST,
     VIOLENT_PROTEST,
@@ -32,5 +34,8 @@ public enum EventCategory {
     ATTACK_ON_CIVILIANS,
     LOOTING,
     PROPERTY_DESTRUCTION,
+    // natural disasters
+    STORM,
+    EARTHQUAKE,
     OTHER
 }
