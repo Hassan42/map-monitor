@@ -51,7 +51,7 @@ export const useContextMenu = () => {
   return [ctx.contextMenu, ctx.setContextMenu] as const
 }
 
-function MapProvider({ children }: { children: ReactNode }) {
+function MapProvider({ children, collapseCredits = false }: { children: ReactNode; collapseCredits?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<Map | null>(null)
   const [selected, setSelected] = useState<Selection>(null)
@@ -69,21 +69,31 @@ function MapProvider({ children }: { children: ReactNode }) {
       maxPitch: 85,
       // show each tile as soon as it arrives, instead of fading it in over 300ms
       fadeDuration: 0,
+      // the small (i) button instead of the credits line; MapLibre opens it at first, so it's closed on load
+      ...(collapseCredits ? { attributionControl: { compact: true } } : {}),
     })
 
     const resizeObserver = new ResizeObserver(() => mapInstance.resize())
     resizeObserver.observe(containerRef.current)
 
-    mapInstance.on('load', () => setMap(mapInstance))
+    mapInstance.on('load', () => {
+      if (collapseCredits) mapInstance.getContainer().querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
+      setMap(mapInstance)
+    })
     // touch: a long press opens the same menus as a right-click
     const removeLongPress = addLongPress(mapInstance.getCanvas())
 
     return () => {
       removeLongPress()
       resizeObserver.disconnect()
-      mapInstance.remove()
       setMap(null)
+      // React cleans up a parent before its children: removing the map right away would leave the
+      // layers' own cleanups (removeEventLayers etc.) calling into a dead map, which crashes the page.
+      // So the map goes once they've run
+      setTimeout(() => mapInstance.remove())
     }
+    // set once, when the map is made
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

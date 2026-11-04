@@ -24,7 +24,8 @@ function territoryTicks(territories: Territory[], selected: Selection): number[]
     const territory = territories.find((t) => t.id === selected.id)
     const end = territory?.endTime ? parseServerTime(territory.endTime) : Number.POSITIVE_INFINITY
     // parseServerTime, not Date.parse: the backend sends UTC without a zone, which Date.parse would read as local time
-    const times = territory?.history?.map((s) => parseServerTime(s.from)).filter((time) => time < end) ?? []
+    // an undated shape has no time to mark
+    const times = territory?.history?.flatMap((s) => (s.from ? [parseServerTime(s.from)] : [])).filter((time) => time < end) ?? []
     return [...new Set(times)] // once each, even if two states share a time
 }
 
@@ -41,6 +42,7 @@ function TimeLine({
     territories,
     events,
     onChange,
+    noPanel = false,
 }: {
     min: number,
     max: number,
@@ -48,6 +50,7 @@ function TimeLine({
     territories: Territory[],
     events: EventMarker[], // the shown ones (visible layers), for the event strip
     onChange: (time: number) => void
+    noPanel?: boolean // no property panel beside the map: center on the whole width
 }) {
     const [playing, setPlaying] = useState(false)
     const [selected] = useSelection()
@@ -177,7 +180,7 @@ function TimeLine({
         // screen, just above the property sheet's bar
         <div
             ref={panelRef}
-            className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 left-[calc((100%-24rem)/2)]
+            className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 ${noPanel ? 'left-1/2' : 'left-[calc((100%-24rem)/2)]'}
                 max-md:inset-x-2 max-md:bottom-14 max-md:translate-x-0 max-md:gap-2 max-md:px-3 max-md:py-2`}
         >
             <button
@@ -203,7 +206,7 @@ function TimeLine({
             <div
                 ref={barRef}
                 title="Scroll to zoom; drag the ticks or Shift+scroll to move"
-                className="relative h-[82px] w-[min(52rem,calc(100vw-30rem))] overflow-hidden max-md:w-auto max-md:min-w-0 max-md:flex-1"
+                className={`relative h-[82px] ${noPanel ? 'w-[min(52rem,calc(100vw-10rem))]' : 'w-[min(52rem,calc(100vw-30rem))]'} overflow-hidden max-md:w-auto max-md:min-w-0 max-md:flex-1`}
             >
                 {/* the strip below the slider's track: drag it to move the zoomed window */}
                 <div
