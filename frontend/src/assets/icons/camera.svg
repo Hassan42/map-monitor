@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- a camera: take a picture of part of the map -->
+  <path d="M2.5 7.5H7.5L9.5 4H14.5L16.5 7.5H21.5V19.5H2.5Z"/>
+  <circle cx="12" cy="13" r="3.5"/>
+</svg>
