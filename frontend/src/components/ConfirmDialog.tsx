@@ -1,18 +1,20 @@
 import { useEffect } from 'react'
-import { formOverlayClass, formClass, formTitleClass, formSecondaryButtonClass } from '../styles/formStyles'
+import { formOverlayClass, formClass, formTitleClass, formPrimaryButtonClass, formSecondaryButtonClass } from '../styles/formStyles'
 
 // a yes/no question in the app's own style, instead of the browser's window.confirm.
-// Escape or clicking outside counts as No
+// Escape or clicking outside counts as No. `danger`: a red confirm button, for things that can't be undone
 function ConfirmDialog({
   title,
   message,
   confirmLabel = 'Delete',
+  danger = true,
   onConfirm,
   onCancel,
 }: {
   title: string
   message: string
   confirmLabel?: string
+  danger?: boolean
   onConfirm: () => void
   onCancel: () => void
 }) {
@@ -40,7 +42,7 @@ function ConfirmDialog({
             type="button"
             autoFocus
             onClick={onConfirm}
-            className="flex-1 bg-red-500 px-3 py-1.5 font-medium text-white transition-colors hover:bg-red-400"
+            className={danger ? 'flex-1 bg-red-500 px-3 py-1.5 font-medium text-white transition-colors hover:bg-red-400' : formPrimaryButtonClass}
           >
             {confirmLabel}
           </button>

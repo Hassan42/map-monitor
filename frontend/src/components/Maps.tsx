@@ -8,12 +8,20 @@ import { navButtonClass } from '../styles/navStyles'
 import NavIcon from './NavIcon'
 import publicIcon from '../assets/icons/visibility-public.svg'
 import privateIcon from '../assets/icons/visibility-private.svg'
+import AppLogo from './AppLogo'
+import ConfirmDialog from './ConfirmDialog'
+import CountryChips from './CountryChips'
+import EditCountries from './EditCountries'
 
 function Maps() {
     const [maps, setMaps] = useState<MapSummary[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [showAddMap, setShowAddMap] = useState(false)
+    // the map whose public/private switch is waiting for a yes
+    const [visibilityMap, setVisibilityMap] = useState<MapSummary | null>(null)
+    // the map whose country tags are being edited
+    const [countriesMap, setCountriesMap] = useState<MapSummary | null>(null)
     const navigate = useNavigate()
     const { username, signOut } = useAuth()
 
@@ -43,10 +51,10 @@ function Maps() {
             .catch(() => setError('Could not delete map'))
     }
 
-    // flips public <-> private, then updates the list in place (the maps are only fetched once)
+    // flips public <-> private once confirmed, then updates the list in place (the maps are only fetched once)
     const handleVisibility = (map: MapSummary) => {
         const next: MapVisibility = map.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC'
-        if (!window.confirm(`Make "${map.title}" ${next.toLowerCase()}?`)) return
+        setVisibilityMap(null)
         changeVisibility(map.id, next)
             .then(() => setMaps((prev) => prev.map((m) => (m.id === map.id ? { ...m, visibility: next } : m))))
             .catch(() => setError('Could not change map visibility'))
@@ -56,7 +64,7 @@ function Maps() {
         <div className="min-h-screen bg-neutral-950 text-gray-300">
             {/* same bar as the map view */}
             <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
-                <span className="px-2 font-mono text-sm font-bold uppercase tracking-widest text-accent-300">Map Monitor</span>
+                <span className="px-2"><AppLogo /></span>
                 <span className="px-2 text-sm">{username}</span>
                 <button type="button" onClick={() => setShowAddMap(true)} className={`${navButtonClass} ml-auto`}>
                     + New Map
@@ -105,6 +113,7 @@ function Maps() {
                                     <p className="line-clamp-3 text-sm text-gray-400">
                                         {map.description || <span className="italic text-gray-600">No description</span>}
                                     </p>
+                                    <CountryChips codes={map.countries} limit={3} />
                                 </button>
 
                                 <div className="flex border-t border-neutral-800 text-sm">
@@ -124,13 +133,23 @@ function Maps() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => handleVisibility(map)}
+                                        onClick={() => setCountriesMap(map)}
+                                        className="px-4 py-2 text-gray-500 transition-colors hover:bg-accent-400/15 hover:text-accent-300"
+                                    >
+                                        Tags
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setVisibilityMap(map)}
                                         // open eye = public, closed eye = private; the title says which and what a click does
                                         aria-label={map.visibility === 'PUBLIC' ? 'Public - make private' : 'Private - make public'}
                                         title={map.visibility === 'PUBLIC' ? 'Public - click to make private' : 'Private - click to make public'}
-                                        className={`flex items-center px-4 py-2 text-gray-500 transition-colors ${map.visibility === 'PUBLIC' ? " hover:bg-green-500/15 hover:text-green-400 ": "hover:bg-blue-500/15 hover:text-blue-400" } `}
+                                        className={`flex items-center gap-2 px-3 py-2 transition-colors ${map.visibility === 'PUBLIC' ? 'text-green-400 hover:bg-green-500/15' : 'text-gray-400 hover:bg-blue-500/15 hover:text-blue-400'}`}
                                     >
                                         <NavIcon src={map.visibility === 'PUBLIC' ? publicIcon : privateIcon} />
+                                        <span className="font-mono text-[11px] font-semibold uppercase tracking-widest">
+                                            {map.visibility === 'PUBLIC' ? 'Public' : 'Private'}
+                                        </span>
                                     </button>
                                 </div>
                             </li>
@@ -140,6 +159,37 @@ function Maps() {
             </main>
 
             {showAddMap && <AddMap onCreated={handleCreated} onClose={() => setShowAddMap(false)} />}
+            {countriesMap && (
+                <EditCountries
+                    map={countriesMap}
+                    onSaved={(countries) => {
+                        setMaps((prev) => prev.map((m) => (m.id === countriesMap.id ? { ...m, countries } : m)))
+                        setCountriesMap(null)
+                    }}
+                    onClose={() => setCountriesMap(null)}
+                />
+            )}
+            {visibilityMap && (
+                visibilityMap.visibility === 'PUBLIC' ? (
+                    <ConfirmDialog
+                        title={`Make "${visibilityMap.title}" private?`}
+                        message="Only you will be able to see it. Anyone who has the link loses access."
+                        confirmLabel="Make private"
+                        danger={false}
+                        onConfirm={() => handleVisibility(visibilityMap)}
+                        onCancel={() => setVisibilityMap(null)}
+                    />
+                ) : (
+                    <ConfirmDialog
+                        title={`Make "${visibilityMap.title}" public?`}
+                        message="Anyone with the link can view its published version, and others can import its layers (with credit to you). Your drafts stay private."
+                        confirmLabel="Make public"
+                        danger={false}
+                        onConfirm={() => handleVisibility(visibilityMap)}
+                        onCancel={() => setVisibilityMap(null)}
+                    />
+                )
+            )}
         </div>
     )
 }
