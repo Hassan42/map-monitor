@@ -2,11 +2,13 @@ import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { createUserMap } from '../api/map'
 import type { MapSummary } from '../types/types'
+import CountryPicker from './CountryPicker'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
 function AddMap({ onCreated, onClose }: { onCreated: (map: MapSummary) => void; onClose: () => void }) {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
+    const [countries, setCountries] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -15,10 +17,11 @@ function AddMap({ onCreated, onClose }: { onCreated: (map: MapSummary) => void; 
         setError('')
         setLoading(true)
         try {
-            const map = await createUserMap({ title, description })
+            const map = await createUserMap({ title, description, countries })
             onCreated(map)
             setTitle('')
             setDescription('')
+            setCountries([])
         } catch {
             setError('Could not create map')
         } finally {
@@ -37,6 +40,10 @@ function AddMap({ onCreated, onClose }: { onCreated: (map: MapSummary) => void; 
                 <div className={formFieldClass}>
                     <label htmlFor="desc">Description:</label>
                     <input type="text" id="desc" name="desc" value={description} onChange={(e) => setDescription(e.target.value)} className={formInputClass} />
+                </div>
+                <div className={formFieldClass}>
+                    <label htmlFor="new-map-countries">Countries (optional):</label>
+                    <CountryPicker id="new-map-countries" value={countries} onChange={setCountries} />
                 </div>
                 {error && <p className={formErrorClass}>{error}</p>}
                 <div className="flex gap-2">

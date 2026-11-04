@@ -4,14 +4,22 @@ import com.example.mapmonitor.dto.DraftStatusResponse;
 import com.example.mapmonitor.dto.MapSummaryResponse;
 import com.example.mapmonitor.model.*;
 import com.example.mapmonitor.repository.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 public class MapService {
+
+    private static final Set<String> ISO_COUNTRIES = Set.of(Locale.getISOCountries());
+    private static final int MAX_COUNTRIES = 20;
 
     private final MapRepository mapRepository;
     private final UserRepository userRepository;
@@ -45,7 +53,7 @@ public class MapService {
                 .toList();
     }
 
-    public Map createMap(String firebaseUid, String title, String description, Visibility visibility) {
+    public Map createMap(String firebaseUid, String title, String description, Visibility visibility, List<String> countries) {
         User user = userRepository.findByFirebaseUid(firebaseUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -53,6 +61,7 @@ public class MapService {
         map.setTitle(title);
         map.setDescription(description);
         map.setVisibility(visibility != null ? visibility : Visibility.PRIVATE);
+        map.getCountries().addAll(validCountries(countries));
         map.setUser(user);
         Map savedMap = mapRepository.save(map);
 
@@ -221,6 +230,30 @@ public class MapService {
         mapRepository.delete(map);
 
         return mapId;
+    }
+
+    public Set<String> changeCountries(String firebaseUid, Long mapId, List<String> codes) {
+        Map map = getOwnedMap(firebaseUid, mapId);
+        Set<String> countries = validCountries(codes);
+        map.getCountries().clear();
+        map.getCountries().addAll(countries);
+        return mapRepository.save(map).getCountries();
+    }
+
+    // the codes in upper case without duplicates; refuses unknown ones
+    private Set<String> validCountries(List<String> codes) {
+        Set<String> countries = new LinkedHashSet<>();
+        for (String code : codes == null ? List.<String>of() : codes) {
+            String upper = code == null ? "" : code.toUpperCase(Locale.ROOT);
+            if (!ISO_COUNTRIES.contains(upper)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown country: " + code);
+            }
+            countries.add(upper);
+        }
+        if (countries.size() > MAX_COUNTRIES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At most " + MAX_COUNTRIES + " countries");
+        }
+        return countries;
     }
 
     public void changeVisibility(String firebaseUid, Long mapId, Visibility visibility) {

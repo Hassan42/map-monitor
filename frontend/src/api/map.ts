@@ -29,6 +29,13 @@ export function changeVisibility(mapId: string, visibility: MapVisibility): Prom
   })
 }
 
+export function changeCountries(mapId: string, countries: string[]): Promise<string[]> {
+  return apiFetch(`/api/maps/${mapId}/countries`, {
+    method: 'PATCH',
+    body: JSON.stringify({ countries }),
+  })
+}
+
 export function startDraft(mapId: string): Promise<void> {
   return apiFetch(`/api/maps/${mapId}/draft`, { method: 'POST' })
 }

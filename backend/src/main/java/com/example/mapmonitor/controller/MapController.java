@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/maps")
@@ -37,7 +38,7 @@ public class MapController {
     @PostMapping
     public Map createMap(Authentication authentication, @RequestBody CreateMapRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return mapService.createMap(uid, request.getTitle(), request.getDescription(), request.getVisibility());
+        return mapService.createMap(uid, request.getTitle(), request.getDescription(), request.getVisibility(), request.getCountries());
     }
 
     @DeleteMapping("/{mapId}")
@@ -90,6 +91,13 @@ public class MapController {
                                  @RequestBody ChangeVisibilityRequest request) {
         String uid = (String) authentication.getPrincipal();
         mapService.changeVisibility(uid, mapId, request.visibility());
+    }
+
+    @PatchMapping("/{mapId}/countries")
+    public Set<String> changeCountries(Authentication authentication, @PathVariable Long mapId,
+                                       @RequestBody ChangeCountriesRequest request) {
+        String uid = (String) authentication.getPrincipal();
+        return mapService.changeCountries(uid, mapId, request.countries());
     }
 
 }
