@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import type { User } from 'firebase/auth'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { auth } from '../firebase/BaseConfig'
 import { firebaseSignOut, firebaseGoogleSignIn } from '../firebase/AuthService'
 import type { IAuth } from '../types/types'
@@ -24,6 +24,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true)
   const [username, setUsername] = useState<string | null>('')
   const navigate = useNavigate()
+  const location = useLocation()
 
   const signInWithGoogle = async () => {
     setIsLoading(true)
@@ -40,7 +41,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const chooseUsername = async (name: string) => {
     const saved = await saveUsername(name)
     setUsername(saved.username)
-    navigate('/', { replace: true })
+    navigate('/maps', { replace: true })
   }
 
   const signOut = () => {
@@ -49,7 +50,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       .then(() => {
         setCurrentUser(null)
         setUsername('')
-        navigate('/login', { replace: true })
+        navigate('/', { replace: true })
       })
       .catch((error) => {
         console.error(error)
@@ -71,12 +72,17 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     return unsubscribe // stop listening when AuthProvider unmounts
   }, [])
 
-  //redirect to /choose-username if the user is signed in but has no username, or to / if the user is signed in and has a username
+  // signed out: your maps and the username page need an account, so back to the landing page. Signed in
+  // without a username: every page sends you to choose one. With one, these pages send you to your maps
   useEffect(() => {
-    if (isAuthLoading || !currentUser) return
+    if (isAuthLoading) return
+    if (!currentUser) {
+      if (location.pathname === '/maps' || location.pathname === '/choose-username') navigate('/', { replace: true })
+      return
+    }
     if (username === null && location.pathname !== '/choose-username') navigate('/choose-username', { replace: true })
-    else if (username && (location.pathname === '/login' || location.pathname === '/choose-username')) navigate('/', { replace: true })
-  }, [isAuthLoading, currentUser, username, location.pathname])
+    else if (username && (location.pathname === '/' || location.pathname === '/choose-username')) navigate('/maps', { replace: true })
+  }, [isAuthLoading, currentUser, username, location.pathname, navigate])
 
   const authValues: IAuth = {
     user: currentUser,
