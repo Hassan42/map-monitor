@@ -19,6 +19,7 @@ export interface MapSummary {
   title: string;
   description: string;
   visibility: MapVisibility;
+  countries: string[]; // ISO 3166 two-letter codes; shown by full name (map/countries.ts)
   owned: boolean; // whether the signed-in user owns it; visitors and other users can only view
 }
 
@@ -53,6 +54,7 @@ export type EventCategory =
   | 'ATTACK'
   | 'CAPTURE'
   | 'MARITIME_ATTACK'
+  | 'PLANE_CRASH'
   | 'EXPLOSION'
   | 'AIR_STRIKE'
   | 'CHEMICAL_WEAPON'
@@ -67,12 +69,15 @@ export type EventCategory =
   | 'HEADQUARTERS_ESTABLISHED'
   | 'NON_VIOLENT_TERRITORY_TRANSFER'
   | 'OPERATION'
+  | 'LEGISLATION'
   | 'PEACEFUL_PROTEST'
   | 'VIOLENT_PROTEST'
   | 'ABDUCTION'
   | 'ATTACK_ON_CIVILIANS'
   | 'LOOTING'
   | 'PROPERTY_DESTRUCTION'
+  | 'STORM'
+  | 'EARTHQUAKE'
   | 'OTHER'
 
 // mirrors the backend's EventRelationType enum
@@ -117,7 +122,7 @@ export interface Territory extends MapElement {
 
 // one shape of a territory over time (the backend's TerritoryStateDto): holds from `from` until the next one
 export interface TerritoryState {
-  from: string;
+  from: string | null; // null: this shape has always been there
   points: string;
   factionId: number;
   color: string;

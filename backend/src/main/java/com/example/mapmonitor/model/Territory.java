@@ -1,6 +1,7 @@
 package com.example.mapmonitor.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLOrder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class Territory extends MapElement {
 
     // the shapes over time, in their own table (territory_state), always sorted by date
     @OneToMany(mappedBy = "territory", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("validFrom")
+    @SQLOrder("valid_from NULLS FIRST") // the undated shape first: Postgres would sort NULLs last
     private List<TerritoryState> history = new ArrayList<>();
 
     private LocalDateTime endTime;

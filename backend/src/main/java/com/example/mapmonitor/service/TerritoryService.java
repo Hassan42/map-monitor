@@ -34,11 +34,15 @@ public class TerritoryService extends MapElementService<Territory> {
     // replaces the territory's states with `history`: clear + add, so orphanRemoval deletes the old rows
     private void applyHistory(Territory territory, List<TerritoryStateDto> history) {
         List<TerritoryStateDto> states = history == null ? List.of() : history;
-        if (states.stream().anyMatch(s -> s.from() == null || s.points() == null || s.points().isBlank())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Every history entry needs from and points");
+        if (states.stream().anyMatch(s -> s.points() == null || s.points().isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Every history entry needs points");
+        }
+        // from = null: the shape that has always been there. Only the first shape can be that
+        if (states.stream().filter(s -> s.from() == null).count() > 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only one history entry can have no date");
         }
         territory.getHistory().clear();
-        for (TerritoryStateDto s : states.stream().sorted(Comparator.comparing(TerritoryStateDto::from)).toList()) {
+        for (TerritoryStateDto s : states.stream().sorted(Comparator.comparing(TerritoryStateDto::from, Comparator.nullsFirst(Comparator.naturalOrder()))).toList()) {
             TerritoryState state = new TerritoryState();
             state.setTerritory(territory);
             state.setValidFrom(s.from());

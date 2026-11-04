@@ -4,7 +4,8 @@ import com.example.mapmonitor.model.TerritoryState;
 
 import java.time.LocalDateTime;
 
-// one shape of a territory over time, as the API sends it: it holds from `from` until the next one's `from`
+// one shape of a territory over time, as the API sends it: it holds from `from` until the next one's `from`.
+// `from` null: it has always been there
 public record TerritoryStateDto(LocalDateTime from, String points, Long factionId, String color) {
 
     public static TerritoryStateDto from(TerritoryState state) {

@@ -18,7 +18,8 @@ public class TerritoryState {
     @JoinColumn(name = "territory_id")
     private Territory territory;
 
-    @Column(name = "valid_from", nullable = false) // "from" is a reserved word in SQL
+    // null: this shape has always been there. "from" is a reserved word in SQL
+    @Column(name = "valid_from")
     private LocalDateTime validFrom;
 
     @Column(columnDefinition = "text", nullable = false)

@@ -28,11 +28,10 @@ function territoryBounds(t: Territory): LngLatBoundsLike {
     return [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]]
 }
 
-// when a territory starts: its first shape's `from`. A state from 1970 means "always" (see withShapeAt): no date
+// when a territory starts: its first shape's `from`; null when it has always been there
 function territoryStart(t: Territory): number | null {
     const from = t.history?.[0]?.from
-    const time = from ? parseServerTime(from) : 0
-    return time > 0 ? time : null
+    return from ? parseServerTime(from) : null
 }
 
 const formatDay = (time: number) => new Date(time).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })

@@ -1,6 +1,10 @@
 import type { Territory, TerritoryState } from '../types/types'
 import { parseServerTime } from './eventTime'
 
+// when a state starts: an undated one (from = null, it has always been there) counts as before any date
+export const shapeStart = (s: TerritoryState) =>
+  s.from === null ? Number.NEGATIVE_INFINITY : parseServerTime(s.from)
+
 // which of a territory's states holds at time `now`: an index into its history, 'current' when it
 // has no history (never timed, always shown as is), or null when it didn't exist then (before its
 // first state, or at/after its end)
@@ -10,7 +14,7 @@ function stateIndexAt(t: Territory, now: number): number | 'current' | null {
   if (history.length === 0) return 'current'
   // history is sorted by `from` (the backend's @OrderBy): the last state that had started
   for (let i = history.length - 1; i >= 0; i--) {
-    if (parseServerTime(history[i].from) <= now) return i
+    if (shapeStart(history[i]) <= now) return i
   }
   return null
 }
@@ -30,26 +34,26 @@ export function territoryKey(territories: Territory[], now: number): string {
   return territories.map((t) => `${t.id}:${stateIndexAt(t, now) ?? 'x'}`).join(',')
 }
 
-// the territory with `shape` holding from `now` until its next state: replaces the state that starts
-// exactly at `now`, or adds a new one; later states are kept. The territory's own fields follow the
-// latest state, as the backend expects
+// the territory with `shape` holding from `time` until its next state: replaces the state that starts
+// exactly at `time`, or adds a new one; later states are kept. -Infinity is the undated state. The
+// territory's own fields follow the latest state, as the backend expects
 export function withShapeAt(t: Territory, shape: Omit<TerritoryState, 'from'>, time: number): Territory {
   // whole milliseconds: `from` is stored to the millisecond, so a fractional time (e.g. after playback)
   // would never equal a saved state's time, and an edit would add a duplicate instead of replacing it
   const now = Math.floor(time)
-  const from = new Date(now).toISOString()
+  const from = Number.isFinite(now) ? new Date(now).toISOString() : null
   let history = [...(t.history ?? [])]
 
-  // a territory without history (from before timelines): keep its shape as the "always" state first,
+  // a territory without history (from before timelines): keep its shape as the undated state first,
   // so it doesn't disappear before the edit's date
   if (history.length === 0) {
-    history.push({ from: new Date(0).toISOString(), points: t.points, factionId: t.factionId, color: t.color })
+    history.push({ from: null, points: t.points, factionId: t.factionId, color: t.color })
   }
 
-  const same = history.findIndex((s) => parseServerTime(s.from) === now)
+  const same = history.findIndex((s) => shapeStart(s) === now)
   if (same >= 0) history[same] = { from, ...shape } // same date: replace it
   else history.push({ from, ...shape }) // new date: add it
-  history = history.sort((a, b) => parseServerTime(a.from) - parseServerTime(b.from))
+  history = history.sort((a, b) => (a.from === null ? -1 : b.from === null ? 1 : shapeStart(a) - shapeStart(b)))
 
   const latest = history[history.length - 1]
   return { ...t, history, points: latest.points, factionId: latest.factionId, color: latest.color }
@@ -142,7 +146,7 @@ function applyStretches(points: string, stretches: Stretch[]): string {
 
 // how many of a territory's states start after time `now` (the ones an edit at `now` doesn't reach)
 export const laterStateCount = (t: Territory, now: number) =>
-  (t.history ?? []).filter((s) => parseServerTime(s.from) > now).length
+  (t.history ?? []).filter((s) => shapeStart(s) > now).length
 
 // the territory with an edit (oldPoints -> newPoints, made at time `now`) carried into every later state
 // where the changed stretches are still unchanged. Run it after withShapeAt
@@ -150,7 +154,7 @@ export function carryEditForward(t: Territory, oldPoints: string, newPoints: str
   const stretches = changedStretches(oldPoints, newPoints)
   if (stretches.length === 0) return t
   const history = (t.history ?? []).map((s) =>
-    parseServerTime(s.from) > now ? { ...s, points: applyStretches(s.points, stretches) } : s,
+    shapeStart(s) > now ? { ...s, points: applyStretches(s.points, stretches) } : s,
   )
   const latest = history[history.length - 1]
   return { ...t, history, points: latest.points, factionId: latest.factionId, color: latest.color }
