@@ -5,9 +5,9 @@ import { useAuth } from '../store/AuthContext'
 import { navButtonClass } from '../styles/navStyles'
 import type { MapSummary } from '../types/types'
 import AppLogo from './AppLogo'
-import CountryChips from './CountryChips'
 import CountryPicker from './CountryPicker'
 import GoogleSignInButton from './GoogleSignInButton'
+import PublicMapCard from './PublicMapCard'
 
 // public maps, searched by their country tags. Open to visitors. The search lives in the URL, so it can be shared
 function Explore() {
@@ -70,15 +70,7 @@ function Explore() {
                 {!loading && !error && maps.length > 0 && (
                     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {maps.map((map) => (
-                            <li key={map.id} className="group bg-neutral-900 ring-1 ring-white/10 transition-colors hover:ring-accent-400">
-                                <Link to={`/maps/${map.id}`} className="flex h-full flex-col gap-2 p-4">
-                                    <h2 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h2>
-                                    <p className="line-clamp-3 text-sm text-gray-400">
-                                        {map.description || <span className="italic text-gray-600">No description</span>}
-                                    </p>
-                                    <CountryChips codes={map.countries} limit={3} />
-                                </Link>
-                            </li>
+                            <PublicMapCard key={map.id} map={map} />
                         ))}
                     </ul>
                 )}
