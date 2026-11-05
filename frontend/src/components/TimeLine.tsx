@@ -192,7 +192,7 @@ function TimeLine({
                 onClick={togglePlay}
                 aria-label={playing ? 'Pause' : 'Play through time'}
                 title={playing ? 'Pause' : 'Play through time'}
-                className={`flex h-20 w-7 items-center justify-center transition-colors ${demo ? 'max-md:hidden' : ''} ${playing ? 'bg-accent-400/15 text-accent-300' : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
+                className={`flex h-20 w-7 items-center justify-center transition-colors ${demo ? 'hidden' : ''} ${playing ? 'bg-accent-400/15 text-accent-300' : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
             >
                 {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
                 {playing ? (
