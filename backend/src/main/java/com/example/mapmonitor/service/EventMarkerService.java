@@ -143,7 +143,12 @@ public class EventMarkerService extends MapElementService<EventMarker> {
         event.setVisibleDays(visibleDays);
         event.setCategory(request.getCategory() != null ? request.getCategory() : EventCategory.OTHER);
         event.setFactionId(request.getFactionId());
-        event.setSourceURL(request.getSourceURL());
+        // only real web links: a "javascript:" address would run as a script when someone clicks it
+        String url = request.getSourceURL();
+        if (url != null && !url.isBlank() && !url.matches("(?i)^https?://.*")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Source must start with http:// or https://");
+        }
+        event.setSourceURL(url);
 
         event.getRelations().clear();
         for (EventRelationDto r : request.getRelations()) {

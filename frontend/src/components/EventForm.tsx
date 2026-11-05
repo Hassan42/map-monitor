@@ -78,6 +78,7 @@ function EventForm({
     if (Number.isNaN(startMs)) return setError('Pick when it happened')
     if (startMs > Date.now()) return setError("The event can't start in the future")
     if (!ongoing && endMs < startMs) return setError("The end can't be before the start")
+    if (sourceURL.trim() && !/^https?:\/\//i.test(sourceURL)) return setError('Source must start with http:// or https://')
     setError('')
     setLoading(true)
     try {

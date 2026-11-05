@@ -35,7 +35,8 @@ export function createEventPopupContent(event: EventMarker) {
   const source = document.createElement('a')
   source.className = 'text-xs text-accent-300 hover:underline truncate'
 
-  if (event.sourceURL) {
+  // only real web links, also for values saved before the backend checked them
+  if (event.sourceURL && /^https?:\/\//i.test(event.sourceURL)) {
     source.textContent = "Source"
     const arrow = document.createElement('span')
     arrow.textContent = '⇱ '
