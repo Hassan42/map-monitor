@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getUserMaps, deleteUserMap, changeVisibility } from '../api/map'
 import type { MapSummary, MapVisibility } from '../types/types'
 import AddMap from './AddMap'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../store/AuthContext'
 import { navButtonClass } from '../styles/navStyles'
 import NavIcon from './NavIcon'
@@ -66,7 +66,10 @@ function Maps() {
             <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
                 <span className="px-2"><AppLogo /></span>
                 <span className="px-2 text-sm">{username}</span>
-                <button type="button" onClick={() => setShowAddMap(true)} className={`${navButtonClass} ml-auto`}>
+                <Link to="/explore" className={`${navButtonClass} ml-auto`}>
+                    Explore
+                </Link>
+                <button type="button" onClick={() => setShowAddMap(true)} className={navButtonClass}>
                     + New Map
                 </button>
                 <button type="button" onClick={signOut} className={navButtonClass}>

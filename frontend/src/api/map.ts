@@ -13,6 +13,11 @@ export function getUserMaps(): Promise<MapSummary[]> {
   return apiFetch('/api/maps', { method: 'GET' })
 }
 
+export function getPublicMaps(countries: string[]): Promise<MapSummary[]> {
+  const query = countries.length > 0 ? `?countries=${countries.join(',')}` : ''
+  return apiFetch(`/api/maps/public${query}`, { method: 'GET' })
+}
+
 export function getMapById(mapId: string): Promise<MapSummary> {
   return apiFetch(`/api/maps/${mapId}`, { method: 'GET' })
 }

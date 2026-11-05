@@ -4,6 +4,7 @@ import Landing from './components/Landing.tsx'
 import ChooseUsername from './components/ChooseUsername.tsx'
 import AuthProvider from './store/AuthContext.tsx'
 import Maps from './components/Maps.tsx'
+import Explore from './components/Explore.tsx'
 
 // MapLibre is heavy: only pages with a map load it
 const Map = lazy(() => import('./components/Map.tsx'))
@@ -19,6 +20,7 @@ function App() {
           <Route path="/choose-username" element={<ChooseUsername />} />
           <Route path="/register" element={<Navigate to="/" replace />} />
           <Route path="/maps" element={<Maps />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/maps/:id" element={<Map />} />
         </Routes>
         </Suspense>

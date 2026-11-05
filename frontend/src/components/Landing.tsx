@@ -37,6 +37,9 @@ function Landing() {
                 Explore the demo
               </Link>
             )}
+            <Link to="/explore" className="bg-neutral-800 px-4 py-1.5 text-gray-200 ring-1 ring-white/10 transition-colors hover:bg-neutral-700">
+              Explore maps
+            </Link>
             <GoogleSignInButton label="Create your map" showIcon={false} />
           </div>
         </section>
