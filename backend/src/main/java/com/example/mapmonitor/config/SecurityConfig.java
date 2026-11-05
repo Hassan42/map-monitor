@@ -1,6 +1,7 @@
 package com.example.mapmonitor.config;
 
 import com.example.mapmonitor.security.FirebaseAuthenticationFilter;
+import com.example.mapmonitor.security.RateLimitFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +41,9 @@ public class SecurityConfig {
                                 "/api/maps/{mapId}/layers").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new FirebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new FirebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                // after the Firebase filter, since it needs to know who is signed in
+                .addFilterAfter(new RateLimitFilter(visitorLimit, userLimit), FirebaseAuthenticationFilter.class);
 
         return http.build();
     }
@@ -49,6 +52,12 @@ public class SecurityConfig {
     // production preview, and once deployed the real site (e.g. via the APP_CORS_ALLOWED_ORIGINS env var)
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
+
+    @Value("${app.rate-limit.visitor}")
+    private int visitorLimit;
+
+    @Value("${app.rate-limit.user}")
+    private int userLimit;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
