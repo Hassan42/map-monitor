@@ -29,7 +29,7 @@ function Landing() {
         <section className="mx-auto flex max-w-3xl flex-col items-center gap-3 px-4 pb-4 pt-5 text-center md:pt-6">
           <h1 className="text-3xl font-semibold leading-tight text-white md:text-4xl">Map events and territories as they unfold</h1>
           <p className="max-w-xl text-gray-400 md:text-lg">
-            Build a timeline of what happened and where: draw territories, place events, link them together, and publish your map for anyone to explore.
+            A platform to diversify the sources behind world conflicts. See how events unfold on the map, build your own timeline, and share it publicly.
           </p>
           <div className="flex flex-wrap items-start justify-center gap-3">
             {DEMO_MAP_ID && (
