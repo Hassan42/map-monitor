@@ -15,6 +15,8 @@ public interface MapRepository extends JpaRepository<Map, Long> {
 
     long countByUserId(Long userId);
 
+    List<Map> findByUserIdAndVisibilityOrderByIdDesc(Long userId, Visibility visibility);
+
     List<Map> findByVisibilityOrderByIdDesc(Visibility visibility, Pageable pageable);
 
     @Query("select distinct m from Map m join m.countries c where m.visibility = :visibility and c in :countries order by m.id desc")

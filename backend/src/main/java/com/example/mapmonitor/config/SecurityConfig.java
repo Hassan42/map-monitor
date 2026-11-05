@@ -34,6 +34,7 @@ public class SecurityConfig {
                         // serves them a public map's published version (drafts need the owner)
                         .requestMatchers(HttpMethod.GET,
                                 "/api/maps/public",
+                                "/api/users/profile/{username}",
                                 "/api/maps/{mapId}",
                                 "/api/maps/{mapId}/events",
                                 "/api/maps/{mapId}/factions",

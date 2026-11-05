@@ -1,7 +1,12 @@
 package com.example.mapmonitor.service;
 
+import com.example.mapmonitor.dto.MapSummaryResponse;
+import com.example.mapmonitor.dto.ProfileResponse;
 import com.example.mapmonitor.model.User;
+import com.example.mapmonitor.model.Visibility;
+import com.example.mapmonitor.repository.MapRepository;
 import com.example.mapmonitor.repository.UserRepository;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -10,10 +15,36 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
+    private static final int MAX_DESCRIPTION = 300;
 
-    public UserService(UserRepository userRepository) {
+    private final UserRepository userRepository;
+    private final MapRepository mapRepository;
+
+    public UserService(UserRepository userRepository, MapRepository mapRepository) {
         this.userRepository = userRepository;
+        this.mapRepository = mapRepository;
+    }
+
+    // the public profile page: only public maps, also for the owner. viewerUid is null for a visitor
+    public ProfileResponse getProfile(String username, String viewerUid) {
+        User user = userRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        List<MapSummaryResponse> maps = mapRepository.findByUserIdAndVisibilityOrderByIdDesc(user.getId(), Visibility.PUBLIC).stream()
+                .map((map) -> MapSummaryResponse.from(map, viewerUid))
+                .toList();
+
+        return new ProfileResponse(user.getUsername(), user.getDescription(), user.getFirebaseUid().equals(viewerUid), maps);
+    }
+
+    public String changeDescription(String firebaseUid, String description) {
+        User user = findOrCreate(firebaseUid);
+        String text = description == null ? "" : description.trim();
+        if (text.length() > MAX_DESCRIPTION)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At most " + MAX_DESCRIPTION + " characters");
+        user.setDescription(text.isEmpty() ? null : text);
+        userRepository.save(user);
+        return user.getDescription();
     }
 
     // signed in with Google: find the user, or create them on their first sign in

@@ -22,6 +22,18 @@ public class User {
     @Column (unique = true, length = 30)
     private String username;
 
+    // shown on their profile page; plain text
+    @Column(length = 300)
+    private String description;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public void setUsername(String username) {
         this.username = username;
     }

@@ -1,6 +1,8 @@
 package com.example.mapmonitor.controller;
 
 import com.example.mapmonitor.dto.CreateUserRequest;
+import com.example.mapmonitor.dto.ProfileResponse;
+import com.example.mapmonitor.dto.UpdateDescriptionRequest;
 import com.example.mapmonitor.dto.UserResponse;
 import com.example.mapmonitor.model.User;
 import com.example.mapmonitor.service.UserService;
@@ -20,6 +22,19 @@ public class UserController {
     @GetMapping("/public/health")
     public String health() {
         return "OK - no auth needed";
+    }
+
+    // open to visitors. /profile/ so it can't clash with /me, even for a user named "me"
+    @GetMapping("/profile/{username}")
+    public ProfileResponse getProfile(Authentication authentication, @PathVariable String username) {
+        String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor
+        return userService.getProfile(username, uid);
+    }
+
+    @PatchMapping("/me/description")
+    public UpdateDescriptionRequest changeDescription(Authentication authentication, @RequestBody UpdateDescriptionRequest request) {
+        String uid = (String) authentication.getPrincipal();
+        return new UpdateDescriptionRequest(userService.changeDescription(uid, request.description()));
     }
 
     @GetMapping("/me")
