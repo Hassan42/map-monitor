@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MapRepository extends JpaRepository<Map, Long> {
     List<Map> findByUserId(Long userId);
+
+    long countByUserId(Long userId);
 }

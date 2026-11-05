@@ -20,6 +20,7 @@ public class MapService {
 
     private static final Set<String> ISO_COUNTRIES = Set.of(Locale.getISOCountries());
     private static final int MAX_COUNTRIES = 20;
+    private static final int MAX_MAPS_PER_USER = 10;
 
     private final MapRepository mapRepository;
     private final UserRepository userRepository;
@@ -56,6 +57,10 @@ public class MapService {
     public Map createMap(String firebaseUid, String title, String description, Visibility visibility, List<String> countries) {
         User user = userRepository.findByFirebaseUid(firebaseUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (mapRepository.countByUserId(user.getId()) >= MAX_MAPS_PER_USER) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "At most " + MAX_MAPS_PER_USER + " maps");
+        }
 
         Map map = new Map();
         map.setTitle(title);

@@ -22,8 +22,8 @@ function AddMap({ onCreated, onClose }: { onCreated: (map: MapSummary) => void; 
             setTitle('')
             setDescription('')
             setCountries([])
-        } catch {
-            setError('Could not create map')
+        } catch (e) {
+            setError((e as Error).message.includes('409') ? 'You can have up to 10 maps. Delete one to make a new one.' : 'Could not create map')
         } finally {
             setLoading(false)
         }
