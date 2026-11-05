@@ -156,7 +156,11 @@ function TimeLine({
         if (!drag || !bar) return
         // the time under the pointer stays under it: dragging right shows earlier dates
         const shift = ((e.clientX - drag.x) / bar.clientWidth) * span
-        setZoom(clampWindow(drag.start - shift, span, min, max))
+        const next = clampWindow(drag.start - shift, span, min, max)
+        setZoom(next)
+        // the handle stays in view: the window's edge pushes the date along
+        if (now < next.start) onChange(Math.ceil(next.start))
+        else if (now > next.end) onChange(Math.floor(next.end))
     }
     const handleDragEnd = () => {
         dragRef.current = null
