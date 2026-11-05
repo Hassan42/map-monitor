@@ -2,7 +2,7 @@ import type { DraftStatus, MapChange, MapSummary, MapVisibility } from '../types
 import apiFetch from './client'
 
 // visibility is optional: the backend makes a new map PRIVATE when it's left out
-export function createUserMap(data: Omit<MapSummary, 'id' | 'visibility' | 'owned'> & { visibility?: MapVisibility }): Promise<MapSummary> {
+export function createUserMap(data: Omit<MapSummary, 'id' | 'visibility' | 'creator' | 'owned'> & { visibility?: MapVisibility }): Promise<MapSummary> {
   return apiFetch('/api/maps', {
     method: 'POST',
     body: JSON.stringify(data),

@@ -11,6 +11,7 @@ public class MapSummaryResponse {
     private final String description;
     private final Visibility visibility;
     private final List<String> countries; // ISO 3166 two-letter codes
+    private final String creator; // the owner's username
     private final boolean owned; // whether the caller owns it: only the owner may edit (visitors just view)
 
     private MapSummaryResponse(Map map, String viewerUid) {
@@ -19,6 +20,7 @@ public class MapSummaryResponse {
         this.description = map.getDescription();
         this.visibility = map.getVisibility();
         this.countries = List.copyOf(map.getCountries());
+        this.creator = map.getUser().getUsername();
         this.owned = map.getUser().getFirebaseUid().equals(viewerUid); // viewerUid is null for a visitor
     }
 
@@ -44,6 +46,10 @@ public class MapSummaryResponse {
 
     public List<String> getCountries() {
         return countries;
+    }
+
+    public String getCreator() {
+        return creator;
     }
 
     public boolean isOwned() {

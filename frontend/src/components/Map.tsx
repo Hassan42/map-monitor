@@ -563,6 +563,8 @@ function Map() {
                             {editMode ? 'Exit Edit Mode' : 'Edit'}
                         </button>
                     )}
+                    {/* someone else's map: who made it, where the owner has Edit */}
+                    {!canEdit && mapSummary?.creator && <span className="px-2 text-sm text-gray-400">by {mapSummary.creator}</span>}
 
 
 
@@ -663,6 +665,7 @@ function Map() {
                 {canEdit && !editMode && (
                     <button type="button" onClick={handleEditClick} className={`${navButtonClass} md:hidden`}>Edit</button>
                 )}
+                {!canEdit && mapSummary?.creator && <span className="max-w-28 truncate px-1 text-sm text-gray-400 md:hidden">by {mapSummary.creator}</span>}
                 {editMode && (
                     <div className="md:hidden">
                         <NavDropdown

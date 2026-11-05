@@ -20,6 +20,7 @@ export interface MapSummary {
   description: string;
   visibility: MapVisibility;
   countries: string[]; // ISO 3166 two-letter codes; shown by full name (map/countries.ts)
+  creator: string | null; // the owner's username
   owned: boolean; // whether the signed-in user owns it; visitors and other users can only view
 }
 
