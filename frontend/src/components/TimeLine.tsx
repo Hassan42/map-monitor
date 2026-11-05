@@ -185,14 +185,14 @@ function TimeLine({
         <div
             ref={panelRef}
             className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 ${demo ? 'left-1/2' : 'left-[calc((100%-24rem)/2)]'}
-                max-md:inset-x-2 max-md:translate-x-0 max-md:gap-2 max-md:px-3 ${demo ? 'max-md:bottom-9 max-md:py-1' : 'max-md:bottom-14 max-md:py-2'}`}
+                max-md:inset-x-2 max-md:translate-x-0 max-md:gap-1 max-md:px-2 ${demo ? 'max-md:bottom-9 max-md:py-1' : 'max-md:bottom-16 max-md:py-4'}`}
         >
             <button
                 type="button"
                 onClick={togglePlay}
                 aria-label={playing ? 'Pause' : 'Play through time'}
                 title={playing ? 'Pause' : 'Play through time'}
-                className={`flex h-7 w-7 items-center justify-center transition-colors ${demo ? 'max-md:hidden' : ''} ${playing ? 'bg-accent-400/15 text-accent-300' : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
+                className={`flex h-20 w-7 items-center justify-center transition-colors ${demo ? 'max-md:hidden' : ''} ${playing ? 'bg-accent-400/15 text-accent-300' : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
             >
                 {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
                 {playing ? (
@@ -271,11 +271,11 @@ function TimeLine({
                         title={`${count} ${count === 1 ? 'event' : 'events'}: ${formatDate(first)}${last !== first ? ` – ${formatDate(last)}` : ''}`}
                         aria-label={`Jump to ${count} events from ${new Date(first).toLocaleDateString()}`}
                         // the whole slice's height is clickable, however short the bar; 1px gaps keep bars apart
-                        className={`group absolute bottom-0 flex h-7 items-end px-px ${demo ? 'max-md:hidden' : ''}`}
+                        className={`group absolute bottom-0 flex h-7 items-end px-px max-md:hidden`}
                         style={{ left: atShare(at), width: shareWidth(width) }}
                     >
                         <span
-                            className="w-full bg-gray-400 group-hover:bg-accent-300"
+                            className="w-full bg-gray-400 group-hover:bg-accent-300 max-md:hidden"
                             // at least 8px, so a single event still shows
                             style={{ height: `max(8px, ${(count / strip.max) * 100}%)` }}
                         />
@@ -292,18 +292,18 @@ function TimeLine({
                         title={`Shape changes: ${new Date(t).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`}
                         aria-label={`Jump to the territory's change on ${new Date(t).toLocaleDateString()}`}
                         // a 20×24px hit area around the thin line, so it's easy to hit
-                        className="group absolute top-3 flex h-6 w-5 -translate-x-1/2 justify-center pt-1"
+                        className="group absolute top-3 flex h-6 w-5 -translate-x-1/2 justify-center pt-1 max-md:hidden"
                         style={{ left: onTrack(t) }}
                     >
-                        <span className="h-4 w-1 bg-blue-400 transition-all group-hover:w-1.5 group-hover:bg-blue-300" />
+                        <span className="h-4 w-1 bg-blue-400 transition-all group-hover:w-1.5 group-hover:bg-blue-300 max-md:hidden" />
                     </button>
                 ))}
             </div>
 
             {/* phones: no wheel or trackpad pinch, so zoom buttons (around the handle) */}
             <div className={demo ? 'hidden' : 'flex flex-col md:hidden'}>
-                <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1 / ZOOM_STEP ** 2)} className="h-8 w-8 text-lg transition-colors hover:bg-accent-400/15 hover:text-accent-300">+</button>
-                <button type="button" aria-label="Zoom out" onClick={() => zoomBy(ZOOM_STEP ** 2)} className="h-8 w-8 text-lg transition-colors hover:bg-accent-400/15 hover:text-accent-300">−</button>
+                <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1 / ZOOM_STEP ** 2)} className="h-10 w-8 text-lg transition-colors hover:bg-accent-400/15 hover:text-accent-300">+</button>
+                <button type="button" aria-label="Zoom out" onClick={() => zoomBy(ZOOM_STEP ** 2)} className="h-10 w-8 text-lg transition-colors hover:bg-accent-400/15 hover:text-accent-300">−</button>
             </div>
 
             {zoom && (
@@ -311,7 +311,7 @@ function TimeLine({
                     type="button"
                     onClick={() => setZoom(null)}
                     title="Show the whole timeline"
-                    className="shrink-0 px-2 py-1 font-mono text-xs text-gray-400 transition-colors hover:bg-accent-400/15 hover:text-accent-300"
+                    className="shrink-0 px-2 py-9 font-mono text-xs text-gray-400 transition-colors hover:bg-accent-400/15 hover:text-accent-300"
                 >
                     Reset<span className="max-md:hidden"> zoom</span>
                 </button>
