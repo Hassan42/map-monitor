@@ -693,7 +693,7 @@ function Map() {
                 )}
 
 
-                <div className="ml-auto flex items-center gap-1 text-right max-md:text-xs">
+                <div className="ml-auto flex items-center gap-1 whitespace-nowrap text-right text-lg font-semibold text-white max-md:text-base">
                     {/* All time shows every date at once, so there's no single date to show */}
                     {showAllTime ? 'All time' : (
                         <>
