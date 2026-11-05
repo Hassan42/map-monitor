@@ -33,6 +33,7 @@ public class SecurityConfig {
                         // reading one map and its contents is open to visitors; MapService still only
                         // serves them a public map's published version (drafts need the owner)
                         .requestMatchers(HttpMethod.GET,
+                                "/api/maps/public",
                                 "/api/maps/{mapId}",
                                 "/api/maps/{mapId}/events",
                                 "/api/maps/{mapId}/factions",

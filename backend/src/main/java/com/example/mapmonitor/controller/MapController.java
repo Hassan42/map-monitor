@@ -23,6 +23,13 @@ public class MapController {
         this.changeService = changeService;
     }
 
+    // the explore page, open to visitors. A fixed path, so it doesn't clash with /{mapId}
+    @GetMapping("/public")
+    public List<MapSummaryResponse> getPublicMaps(Authentication authentication, @RequestParam(required = false) List<String> countries) {
+        String uid = authentication != null ? (String) authentication.getPrincipal() : null;
+        return mapService.getPublicMaps(uid, countries);
+    }
+
     @GetMapping("/{mapId}")
     public MapSummaryResponse getMap(Authentication authentication, @PathVariable Long mapId){
         String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor

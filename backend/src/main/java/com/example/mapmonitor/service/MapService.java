@@ -4,6 +4,8 @@ import com.example.mapmonitor.dto.DraftStatusResponse;
 import com.example.mapmonitor.dto.MapSummaryResponse;
 import com.example.mapmonitor.model.*;
 import com.example.mapmonitor.repository.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class MapService {
     private static final Set<String> ISO_COUNTRIES = Set.of(Locale.getISOCountries());
     private static final int MAX_COUNTRIES = 20;
     private static final int MAX_MAPS_PER_USER = 10;
+    private static final int MAX_EXPLORE_MAPS = 60;
 
     private final MapRepository mapRepository;
     private final UserRepository userRepository;
@@ -50,6 +53,20 @@ public class MapService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return mapRepository.findByUserId(user.getId()).stream()
+                .map((map) -> MapSummaryResponse.from(map, firebaseUid))
+                .toList();
+    }
+
+    // the explore page: the newest public maps, only those with any of these countries if some are given
+    public List<MapSummaryResponse> getPublicMaps(String firebaseUid, List<String> codes) {
+        Set<String> countries = validCountries(codes);
+        Pageable newest = PageRequest.of(0, MAX_EXPLORE_MAPS);
+
+        List<Map> maps = countries.isEmpty()
+                ? mapRepository.findByVisibilityOrderByIdDesc(Visibility.PUBLIC, newest)
+                : mapRepository.findByVisibilityAndCountries(Visibility.PUBLIC, countries, newest);
+
+        return maps.stream()
                 .map((map) -> MapSummaryResponse.from(map, firebaseUid))
                 .toList();
     }
