@@ -14,6 +14,13 @@ export type MapVisibility =
   | 'PRIVATE'
 
 
+export interface Profile {
+  username: string;
+  description: string | null;
+  owned: boolean; // whether it's the signed-in user's own profile
+  maps: MapSummary[]; // public ones only
+}
+
 export interface MapSummary {
   id: string;
   title: string;

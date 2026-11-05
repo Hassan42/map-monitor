@@ -65,7 +65,7 @@ function Maps() {
             {/* same bar as the map view */}
             <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
                 <span className="px-2"><AppLogo /></span>
-                <span className="px-2 text-sm">{username}</span>
+                <Link to={`/users/${username}`} className="px-2 text-sm hover:text-accent-300 hover:underline">{username}</Link>
                 <Link to="/explore" className={`${navButtonClass} ml-auto`}>
                     Explore
                 </Link>
