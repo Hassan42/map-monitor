@@ -261,7 +261,7 @@ function AnnotationEditor({
       {overlays}
       {/* centered over the map area (the property panel takes the right 24rem) */}
       {/* phones: across the screen, above the timeline or the property sheet's bar */}
-      <div className={`fixed ${aboveTimeline ? 'bottom-[10.5rem] md:bottom-40' : 'bottom-14 md:bottom-6'} left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center z-40 flex -translate-x-1/2 items-center gap-2 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10`}>
+      <div className={`fixed ${aboveTimeline ? 'bottom-[11rem] md:bottom-40' : 'bottom-16 md:bottom-6'} left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center z-40 flex -translate-x-1/2 items-center gap-2 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10`}>
         <span className="mr-2 font-semibold text-white">{annotation.label || ANNOTATION_KINDS[annotation.kind].label}</span>
         <button
           type="button"

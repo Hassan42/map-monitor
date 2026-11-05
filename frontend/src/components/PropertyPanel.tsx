@@ -192,22 +192,22 @@ function PropertyPanel({
 
     return (
         // desktop: a column on the right under the nav bar. Phones: a sheet across the bottom, 60% of the
-        // screen when open, folded down to its 48px bar otherwise (above the timeline, under the nav bar)
+        // screen when open, folded down to its 56px bar otherwise (above the timeline, under the nav bar)
         <div
             className={`absolute top-14 right-0 bottom-0 w-96 bg-neutral-900 text-gray-300 shadow-lg flex flex-col
-                max-md:fixed max-md:top-auto max-md:inset-x-0 max-md:z-[45] max-md:w-auto max-md:h-[60dvh] max-md:transition-transform
-                ${sheetOpen ? '' : 'max-md:translate-y-[calc(100%-3rem)]'}`}
+                max-md:fixed max-md:top-auto max-md:inset-x-0 max-md:z-[45] max-md:w-auto max-md:h-[75dvh] max-md:transition-transform
+                ${sheetOpen ? '' : 'max-md:translate-y-[calc(100%-3.5rem)]'}`}
         >
             {/* phones: the sheet's bar - tap to open or fold it */}
             <button
                 type="button"
                 aria-expanded={sheetOpen}
                 onClick={() => setSheetOpen((open) => !open)}
-                className="flex h-12 shrink-0 items-center gap-2 border-b border-neutral-800 px-4 text-left md:hidden"
+                className="flex h-14 shrink-0 items-center gap-2 border-b border-t-2 border-b-neutral-800 border-t-accent-400 px-4 text-left md:hidden"
             >
-                <span className="flex-1 truncate font-semibold text-white">{map?.title ?? 'Map'}</span>
-                <span className="text-xs text-gray-400">{total} elements</span>
-                <span aria-hidden="true" className={`text-xs transition-transform ${sheetOpen ? 'rotate-180' : ''}`}>▲</span>
+                <span className="flex-1 truncate text-lg font-semibold text-white">{map?.title ?? 'Map'}</span>
+                <span className="text-sm text-gray-300">{total} elements</span>
+                <span aria-hidden="true" className={`text-base text-accent-300 transition-transform ${sheetOpen ? 'rotate-180' : ''}`}>▲</span>
             </button>
             <div className="p-4 border-b border-neutral-800 max-md:hidden">
                 <h2 className="font-bold text-lg text-white">{map?.title ?? 'Map'}</h2>
