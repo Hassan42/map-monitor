@@ -33,9 +33,10 @@ public class FactionController {
     }
 
     @PutMapping("/{stableId}")
-    public Faction editFaction(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId,
+    public FactionSummaryResponse editFaction(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId,
                                 @RequestBody CreateFactionRequest request) {
         String uid = (String) authentication.getPrincipal();
-        return factionService.editFaction(uid, mapId, stableId, request.getName(), request.getColor());
+        // the summary: its id is the stableId, which the draft's row id isn't
+        return FactionSummaryResponse.from(factionService.editFaction(uid, mapId, stableId, request.getName(), request.getColor()));
     }
 }

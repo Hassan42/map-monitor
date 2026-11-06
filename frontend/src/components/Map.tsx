@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import MapProvider from '../store/MapContext'
 import TerraDrawProvider from '../store/TerraDrawContext'
 import TerritoryLayer from './TerritoryLayer'
-import AddFaction from './AddFaction'
+import FactionForm from './FactionForm'
 import AddLayer from './AddLayer'
 import AddEvent from './AddEvent'
 import EditEvent from './EditEvent'
@@ -68,6 +68,7 @@ function Map() {
     const [territoriesLoaded, setTerritoriesLoaded] = useState(false)
     const [annotations, setAnnotations] = useState<Annotation[]>([])
     const [showAddFaction, setShowAddFaction] = useState(false)
+    const [editingFaction, setEditingFaction] = useState<Faction | null>(null)
     const [showAddLayer, setShowAddLayer] = useState(false)
     // layers switched off in the property panel (null = elements in no layer): their elements leave the map
     const [hiddenLayers, setHiddenLayers] = useState<Set<LayerKey>>(() => new Set())
@@ -234,11 +235,12 @@ function Map() {
 
 
 
-    // faction creation handle
-    const handleFactionCreated = (faction: Faction) => {
-        setFactions((prev) => [...prev, faction])
+    // faction form handle: an edited faction replaces itself, a new one joins the list
+    const handleFactionSaved = (faction: Faction) => {
+        setFactions((prev) => prev.some((f) => f.id === faction.id) ? prev.map((f) => (f.id === faction.id ? faction : f)) : [...prev, faction])
         refreshDraftStatus()
         setShowAddFaction(false)
+        setEditingFaction(null)
     }
 
     // layer creation handle
@@ -521,6 +523,7 @@ function Map() {
                     {!isDemo && <PropertyPanel
                         map={mapSummary}
                         factions={factions}
+                        onEditFaction={editMode ? setEditingFaction : undefined}
                         layers={layers}
                         hiddenLayers={hiddenLayers}
                         onToggleLayer={handleToggleLayer}
@@ -865,7 +868,10 @@ function Map() {
             {error && <p className="absolute bottom-4 left-4 text-red-600 bg-white px-2 py-1">{error}</p>}
 
             {showAddFaction && (
-                <AddFaction mapId={id} onCreated={handleFactionCreated} onClose={() => setShowAddFaction(false)} />
+                <FactionForm mapId={id} onSaved={handleFactionSaved} onClose={() => setShowAddFaction(false)} />
+            )}
+            {editingFaction && (
+                <FactionForm key={editingFaction.id} mapId={id} faction={editingFaction} onSaved={handleFactionSaved} onClose={() => setEditingFaction(null)} />
             )}
             {showAddLayer && (
                 <AddLayer mapId={id} onCreated={handleLayerCreated} onImported={handleLayersImported}

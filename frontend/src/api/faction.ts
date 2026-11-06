@@ -8,6 +8,14 @@ export function createFaction(mapId: string, data: Omit<Faction, 'id'>): Promise
   })
 }
 
+// PUT returns the same summary as GET (id = stableId)
+export function editFaction(mapId: string, stableId: number, data: Omit<Faction, 'id'>): Promise<Faction> {
+  return apiFetch(`/api/maps/${mapId}/factions/${stableId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
 export function getMapFactions(mapId: string, draft: boolean): Promise<Faction[]> {
   return apiFetch(`/api/maps/${mapId}/factions?draft=${draft}`, {
     method: 'GET'

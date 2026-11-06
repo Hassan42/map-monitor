@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { createFaction } from '../api/faction'
+import { createFaction, editFaction } from '../api/faction'
 import type { Faction } from '../types/types'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formColorInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
-function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (faction: Faction) => void; onClose: () => void }) {
-    const [name, setName] = useState('')
-    const [color, setColor] = useState('#ff0000')
+// adds an actor, or edits `faction` when given
+function FactionForm({ mapId, faction, onSaved, onClose }: { mapId: string; faction?: Faction; onSaved: (faction: Faction) => void; onClose: () => void }) {
+    const [name, setName] = useState(faction?.name ?? '')
+    const [color, setColor] = useState(faction?.color ?? '#ff0000')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -15,10 +16,9 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
         setError('')
         setLoading(true)
         try {
-            const faction = await createFaction(mapId, { name, color })
-            onCreated(faction)
+            onSaved(await (faction ? editFaction(mapId, faction.id, { name, color }) : createFaction(mapId, { name, color })))
         } catch {
-            setError('Could not create actor')
+            setError('Could not save actor')
         } finally {
             setLoading(false)
         }
@@ -27,7 +27,7 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
     return (
         <div className={formOverlayClass}>
             <form onSubmit={handleSubmit} className={formClass}>
-                <h2 className={formTitleClass}>New Actor</h2>
+                <h2 className={formTitleClass}>{faction ? 'Edit Actor' : 'New Actor'}</h2>
                 <div className={formFieldClass}>
                     <label htmlFor="name">Name:</label>
                     <input type="text" id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} className={formInputClass} />
@@ -39,7 +39,7 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
                 {error && <p className={formErrorClass}>{error}</p>}
                 <div className="flex gap-2">
                     <button type="submit" disabled={loading} className={formPrimaryButtonClass}>
-                        {loading ? 'Adding...' : 'Add Actor'}
+                        {loading ? 'Saving...' : faction ? 'Save' : 'Add Actor'}
                     </button>
                     <button type="button" onClick={onClose} className={formSecondaryButtonClass}>
                         Cancel
@@ -50,4 +50,4 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
     )
 }
 
-export default AddFaction
+export default FactionForm

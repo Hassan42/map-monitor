@@ -48,6 +48,7 @@ type Entry =
 function PropertyPanel({
     map,
     factions,
+    onEditFaction,
     layers,
     hiddenLayers,
     onToggleLayer,
@@ -59,6 +60,7 @@ function PropertyPanel({
 }: {
     map: MapSummary | null
     factions: Faction[]
+    onEditFaction?: (faction: Faction) => void // edit mode only
     layers: Layer[]
     hiddenLayers: Set<LayerKey> // layers whose elements are hidden, on the map and in this list
     onToggleLayer: (layer: LayerKey) => void
@@ -257,6 +259,16 @@ function PropertyPanel({
                                     {' · '}
                                     {plural(events.filter((e) => e.factionId === faction.id).length, 'event', 'events')}
                                 </span>
+                                {onEditFaction && (
+                                    <button
+                                        type="button"
+                                        aria-label={`Edit ${faction.name}`}
+                                        onClick={() => onEditFaction(faction)}
+                                        className="text-xs text-gray-400 hover:text-accent-300"
+                                    >
+                                        Edit
+                                    </button>
+                                )}
                             </li>
                         ))}
                     </ul>

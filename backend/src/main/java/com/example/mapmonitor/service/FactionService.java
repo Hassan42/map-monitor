@@ -4,7 +4,9 @@ import com.example.mapmonitor.dto.FactionSummaryResponse;
 import com.example.mapmonitor.model.Faction;
 import com.example.mapmonitor.model.MapVersion;
 import com.example.mapmonitor.repository.FactionRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,6 +46,10 @@ public class FactionService {
 
     public Faction editFaction(String firebaseUid, Long mapId, Long stableId, String name, String color) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
+
+        if (resolveVisibleFactions(draft).stream().noneMatch(f -> f.getStableId().equals(stableId))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Actor not found");
+        }
 
         Faction shadow = factionRepository.findByMapVersionId(draft.getId()).stream()
                 .filter(f -> f.getStableId().equals(stableId))
