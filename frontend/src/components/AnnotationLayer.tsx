@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { GeoJSONSource } from 'maplibre-gl'
 import { useMap, useSelection } from '../store/MapContext'
 import type { Annotation, AnnotationKind, Faction } from '../types/types'
-import { ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SOURCE_ID, annotationImageId } from '../map/mapLayers'
+import { ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SELECTED_LINE_LAYER_ID, ANNOTATIONS_SOURCE_ID, annotationImageId } from '../map/mapLayers'
 import { addAnnotationLayers, removeAnnotationLayers } from '../map/annotationLayers'
 import { ANNOTATION_KINDS, ANNOTATION_KIND_LIST } from '../map/annotationKinds'
 import { ACCENT } from '../styles/colors'
@@ -38,11 +38,19 @@ function colorOf(annotation: Annotation, colorByFaction: Map<number, string>) {
   return annotation.color ?? (annotation.factionId != null ? colorByFaction.get(annotation.factionId) : undefined) ?? DEFAULT_COLOR
 }
 
-// only points are drawn (the icon is stamped at the point); other geometries are skipped
+// drawn lines as lines, the rest as points (the icon is stamped at the point); other geometries are skipped
 function annotationsToGeoJSON(annotations: Annotation[], factions: Faction[]): GeoJSON.FeatureCollection {
   const colorByFaction = new Map(factions.map((f) => [f.id, f.color]))
   const features: GeoJSON.Feature[] = []
   for (const a of annotations) {
+    if (a.line) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: JSON.parse(a.line) },
+        properties: { id: a.id, color: colorOf(a, colorByFaction), dashed: a.dashed === true, label: a.label ?? '' },
+      })
+      continue
+    }
     const geometry = JSON.parse(a.geometry) as GeoJSON.Geometry
     if (geometry.type !== 'Point') continue
     features.push({
@@ -111,6 +119,7 @@ function AnnotationLayer({ annotations, factions }: { annotations: Annotation[];
 
     const data = annotationsToGeoJSON(annotations, factions)
     for (const feature of data.features) {
+      if (feature.geometry.type !== 'Point') continue // lines need no image
       const { kind, color } = feature.properties as { kind: AnnotationKind; color: string }
       const imageId = annotationImageId(kind, color)
       if (!map.hasImage(imageId)) map.addImage(imageId, drawAnnotationImage(icons[kind], color), { pixelRatio: ICON_PIXEL_RATIO })
@@ -118,11 +127,12 @@ function AnnotationLayer({ annotations, factions }: { annotations: Annotation[];
     source.setData(data)
   }, [map, icons, annotations, factions])
 
-  // selected annotation: show the accent ring under it
+  // selected annotation: show the accent ring (or a line's glow) under it
   useEffect(() => {
     if (!map?.getLayer(ANNOTATIONS_SELECTED_LAYER_ID)) return
     const selectedId = selected?.type === 'annotation' ? selected.id : -1
-    map.setFilter(ANNOTATIONS_SELECTED_LAYER_ID, ['==', ['get', 'id'], selectedId])
+    map.setFilter(ANNOTATIONS_SELECTED_LAYER_ID, ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'id'], selectedId]])
+    map.setFilter(ANNOTATIONS_SELECTED_LINE_LAYER_ID, ['all', ['==', ['geometry-type'], 'LineString'], ['==', ['get', 'id'], selectedId]])
   }, [map, selected])
 
   return null

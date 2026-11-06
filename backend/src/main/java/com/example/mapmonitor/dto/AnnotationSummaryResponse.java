@@ -8,6 +8,8 @@ public final class AnnotationSummaryResponse implements ElementSummary {
     private final Long id;
     private final AnnotationKind kind;
     private final String geometry;
+    private final String line;
+    private final Boolean dashed;
     private final Long factionId;
     private final Long layerId;
     private final String label;
@@ -21,6 +23,8 @@ public final class AnnotationSummaryResponse implements ElementSummary {
         this.id = annotation.getStableId();
         this.kind = annotation.getKind();
         this.geometry = annotation.getGeometry();
+        this.line = annotation.getLine();
+        this.dashed = annotation.getDashed();
         this.factionId = annotation.getFactionId();
         this.layerId = annotation.getLayerId();
         this.label = annotation.getLabel();
@@ -45,6 +49,14 @@ public final class AnnotationSummaryResponse implements ElementSummary {
 
     public String getGeometry() {
         return geometry;
+    }
+
+    public String getLine() {
+        return line;
+    }
+
+    public Boolean getDashed() {
+        return dashed;
     }
 
     public Long getFactionId() {

@@ -1,10 +1,10 @@
-import type { AddLayerObject, Map, SourceSpecification } from 'maplibre-gl'
+import type { AddLayerObject, ExpressionSpecification, Map, SourceSpecification } from 'maplibre-gl'
 import { ICON_MIN_SIZE, ICON_RADIUS_PX, MAX_ICON_SIZE, zoomScaled } from './annotationScale'
-import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_LABEL_LAYER_ID, ANNOTATIONS_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
+import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_DASHED_LINE_LAYER_ID, ANNOTATIONS_LABEL_LAYER_ID, ANNOTATIONS_LAYER_ID, ANNOTATIONS_LINE_LABEL_LAYER_ID, ANNOTATIONS_LINE_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SELECTED_LINE_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
 import { ACCENT } from '../styles/colors'
 
-// what annotations look like on the map: one GeoJSON source of points and one symbol layer
-// stamping each kind's icon. AnnotationLayer fills the source and creates the per-color images.
+// what annotations look like on the map: one GeoJSON source with points (a symbol layer stamps each kind's
+// icon) and drawn lines. AnnotationLayer fills the source and creates the per-color images.
 
 const annotationsSource: SourceSpecification = {
   type: 'geojson',
@@ -14,9 +14,58 @@ const annotationsSource: SourceSpecification = {
 const LABEL_SIZE_PX = 15
 // further out than this, labels would crowd the map: only the icons show
 const LABEL_MIN_ZOOM = 8
+const LINE_WIDTH_PX = 3
+
+const IS_POINT = ['==', ['geometry-type'], 'Point'] as ExpressionSpecification
+const IS_LINE = ['==', ['geometry-type'], 'LineString'] as ExpressionSpecification
+const LINE_LABEL_PAINT = { 'text-color': '#e5e7eb', 'text-halo-color': '#1c1f23', 'text-halo-width': 2 }
 
 // in drawing order: later layers draw on top
 const annotationLayers: AddLayerObject[] = [
+  // lines first, so icons sit on top of them. A dashed line needs its own layer: not every map can read
+  // a dash pattern per feature
+  {
+    id: ANNOTATIONS_SELECTED_LINE_LAYER_ID,
+    type: 'line',
+    source: ANNOTATIONS_SOURCE_ID,
+    filter: ['==', ['get', 'id'], -1],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': ACCENT, 'line-width': LINE_WIDTH_PX + 5, 'line-opacity': 0.5 },
+  },
+  {
+    id: ANNOTATIONS_LINE_LAYER_ID,
+    type: 'line',
+    source: ANNOTATIONS_SOURCE_ID,
+    filter: ['all', IS_LINE, ['!=', ['get', 'dashed'], true]],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': ['get', 'color'], 'line-width': LINE_WIDTH_PX },
+  },
+  {
+    id: ANNOTATIONS_DASHED_LINE_LAYER_ID,
+    type: 'line',
+    source: ANNOTATIONS_SOURCE_ID,
+    filter: ['all', IS_LINE, ['==', ['get', 'dashed'], true]],
+    layout: { 'line-join': 'round' },
+    paint: { 'line-color': ['get', 'color'], 'line-width': LINE_WIDTH_PX, 'line-dasharray': [2.5, 2] },
+  },
+  // a line's label: along its middle
+  {
+    id: ANNOTATIONS_LINE_LABEL_LAYER_ID,
+    type: 'symbol',
+    source: ANNOTATIONS_SOURCE_ID,
+    minzoom: LABEL_MIN_ZOOM,
+    filter: ['all', IS_LINE, ['!=', ['get', 'label'], '']],
+    layout: {
+      'symbol-placement': 'line-center',
+      'text-field': ['get', 'label'],
+      'text-font': ['Noto Sans Regular'],
+      'text-size': LABEL_SIZE_PX,
+      'text-offset': [0, -1],
+      'text-allow-overlap': true,
+      'text-ignore-placement': true,
+    },
+    paint: LINE_LABEL_PAINT,
+  },
   // accent ring under the selected annotation, sized with it (its filter is set by AnnotationLayer)
   {
     id: ANNOTATIONS_SELECTED_LAYER_ID,
@@ -35,6 +84,7 @@ const annotationLayers: AddLayerObject[] = [
     id: ANNOTATIONS_LAYER_ID,
     type: 'symbol',
     source: ANNOTATIONS_SOURCE_ID,
+    filter: IS_POINT,
     layout: {
       // same name as annotationImageId(): kind + color
       'icon-image': ['concat', ANNOTATION_IMAGE_PREFIX, ['get', 'kind'], '-', ['get', 'color']],
@@ -52,7 +102,7 @@ const annotationLayers: AddLayerObject[] = [
     type: 'symbol',
     source: ANNOTATIONS_SOURCE_ID,
     minzoom: LABEL_MIN_ZOOM,
-    filter: ['!=', ['get', 'label'], ''],
+    filter: ['all', IS_POINT, ['!=', ['get', 'label'], '']],
     layout: {
       'text-field': ['get', 'label'],
       'text-font': ['Noto Sans Regular'], // a font the map style's glyph server provides

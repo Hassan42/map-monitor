@@ -6,6 +6,8 @@ import com.example.mapmonitor.model.AnnotationKind;
 public class CreateAnnotationRequest {
     private AnnotationKind kind;
     private String geometry;
+    private String line;     // a drawn line's points; null = a ready annotation
+    private Boolean dashed;
     private Long factionId;
     private Long layerId; // null = in no layer
     private String label;
@@ -29,6 +31,22 @@ public class CreateAnnotationRequest {
 
     public void setGeometry(String geometry) {
         this.geometry = geometry;
+    }
+
+    public String getLine() {
+        return line;
+    }
+
+    public void setLine(String line) {
+        this.line = line;
+    }
+
+    public Boolean getDashed() {
+        return dashed;
+    }
+
+    public void setDashed(Boolean dashed) {
+        this.dashed = dashed;
     }
 
     public Long getFactionId() {

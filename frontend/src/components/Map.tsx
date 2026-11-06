@@ -11,6 +11,7 @@ import EditEvent from './EditEvent'
 import EventMarkers from './EventMarkers'
 import AnnotationLayer from './AnnotationLayer'
 import AddAnnotation from './AddAnnotation'
+import AddAnnotationLine from './AddAnnotationLine'
 import AnnotationEditor from './AnnotationEditor'
 import SelectTool from './SelectTool'
 import PropertyPanel from './PropertyPanel'
@@ -83,6 +84,7 @@ function Map() {
     const [editMode, setEditMode] = useState(false)
     const [isPlacingEvent, setIsPlacingEvent] = useState(false)
     const [isPlacingAnnotation, setIsPlacingAnnotation] = useState(false)
+    const [isDrawingLine, setIsDrawingLine] = useState(false)
     const [isPlacingViewshed, setIsPlacingViewshed] = useState(false)
     // the ruler: map clicks draw measured lines instead of selecting or drawing territories
     const [isMeasuring, setIsMeasuring] = useState(false)
@@ -347,6 +349,7 @@ function Map() {
             setDrawMode(null)
             setIsPlacingEvent(false)
             setIsPlacingAnnotation(false)
+            setIsDrawingLine(false)
             return
         }
         if (!id) return
@@ -412,6 +415,7 @@ function Map() {
         setIsCapturing(false)
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
         setDrawMode(null)
     }
     const pickSelect = () => {
@@ -419,12 +423,14 @@ function Map() {
         setIsCapturing(false)
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
         setDrawMode('select')
     }
     const startAddEvent = () => {
         setIsMeasuring(false)
         setIsCapturing(false)
         setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
         setIsPlacingViewshed(false)
         setIsPlacingEvent(true)
     }
@@ -435,11 +441,23 @@ function Map() {
         setIsCapturing(false)
         setIsPlacingEvent(false)
         setIsPlacingViewshed(false)
+        setIsDrawingLine(false)
         setIsPlacingAnnotation(true)
+    }
+    // terra-draw's line mode instead of a tool (TerritoryLayer switches to it), like the ruler
+    const startDrawLine = () => {
+        setDrawMode(null)
+        setIsMeasuring(false)
+        setIsCapturing(false)
+        setIsPlacingEvent(false)
+        setIsPlacingViewshed(false)
+        setIsPlacingAnnotation(false)
+        setIsDrawingLine(true)
     }
     const toggleViewshed = () => {
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
         if (editMode) setDrawMode(null)
         setIsMeasuring(false)
         setIsCapturing(false)
@@ -448,6 +466,7 @@ function Map() {
     const toggleRuler = () => {
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
         setIsPlacingViewshed(false)
         if (editMode) setDrawMode(null)
         setIsCapturing(false)
@@ -456,6 +475,7 @@ function Map() {
     const toggleScreenshot = () => {
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
         setIsPlacingViewshed(false)
         setIsMeasuring(false)
         setIsCapturing((on) => !on)
@@ -465,7 +485,7 @@ function Map() {
     // nothing can be added before the map has an actor (the list is empty until it has loaded, too)
     const noActors = factions.length === 0
     const needsActorClass = 'cursor-not-allowed opacity-40'
-    const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation
+    const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation && !isDrawingLine
 
     if (!id) return <p>Map not found</p>
 
@@ -487,6 +507,15 @@ function Map() {
                         onDeleted={handleTerritoryDeleted}
                         onError={setError}
                         measuring={isMeasuring}
+                        drawingLine={isDrawingLine}
+                    />
+                    <AddAnnotationLine
+                        mapId={id}
+                        factions={factions}
+                        layers={layers}
+                        active={isDrawingLine}
+                        onExit={() => setIsDrawingLine(false)}
+                        onCreated={handleAnnotationCreated}
                     />
                     <AddAnnotation
                         mapId={id}
@@ -655,20 +684,29 @@ function Map() {
                         </button>
                     )}
 
-                    {/* place an annotation: the next map click picks the spot (no draw/select tool, so that click isn't also handled by them) */}
-                    {editMode && (
+                    {/* a ready annotation: the next map click picks the spot (no draw/select tool, so that click isn't
+                        also handled by them). A line: drawn on the map, then the same form */}
+                    {editMode && (noActors ? (
                         <button
                             type="button"
+                            disabled
                             aria-label="Add annotation"
-                            aria-pressed={isPlacingAnnotation}
-                            title={noActors ? 'Add an actor first' : isPlacingAnnotation ? 'Add annotation - click on the map to place it' : 'Add annotation'}
-                            disabled={noActors}
-                            onClick={startAddAnnotation}
-                            className={`${navButtonClass} ${isPlacingAnnotation ? navButtonActiveClass : ''} ${noActors ? needsActorClass : ''}`}
+                            title="Add an actor first"
+                            className={`${navButtonClass} ${needsActorClass}`}
                         >
                             <NavIcon src={addAnnotationIcon} />
                         </button>
-                    )}
+                    ) : (
+                        <NavDropdown
+                            label={<NavIcon src={addAnnotationIcon} />}
+                            ariaLabel="Add annotation"
+                            title="Add annotation - a ready one or a drawn line"
+                            active={isPlacingAnnotation || isDrawingLine}
+                        >
+                            <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation}>Ready annotation</NavDropdownItem>
+                            <NavDropdownItem onClick={startDrawLine} active={isDrawingLine}>Draw line</NavDropdownItem>
+                        </NavDropdown>
+                    ))}
 
                     {editMode && (noActors ? (
                         <button
@@ -701,7 +739,7 @@ function Map() {
                 {editMode && (
                     <div className="md:hidden">
                         <NavDropdown
-                            label={<NavIcon src={isPlacingEvent ? addEventIcon : isPlacingAnnotation ? addAnnotationIcon : drawMode === 'select' ? cursorIcon : handIcon} />}
+                            label={<NavIcon src={isPlacingEvent ? addEventIcon : isPlacingAnnotation || isDrawingLine ? addAnnotationIcon : drawMode === 'select' ? cursorIcon : handIcon} />}
                             ariaLabel="Edit tools"
                             active={!isPanning}
                         >
@@ -709,6 +747,7 @@ function Map() {
                             <NavDropdownItem onClick={pickSelect} active={drawMode === 'select'}><NavIcon src={cursorIcon} /> Select</NavDropdownItem>
                             <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent} disabled={noActors}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
                             <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
+                            <NavDropdownItem onClick={startDrawLine} active={isDrawingLine} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Draw line</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add actor</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddLayer(true)}><NavIcon src={addLayerIcon} /> Add layer</NavDropdownItem>
                             <NavDropdownItem onClick={handleEditClick}>Exit edit mode</NavDropdownItem>

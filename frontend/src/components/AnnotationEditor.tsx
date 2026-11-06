@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { MapMouseEvent, MapTouchEvent } from 'maplibre-gl'
 import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import type { Annotation, Faction, Layer } from '../types/types'
-import { ANNOTATION_KINDS } from '../map/annotationKinds'
+import { annotationLook } from '../map/annotationKinds'
+import { moveAnnotationTo } from '../map/annotationLine'
 import { findAnnotationAt } from '../map/annotationHitTest'
 import AnnotationForm from './AnnotationForm'
 import { annotationToFormValues } from './annotationFormValues'
@@ -172,7 +173,7 @@ function AnnotationEditor({
     let placed = false
 
     const handleMove = (e: MapMouseEvent) => {
-      moved = { ...original, geometry: JSON.stringify({ type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] }) }
+      moved = moveAnnotationTo(original, e.lngLat)
       latestRef.current.onChange(moved)
     }
     const handleClick = (e: MapMouseEvent) => {
@@ -230,9 +231,10 @@ function AnnotationEditor({
       {editing && (
         <AnnotationForm
           key={editing.id}
-          heading="Edit Annotation"
+          heading={editing.line ? 'Edit Line' : 'Edit Annotation'}
           submitLabel="Save"
           initial={annotationToFormValues(editing)}
+          isLine={editing.line != null}
           factions={factions}
           layers={layers}
           onSubmit={async (fields) => {
@@ -262,7 +264,7 @@ function AnnotationEditor({
       {/* centered over the map area (the property panel takes the right 24rem) */}
       {/* phones: across the screen, above the timeline or the property sheet's bar */}
       <div className={`fixed ${aboveTimeline ? 'bottom-[11rem] md:bottom-40' : 'bottom-16 md:bottom-6'} left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center z-40 flex -translate-x-1/2 items-center gap-2 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10`}>
-        <span className="mr-2 font-semibold text-white">{annotation.label || ANNOTATION_KINDS[annotation.kind].label}</span>
+        <span className="mr-2 font-semibold text-white">{annotation.label || annotationLook(annotation).label}</span>
         <button
           type="button"
           aria-pressed={movingId === annotation.id}
@@ -275,19 +277,24 @@ function AnnotationEditor({
           ⊹ Move
           {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
         </button>
-        <button type="button" aria-pressed={mode === 'rotate'} onClick={() => toggleMode('rotate')} className={modeButtonClass('rotate')}>
-          ⟳ Rotate
-          {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
-        </button>
-        <button type="button" aria-pressed={mode === 'scale'} onClick={() => toggleMode('scale')} className={modeButtonClass('scale')}>
-          ⇕ Scale
-          <span className="tabular-nums text-gray-400">{annotation.scale.toFixed(2)}x</span>
-        </button>
+        {/* a line has no icon to turn or resize */}
+        {!annotation.line && (
+          <>
+            <button type="button" aria-pressed={mode === 'rotate'} onClick={() => toggleMode('rotate')} className={modeButtonClass('rotate')}>
+              ⟳ Rotate
+              {/* <span className="tabular-nums text-gray-400">{Math.round(annotation.rotation)}°</span> */}
+            </button>
+            <button type="button" aria-pressed={mode === 'scale'} onClick={() => toggleMode('scale')} className={modeButtonClass('scale')}>
+              ⇕ Scale
+              <span className="tabular-nums text-gray-400">{annotation.scale.toFixed(2)}x</span>
+            </button>
+          </>
+        )}
 
         <span className="ml-2 text-xs text-gray-500 max-md:hidden">
           {mode === 'rotate' && 'Drag to rotate'}
           {mode === 'scale' && 'Drag up or down to resize'}
-          {mode === 'move' && (movingId === annotation.id ? 'Click to put it down, Esc to cancel' : 'Pick Move, Rotate or Scale')}
+          {mode === 'move' && (movingId === annotation.id ? 'Click to put it down, Esc to cancel' : annotation.line ? 'Pick Move to shift it' : 'Pick Move, Rotate or Scale')}
         </span>
       </div>
     </>

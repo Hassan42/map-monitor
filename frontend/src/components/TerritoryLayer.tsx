@@ -88,6 +88,7 @@ function TerritoryLayer({
   onError,
   now,
   measuring,
+  drawingLine,
 }: {
   mapId: string
   factions: Faction[]
@@ -102,6 +103,7 @@ function TerritoryLayer({
   onError: (message: string) => void
   now: number // the timeline's date: a reshaped polygon is saved as its shape from this date on
   measuring: boolean // the ruler is on: terra-draw draws measured lines, territories can't be picked
+  drawingLine: boolean // a line annotation is being drawn (AddAnnotationLine): same line mode
 }) {
   const map = useMap()
   const draw = useTerraDraw()
@@ -267,8 +269,8 @@ function TerritoryLayer({
     if (!terraDraw) return
     if (!terraDraw.enabled) terraDraw.start()
     // the ruler takes over terra-draw while it's on, in view and edit mode
-    terraDraw.setMode(measuring ? RULER_MODE : active && mode ? mode : 'default')
-  }, [draw, active, mode, measuring])
+    terraDraw.setMode(measuring || drawingLine ? RULER_MODE : active && mode ? mode : 'default')
+  }, [draw, active, mode, measuring, drawingLine])
 
   // terra-draw is the only renderer of territories: reload all of them whenever the list changes
   useEffect(() => {

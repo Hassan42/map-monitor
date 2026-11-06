@@ -3,24 +3,8 @@ import { useMap } from '../store/MapContext'
 import { createAnnotation } from '../api/annotation'
 import type { Annotation, Faction, Layer } from '../types/types'
 import { ANNOTATION_REFERENCE_ZOOM, scaleAtZoom } from '../map/annotationScale'
-import { ACCENT } from '../styles/colors'
 import AnnotationForm from './AnnotationForm'
-import type { AnnotationFormValues } from './annotationFormValues'
-import { toLocalInput } from './eventFormValues'
-
-const DEFAULT_COLOR = ACCENT // accent, until a faction is picked
-
-// a new annotation: no start and no end, so it shows on every date until dates are picked
-const emptyForm = (): AnnotationFormValues => ({
-  kind: 'ARROW',
-  label: '',
-  factionId: '',
-  layerId: null,
-  color: DEFAULT_COLOR,
-  startTime: '',
-  ongoing: true,
-  endTime: toLocalInput(Date.now()),
-})
+import { newAnnotationValues } from './annotationFormValues'
 
 // click the map to place an annotation, then pick its kind, color and size in a dialog
 function AddAnnotation({
@@ -74,7 +58,7 @@ function AddAnnotation({
       key={`${pendingLocation.lng},${pendingLocation.lat}`}
       heading="New Annotation"
       submitLabel="Add Annotation"
-      initial={emptyForm()}
+      initial={newAnnotationValues()}
       factions={factions}
       layers={layers}
       onSubmit={async (fields) => {

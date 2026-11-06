@@ -148,10 +148,12 @@ export interface DraftStatus {
 // mirrors the backend's AnnotationKind enum (Jackson sends the constant's name)
 export type AnnotationKind = 'AMBUSH' | 'ARROW' | 'DESTROY' | 'OBJECTIVE'
 
-// a tactical graphic stamped on the map: the kind's icon at a point, in `color`, sized by `scale`
+// a tactical graphic on the map: the kind's icon at a point, in `color`, sized by `scale`, or a drawn line
 export interface Annotation extends MapElement {
   kind: AnnotationKind;
-  geometry: string; // GeoJSON geometry as text, e.g. {"type":"Point","coordinates":[lng,lat]}
+  geometry: string; // GeoJSON point as text, e.g. {"type":"Point","coordinates":[lng,lat]}
+  line?: string | null; // a drawn line's points as JSON, [[lng,lat],...]; null = a ready annotation (kind's icon)
+  dashed?: boolean | null; // how a line is drawn; null for a ready annotation
   factionId: number | null;
   label: string | null;
   color: string | null;

@@ -12,7 +12,13 @@ public class Annotation extends MapElement {
     private AnnotationKind kind;
 
     @Column(nullable = false, columnDefinition = "text")
-    private String geometry; // GeoJSON geometry, e.g. {"type":"LineString","coordinates":[[lng,lat],...]}
+    private String geometry; // GeoJSON point it sits at, e.g. {"type":"Point","coordinates":[lng,lat]}
+
+    // a drawn line's points as JSON, e.g. [[lng,lat],...]; null for a ready annotation (an icon at its point)
+    @Column(columnDefinition = "text")
+    private String line;
+
+    private Boolean dashed; // how a line is drawn; null for a ready annotation
 
     private Long factionId; // optional, the owning Faction's stableId, not its row id
 
@@ -48,6 +54,22 @@ public class Annotation extends MapElement {
 
     public void setGeometry(String geometry) {
         this.geometry = geometry;
+    }
+
+    public String getLine() {
+        return line;
+    }
+
+    public void setLine(String line) {
+        this.line = line;
+    }
+
+    public Boolean getDashed() {
+        return dashed;
+    }
+
+    public void setDashed(Boolean dashed) {
+        this.dashed = dashed;
     }
 
     public Long getFactionId() {
@@ -121,6 +143,8 @@ public class Annotation extends MapElement {
         Annotation copy = new Annotation();
         copy.setKind(this.kind);
         copy.setGeometry(this.geometry);
+        copy.setLine(this.line);
+        copy.setDashed(this.dashed);
         copy.setFactionId(this.factionId);
         copy.setLabel(this.label);
         copy.setColor(this.color);

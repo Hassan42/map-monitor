@@ -6,12 +6,13 @@ import type { AnnotationFormValues } from './annotationFormValues'
 import LayerSelect from './LayerSelect'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formColorInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
-// the one annotation form, for a newly placed annotation and for editing one (right-click > Edit).
+// the one annotation form, for a newly placed annotation or drawn line and for editing one (right-click > Edit).
 // It starts from `initial` when it opens; render it with a key per annotation so another one starts fresh
 function AnnotationForm({
   heading,
   submitLabel,
   initial,
+  isLine = false,
   factions,
   layers,
   onSubmit,
@@ -20,13 +21,15 @@ function AnnotationForm({
   heading: string
   submitLabel: string
   initial: AnnotationFormValues
+  isLine?: boolean // a drawn line: picks its look (straight or dashed) instead of a kind
   factions: Faction[]
   layers: Layer[]
   // the form's fields as sent to the backend: times as ISO strings, null for no start / no end
-  onSubmit: (fields: Pick<Annotation, 'kind' | 'label' | 'factionId' | 'layerId' | 'color' | 'startTime' | 'endTime'>) => Promise<void>
+  onSubmit: (fields: Pick<Annotation, 'kind' | 'dashed' | 'label' | 'factionId' | 'layerId' | 'color' | 'startTime' | 'endTime'>) => Promise<void>
   onCancel: () => void
 }) {
   const [kind, setKind] = useState(initial.kind)
+  const [dashed, setDashed] = useState(initial.dashed)
   const [label, setLabel] = useState(initial.label)
   const [factionId, setFactionId] = useState(initial.factionId)
   const [layerId, setLayerId] = useState(initial.layerId)
@@ -48,6 +51,7 @@ function AnnotationForm({
     try {
       await onSubmit({
         kind,
+        dashed: isLine ? dashed : null,
         label: label.trim() || null,
         factionId: factionId === '' ? null : factionId,
         layerId,
@@ -66,6 +70,24 @@ function AnnotationForm({
       <form onSubmit={handleSubmit} className={formClass}>
         <h2 className={formTitleClass}>{heading}</h2>
 
+        {isLine ? (
+        <div className={formFieldClass}>
+          <label htmlFor="annotation-line-style">Line:</label>
+          <div className="flex items-center gap-3">
+            {/* preview of the chosen look in the chosen color */}
+            <span aria-hidden="true" className="w-10 shrink-0" style={{ borderTop: `3px ${dashed ? 'dashed' : 'solid'} ${color}` }} />
+            <select
+              id="annotation-line-style"
+              value={dashed ? 'dashed' : 'straight'}
+              onChange={(e) => setDashed(e.target.value === 'dashed')}
+              className={`${formInputClass} flex-1`}
+            >
+              <option value="straight">Straight</option>
+              <option value="dashed">Dashed</option>
+            </select>
+          </div>
+        </div>
+        ) : (
         <div className={formFieldClass}>
           <label htmlFor="annotation-kind">Type:</label>
           <div className="flex items-center gap-3">
@@ -91,6 +113,7 @@ function AnnotationForm({
             </select>
           </div>
         </div>
+        )}
 
         <div className={formFieldClass}>
           <label htmlFor="annotation-label">Label (optional):</label>

@@ -1,8 +1,9 @@
-import type { AnnotationKind } from '../types/types'
+import type { Annotation, AnnotationKind } from '../types/types'
 import ambushIcon from '../assets/annotations/Ambush.svg'
 import arrowIcon from '../assets/annotations/Arrow.svg'
 import destroyIcon from '../assets/annotations/Destroy.svg'
 import objectiveIcon from '../assets/annotations/Objective.svg'
+import lineIcon from '../assets/annotations/Line.svg'
 
 // every backend annotation kind -> how it's shown. Record<AnnotationKind, ...> makes the build fail
 // if a kind is added to the type but forgotten here.
@@ -15,3 +16,7 @@ export const ANNOTATION_KINDS: Record<AnnotationKind, { label: string; icon: str
 }
 
 export const ANNOTATION_KIND_LIST = Object.keys(ANNOTATION_KINDS) as AnnotationKind[]
+
+// how one annotation is named and pictured in lists: a drawn line has no kind of its own (its `kind` is
+// never shown: the database only accepts the kinds above)
+export const annotationLook = (a: Annotation) => (a.line ? { label: 'Line', icon: lineIcon } : ANNOTATION_KINDS[a.kind])

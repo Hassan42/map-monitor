@@ -28,6 +28,11 @@ export const ANNOTATIONS_LAYER_ID = 'annotations-icon'
 export const ANNOTATIONS_LABEL_LAYER_ID = 'annotations-label'
 // accent ring drawn under the selected annotation
 export const ANNOTATIONS_SELECTED_LAYER_ID = 'annotations-selected'
+// drawn line annotations, and the accent glow under the selected one
+export const ANNOTATIONS_LINE_LAYER_ID = 'annotations-line'
+export const ANNOTATIONS_DASHED_LINE_LAYER_ID = 'annotations-line-dashed'
+export const ANNOTATIONS_LINE_LABEL_LAYER_ID = 'annotations-line-label'
+export const ANNOTATIONS_SELECTED_LINE_LAYER_ID = 'annotations-selected-line'
 // annotation images are named by kind + color, e.g. 'annotation-ARROW-#c0392b'.
 // annotationLayers.ts builds the same name per feature with an expression - keep the two in sync
 export const ANNOTATION_IMAGE_PREFIX = 'annotation-'

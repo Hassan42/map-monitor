@@ -5,7 +5,7 @@ import type { LngLatBoundsLike } from 'maplibre-gl'
 import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import { EVENTS_CLUSTER_MAX_ZOOM } from '../map/mapLayers'
 import { EVENT_CATEGORIES, categoryOf } from '../map/eventCategories'
-import { ANNOTATION_KINDS } from '../map/annotationKinds'
+import { annotationLook } from '../map/annotationKinds'
 import { parseServerTime } from '../map/eventTime'
 import { cameraPadding } from '../map/cameraPadding'
 import { useLongPress } from '../map/longPress'
@@ -170,7 +170,7 @@ function PropertyPanel({
             }
             case 'annotation': {
                 const a = entry.item
-                const kind = ANNOTATION_KINDS[a.kind]
+                const kind = annotationLook(a)
                 const faction = a.factionId != null ? factionById.get(a.factionId) : undefined
                 return (
                     <Row
