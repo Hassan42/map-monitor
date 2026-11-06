@@ -49,7 +49,7 @@ export function createTerraDrawControl(map: Map): MaplibreMeasureControl {
     showDeleteConfirmation: true,
     modeOptions: {
       freehand: new TerraDrawFreehandMode({
-        minDistance: 5,
+        minDistance: 15,
         smoothing: 0.4,
         styles: { /* same territory styling as polygon, so it matches */ },
       }),
