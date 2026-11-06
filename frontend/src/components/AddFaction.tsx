@@ -18,7 +18,7 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
             const faction = await createFaction(mapId, { name, color })
             onCreated(faction)
         } catch {
-            setError('Could not create faction')
+            setError('Could not create actor')
         } finally {
             setLoading(false)
         }
@@ -27,7 +27,7 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
     return (
         <div className={formOverlayClass}>
             <form onSubmit={handleSubmit} className={formClass}>
-                <h2 className={formTitleClass}>New Faction</h2>
+                <h2 className={formTitleClass}>New Actor</h2>
                 <div className={formFieldClass}>
                     <label htmlFor="name">Name:</label>
                     <input type="text" id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} className={formInputClass} />
@@ -39,7 +39,7 @@ function AddFaction({ mapId, onCreated, onClose }: { mapId: string; onCreated: (
                 {error && <p className={formErrorClass}>{error}</p>}
                 <div className="flex gap-2">
                     <button type="submit" disabled={loading} className={formPrimaryButtonClass}>
-                        {loading ? 'Adding...' : 'Add Faction'}
+                        {loading ? 'Adding...' : 'Add Actor'}
                     </button>
                     <button type="button" onClick={onClose} className={formSecondaryButtonClass}>
                         Cancel

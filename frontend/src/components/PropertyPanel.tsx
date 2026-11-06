@@ -216,7 +216,7 @@ function PropertyPanel({
 
             <div role="tablist" className="flex border-b border-neutral-800 text-sm">
                 <TabButton active={tab === 'factions'} onClick={() => setTab('factions')}>
-                    Factions ({factions.length})
+                    Actors ({factions.length})
                 </TabButton>
                 <TabButton active={tab === 'elements'} onClick={() => setTab('elements')}>
                     Elements ({total})
@@ -247,7 +247,7 @@ function PropertyPanel({
             <div className="flex-1 overflow-y-auto p-2">
                 {tab === 'factions' && (
                     <ul className="flex flex-col gap-1 p-2">
-                        {factions.length === 0 && <p className="text-sm text-gray-400">No factions yet.</p>}
+                        {factions.length === 0 && <p className="text-sm text-gray-400">No actors yet.</p>}
                         {factions.map((faction) => (
                             <li key={faction.id} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5">
                                 <Swatch color={faction.color} />

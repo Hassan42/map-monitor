@@ -61,7 +61,7 @@ function TerritoryForm({
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault()
-    if (factionId === '') return setError('Pick a faction')
+    if (factionId === '') return setError('Pick an actor')
     const createdMs = createdAt === '' ? null : new Date(createdAt).getTime()
     const endMs = new Date(endTime).getTime()
     if ((createdMs === null && requireCreated) || Number.isNaN(createdMs)) return setError('Pick when it was created')
@@ -88,9 +88,9 @@ function TerritoryForm({
           <input type="text" id="territory-name" value={name} onChange={(e) => setName(e.target.value)} className={formInputClass} />
         </div>
         <div className={formFieldClass}>
-          <label htmlFor="territory-faction">Faction:</label>
+          <label htmlFor="territory-faction">Actor:</label>
           {factions.length === 0 ? (
-            <p className={formErrorClass}>Create a faction first.</p>
+            <p className={formErrorClass}>Create an actor first.</p>
           ) : (
             <select
               id="territory-faction"
@@ -104,7 +104,7 @@ function TerritoryForm({
               }}
               className={formInputClass}
             >
-              <option value="" disabled>Select a faction</option>
+              <option value="" disabled>Select an actor</option>
               {factions.map((faction) => (
                 <option key={faction.id} value={faction.id}>{faction.name}</option>
               ))}
@@ -127,7 +127,7 @@ function TerritoryForm({
                   From {new Date(factionFrom).toLocaleDateString(undefined, { dateStyle: 'medium' })}, until its next change
                 </span>
               )}
-              {wholePeriod && severalOwners && <span className="text-xs text-amber-400">Replaces every faction it has had, on all dates</span>}
+              {wholePeriod && severalOwners && <span className="text-xs text-amber-400">Replaces every actor it has had, on all dates</span>}
             </>
           )}
         </div>

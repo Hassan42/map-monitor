@@ -73,7 +73,7 @@ function EventForm({
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault()
-    if (factionId === '') return setError('Pick a faction')
+    if (factionId === '') return setError('Pick an actor')
     const startMs = new Date(startTime).getTime()
     if (Number.isNaN(startMs)) return setError('Pick when it happened')
     if (startMs > Date.now()) return setError("The event can't start in the future")
@@ -122,9 +122,9 @@ function EventForm({
             <CategoryPicker id="event-category" value={category} onChange={setCategory} />
           </div>
           <div className={formFieldClass}>
-            <label htmlFor="event-faction">Faction:</label>
+            <label htmlFor="event-faction">Actor:</label>
             {factions.length === 0 ? (
-              <p className={formErrorClass}>Create a faction first.</p>
+              <p className={formErrorClass}>Create an actor first.</p>
             ) : (
               <select
                 id="event-faction"
@@ -132,7 +132,7 @@ function EventForm({
                 onChange={(e) => setFactionId(Number(e.target.value))}
                 className={formInputClass}
               >
-                <option value="" disabled>Select a faction</option>
+                <option value="" disabled>Select an actor</option>
                 {factions.map((faction) => (
                   <option key={faction.id} value={faction.id}>{faction.name}</option>
                 ))}

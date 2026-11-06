@@ -98,7 +98,7 @@ function AnnotationForm({
         </div>
 
         <div className={formFieldClass}>
-          <label htmlFor="annotation-faction">Faction (optional):</label>
+          <label htmlFor="annotation-faction">Actor (optional):</label>
           <select
             id="annotation-faction"
             value={factionId}

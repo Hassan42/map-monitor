@@ -188,7 +188,7 @@ function Map() {
         if (!id) return
         getMapFactions(id, editMode)
             .then(setFactions)
-            .catch(() => setError('Could not load factions'))
+            .catch(() => setError('Could not load actors'))
             .finally(() => setLoading(false))
     }, [id, editMode, elementsRevision])
 
@@ -599,8 +599,8 @@ function Map() {
                     {editMode && (
                         <button
                             type="button"
-                            aria-label="Add faction"
-                            title="Add faction"
+                            aria-label="Add actor"
+                            title="Add actor"
                             onClick={() => setShowAddFaction(true)}
                             className={navButtonClass}
                         >
@@ -677,7 +677,7 @@ function Map() {
                             <NavDropdownItem onClick={pickSelect} active={drawMode === 'select'}><NavIcon src={cursorIcon} /> Select</NavDropdownItem>
                             <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
                             <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
-                            <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add faction</NavDropdownItem>
+                            <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add actor</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddLayer(true)}><NavIcon src={addLayerIcon} /> Add layer</NavDropdownItem>
                             <NavDropdownItem onClick={handleEditClick}>Exit edit mode</NavDropdownItem>
                         </NavDropdown>
