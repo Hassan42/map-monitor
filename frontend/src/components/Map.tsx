@@ -447,6 +447,9 @@ function Map() {
     }
     const closeScreenshot = useCallback(() => setIsCapturing(false), [])
     const closeRuler = useCallback(() => setIsMeasuring(false), [])
+    // nothing can be added before the map has an actor (the list is empty until it has loaded, too)
+    const noActors = factions.length === 0
+    const needsActorClass = 'cursor-not-allowed opacity-40'
     const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation
 
     if (!id) return <p>Map not found</p>
@@ -626,9 +629,10 @@ function Map() {
                             type="button"
                             aria-label="Add event"
                             aria-pressed={isPlacingEvent}
-                            title={isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
+                            title={noActors ? 'Add an actor first' : isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
+                            disabled={noActors}
                             onClick={startAddEvent}
-                            className={`${navButtonClass} ${isPlacingEvent ? navButtonActiveClass : ''}`}
+                            className={`${navButtonClass} ${isPlacingEvent ? navButtonActiveClass : ''} ${noActors ? needsActorClass : ''}`}
                         >
                             <NavIcon src={addEventIcon} />
                         </button>
@@ -640,15 +644,26 @@ function Map() {
                             type="button"
                             aria-label="Add annotation"
                             aria-pressed={isPlacingAnnotation}
-                            title={isPlacingAnnotation ? 'Add annotation - click on the map to place it' : 'Add annotation'}
+                            title={noActors ? 'Add an actor first' : isPlacingAnnotation ? 'Add annotation - click on the map to place it' : 'Add annotation'}
+                            disabled={noActors}
                             onClick={startAddAnnotation}
-                            className={`${navButtonClass} ${isPlacingAnnotation ? navButtonActiveClass : ''}`}
+                            className={`${navButtonClass} ${isPlacingAnnotation ? navButtonActiveClass : ''} ${noActors ? needsActorClass : ''}`}
                         >
                             <NavIcon src={addAnnotationIcon} />
                         </button>
                     )}
 
-                    {editMode && (
+                    {editMode && (noActors ? (
+                        <button
+                            type="button"
+                            disabled
+                            aria-label="Add territory"
+                            title="Add an actor first"
+                            className={`${navButtonClass} ${needsActorClass}`}
+                        >
+                            <NavIcon src={addTerritoryIcon} />
+                        </button>
+                    ) : (
                         <NavDropdown
                             label={<NavIcon src={addTerritoryIcon} />}
                             ariaLabel="Add territory"
@@ -658,7 +673,7 @@ function Map() {
                             <NavDropdownItem onClick={() => setDrawMode('polygon')}>Polygon</NavDropdownItem>
                             <NavDropdownItem onClick={() => setDrawMode('freehand')}>Freehand</NavDropdownItem>
                         </NavDropdown>
-                    )}
+                    ))}
                 </div>
 
                 {/* phones: Edit, or in edit mode one Tools menu (no territory drawing: too fiddly by finger) */}
@@ -675,8 +690,8 @@ function Map() {
                         >
                             <NavDropdownItem onClick={pickPan} active={isPanning}><NavIcon src={handIcon} /> Pan</NavDropdownItem>
                             <NavDropdownItem onClick={pickSelect} active={drawMode === 'select'}><NavIcon src={cursorIcon} /> Select</NavDropdownItem>
-                            <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
-                            <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
+                            <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent} disabled={noActors}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
+                            <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add actor</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddLayer(true)}><NavIcon src={addLayerIcon} /> Add layer</NavDropdownItem>
                             <NavDropdownItem onClick={handleEditClick}>Exit edit mode</NavDropdownItem>

@@ -60,14 +60,15 @@ function NavDropdown({ label, ariaLabel, title, active = false, align = 'left', 
 }
 
 // active: a toggle that's on (e.g. a map layer), shown in the accent color
-export function NavDropdownItem({ onClick, active, children }: { onClick?: () => void; active?: boolean; children: ReactNode }) {
+export function NavDropdownItem({ onClick, active, disabled, children }: { onClick?: () => void; active?: boolean; disabled?: boolean; children: ReactNode }) {
     return (
         <button
             type="button"
             role="menuitem"
             aria-pressed={active}
+            disabled={disabled}
             onClick={onClick}
-            className={`flex w-full items-center gap-3 text-left px-4 py-2.5 whitespace-nowrap transition-colors hover:bg-accent-400/15 hover:text-accent-300 ${active ? 'text-accent-300' : ''}`}
+            className={`flex w-full items-center gap-3 text-left px-4 py-2.5 whitespace-nowrap transition-colors hover:bg-accent-400/15 hover:text-accent-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-inherit ${active ? 'text-accent-300' : ''}`}
         >
             {children}
         </button>
