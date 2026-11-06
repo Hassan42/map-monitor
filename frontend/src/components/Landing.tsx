@@ -50,12 +50,11 @@ function Landing() {
         <section className={`grid min-h-0 flex-1 gap-x-4 gap-y-2 px-4 pb-4 ${DEMO_MAP_ID ? 'lg:grid-cols-[20rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto]' : 'mx-auto max-w-3xl'}`}>
           <div className="flex min-h-0 flex-col gap-4 max-lg:order-last max-lg:mt-2">
             {FEATURES.map(({ icon, title, text }) => (
-              <div key={title} className="flex flex-1 flex-col justify-center gap-1.5 bg-neutral-900 p-3 ring-1 ring-white/10">
-                <h2 className="flex items-center gap-2 font-semibold text-white">
-                  <span className="text-accent-300"><NavIcon src={icon} /></span>
-                  {title}
-                </h2>
-                <p className="text-sm text-gray-400">{text}</p>
+              <div key={title} className="relative flex flex-1 flex-col justify-center gap-1.5 overflow-hidden bg-neutral-900 p-3 ring-1 ring-white/10">
+                {/* dim, behind the text, filling the card's right half */}
+                <span className="absolute inset-y-2 right-2 w-1/2 text-accent-300/15"><NavIcon src={icon} className="!h-full !w-full" /></span>
+                <h2 className="relative font-semibold text-white">{title}</h2>
+                <p className="relative text-sm text-gray-400">{text}</p>
               </div>
             ))}
           </div>
