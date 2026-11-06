@@ -42,7 +42,7 @@ import { deleteFaction, getMapFactions } from '../api/faction'
 import { getMapLayers } from '../api/layer'
 import { getMapEvents, editEvent, deleteEvent } from '../api/event'
 import { getMapTerritories } from '../api/territory'
-import { editAnnotation, getMapAnnotations } from '../api/annotation'
+import { editAnnotation, getMapAnnotations, deleteAnnotation } from '../api/annotation'
 import { auth } from '../firebase/BaseConfig'
 import { getMapById, startDraft, publishMap, getDraftStatus, discardChange } from '../api/map'
 import type { DrawMode } from '../types/types'
@@ -284,6 +284,16 @@ function Map() {
         editAnnotation(id, stableId, data)
             .then(() => refreshDraftStatus())
             .catch(() => setError('Could not save annotation'))
+    }
+
+    const handleAnnotationDeleted = (annotationId: number) => {
+        if (!id) return
+        deleteAnnotation(id, annotationId)
+            .then(() => {
+                setAnnotations((prev) => prev.filter((a) => a.id !== annotationId))
+                refreshDraftStatus()
+            })
+            .catch(() => setError('Could not delete annotation'))
     }
 
     const handleEventCreated = (event: EventMarker) => {
@@ -544,6 +554,7 @@ function Map() {
                         aboveTimeline={!live && !showAllTime}
                         onChange={handleAnnotationChange}
                         onCommit={handleAnnotationCommit}
+                        onDelete={handleAnnotationDeleted}
                     />
                     <EventMarkers events={shownEvents} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId}
                         onDelete={handleEventDeleted} now={now} editMode={editMode} showRelations={showRelations} allTime={showAllTime} />

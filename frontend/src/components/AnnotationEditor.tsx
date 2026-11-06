@@ -6,6 +6,7 @@ import { annotationLook } from '../map/annotationKinds'
 import { moveAnnotationTo } from '../map/annotationLine'
 import { findAnnotationAt } from '../map/annotationHitTest'
 import AnnotationForm from './AnnotationForm'
+import ConfirmDialog from './ConfirmDialog'
 import { annotationToFormValues } from './annotationFormValues'
 
 // what dragging on the map does while an annotation is selected ('move': nothing - moving is the
@@ -28,6 +29,7 @@ function AnnotationEditor({
   aboveTimeline,
   onChange,
   onCommit,
+  onDelete,
 }: {
   annotations: Annotation[]
   factions: Faction[]
@@ -36,9 +38,10 @@ function AnnotationEditor({
   aboveTimeline: boolean // the timeline is showing: sit above it instead of on top of it
   onChange: (annotation: Annotation) => void
   onCommit: (annotation: Annotation) => void
+  onDelete: (annotationId: number) => void
 }) {
   const map = useMap()
-  const [selected] = useSelection()
+  const [selected, setSelected] = useSelection()
 
   // the mode belongs to the annotation it was picked for: selecting another one starts in 'move'
   const selectedId = active && selected?.type === 'annotation' ? selected.id : null
@@ -60,6 +63,8 @@ function AnnotationEditor({
   const [movingId, setMovingId] = useState<number | null>(null)
   // the annotation whose edit form is open (right-click > Edit)
   const [editingId, setEditingId] = useState<number | null>(null)
+  // the annotation waiting for "really delete?"
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   // leaving edit mode mid-move cancels it (set while rendering, not in an effect)
   if (!active && movingId != null) setMovingId(null)
 
@@ -198,6 +203,7 @@ function AnnotationEditor({
   }, [map, movingId])
 
   const editing = active ? annotations.find((a) => a.id === editingId) : undefined
+  const deleting = active ? annotations.find((a) => a.id === deletingId) : undefined
 
   const overlays = (
     <>
@@ -226,7 +232,29 @@ function AnnotationEditor({
         >
           Move
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDeletingId(menu.id)
+            setContextMenu(null)
+          }}
+          className="block w-full px-3 py-1.5 text-left hover:bg-red-500/15 hover:text-red-400"
+        >
+          Delete
+        </button>
       </div>
+      )}
+      {deleting && (
+        <ConfirmDialog
+          title={`Delete ${deleting.label ? `"${deleting.label}"` : `this ${annotationLook(deleting).label.toLowerCase()}`}?`}
+          message="It's removed from this draft. It stays on the published map until you publish, and you can undo it from the publish menu before then."
+          onConfirm={() => {
+            setSelected((prev) => (prev?.type === 'annotation' && prev.id === deleting.id ? null : prev))
+            setDeletingId(null)
+            onDelete(deleting.id)
+          }}
+          onCancel={() => setDeletingId(null)}
+        />
       )}
       {editing && (
         <AnnotationForm
