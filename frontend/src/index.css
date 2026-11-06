@@ -88,8 +88,9 @@
 }
 
 /* top-left map controls (zoom, compass, reset view) start below the fixed nav bar (h-14).
-   .maplibregl-map in front: maplibre-gl.css loads after this file and sets top: 0 on the same class */
-.maplibregl-map .maplibregl-ctrl-top-left {
+   The container in front: maplibre-gl.css loads after this file and sets top: 0 on the same class. Not
+   .maplibregl-map: in dev, StrictMode's first map takes that class with it when it's removed */
+.maplibregl-control-container .maplibregl-ctrl-top-left {
   top: 3.5rem;
 }
 
@@ -167,8 +168,8 @@
 /* phones: no territory drawing (too fiddly by finger), so no draw toolbar; the map's credits sit
    above the property sheet's 48px bar instead of under it */
 @media (max-width: 767px) {
-  .maplibregl-map .maplibregl-ctrl-bottom-right,
-  .maplibregl-map .maplibregl-ctrl-bottom-left {
+  .maplibregl-control-container .maplibregl-ctrl-bottom-right,
+  .maplibregl-control-container .maplibregl-ctrl-bottom-left {
     bottom: 48px;
   }
   .maplibregl-ctrl-group:has(.maplibregl-terradraw-measure-render-button, .maplibregl-terradraw-measure-add-control) {
