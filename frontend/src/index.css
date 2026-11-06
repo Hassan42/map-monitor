@@ -25,31 +25,9 @@
   }
 }
 
-/* hide the terra-draw toolbar outside edit mode (toggled by TerritoryLayer) */
-.draw-locked .maplibregl-ctrl-group:has(.maplibregl-terradraw-measure-render-button, .maplibregl-terradraw-measure-add-control) {
+/* terra-draw runs from the nav bar; its own toolbar stays hidden */
+.maplibregl-ctrl-group:has(.maplibregl-terradraw-measure-render-button, .maplibregl-terradraw-measure-add-control) {
   display: none;
-}
-
-/* the ruler's line tool: driven by the nav bar's Ruler button, not the draw toolbar */
-.maplibregl-ctrl-group .maplibregl-terradraw-measure-add-linestring-button {
-  display: none;
-}
-
-/* bigger terra-draw toolbar buttons */
-.maplibregl-ctrl-group button[class*="maplibregl-terradraw-"] {
-  width: 40px;
-  height: 40px;
-  background-size: 24px;
-}
-
-/* accent hover to match the nav bar; skip the active tool so its own highlight stays visible */
-.maplibregl-ctrl-group button[class*="maplibregl-terradraw-"]:not(.active):hover {
-  background-color: color-mix(in srgb, var(--color-accent-400) 25%, transparent);
-}
-
-/* the active draw tool: terra-draw colors it amber by default, use the app accent instead */
-.maplibregl-ctrl-group button[class*="maplibregl-terradraw-"].active {
-  background-color: var(--color-accent-400);
 }
 
 /* old-school square look: MapLibre's own controls (draw toolbar, zoom, attribution) are rounded by default */
@@ -165,14 +143,10 @@
   user-select: none;
 }
 
-/* phones: no territory drawing (too fiddly by finger), so no draw toolbar; the map's credits sit
-   above the property sheet's 48px bar instead of under it */
+/* phones: the map's credits sit above the property sheet's 48px bar instead of under it */
 @media (max-width: 767px) {
   .maplibregl-control-container .maplibregl-ctrl-bottom-right,
   .maplibregl-control-container .maplibregl-ctrl-bottom-left {
     bottom: 48px;
-  }
-  .maplibregl-ctrl-group:has(.maplibregl-terradraw-measure-render-button, .maplibregl-terradraw-measure-add-control) {
-    display: none;
   }
 }

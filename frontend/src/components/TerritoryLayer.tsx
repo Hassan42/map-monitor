@@ -270,11 +270,6 @@ function TerritoryLayer({
     terraDraw.setMode(measuring ? RULER_MODE : active && mode ? mode : 'default')
   }, [draw, active, mode, measuring])
 
-  // hide the draw toolbar outside edit mode (see index.css)
-  useEffect(() => {
-    map?.getContainer().classList.toggle('draw-locked', !active)
-  }, [map, active])
-
   // terra-draw is the only renderer of territories: reload all of them whenever the list changes
   useEffect(() => {
     const terraDraw = terraDrawRef.current
