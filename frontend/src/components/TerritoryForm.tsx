@@ -7,6 +7,7 @@ import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputC
 
 // what the form edits; the shape itself is drawn on the map
 export interface TerritoryFormValues {
+  name: string
   factionId: number | ''
   layerId: number | null
   color: string
@@ -46,6 +47,7 @@ function TerritoryForm({
   onSubmit: (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null, wholePeriod: boolean) => Promise<void>
   onCancel: () => void
 }) {
+  const [name, setName] = useState(initial.name)
   const [factionId, setFactionId] = useState<number | ''>(initial.factionId)
   const [layerId, setLayerId] = useState<number | null>(initial.layerId)
   const [color, setColor] = useState(initial.color)
@@ -70,7 +72,7 @@ function TerritoryForm({
     setError('')
     setLoading(true)
     try {
-      await onSubmit({ factionId, layerId, color, createdAt, ongoing, endTime }, createdMs, ongoing ? null : endMs, wholePeriod)
+      await onSubmit({ name, factionId, layerId, color, createdAt, ongoing, endTime }, createdMs, ongoing ? null : endMs, wholePeriod)
     } catch {
       setError('Could not save territory')
       setLoading(false)
@@ -81,6 +83,10 @@ function TerritoryForm({
     <div className={formOverlayClass}>
       <form onSubmit={handleSubmit} className={formClass}>
         <h2 className={formTitleClass}>{heading}</h2>
+        <div className={formFieldClass}>
+          <label htmlFor="territory-name">Title:</label>
+          <input type="text" id="territory-name" value={name} onChange={(e) => setName(e.target.value)} className={formInputClass} />
+        </div>
         <div className={formFieldClass}>
           <label htmlFor="territory-faction">Faction:</label>
           {factions.length === 0 ? (

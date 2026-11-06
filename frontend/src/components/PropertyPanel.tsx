@@ -154,7 +154,7 @@ function PropertyPanel({
                         onDoubleClick={() => flyToTerritory(t)}
                         onContextMenu={openMenu(entry)}
                         icon={<Swatch color={t.color} />}
-                        // the add form doesn't ask for a name any more, so most are named after their faction
+                        // the title is optional: untitled ones are named after their faction
                         title={t.name || `${faction?.name ?? 'Unknown'} territory`}
                         detail={detail(
                             end ? `until ${formatDate(end)}` : 'ongoing',

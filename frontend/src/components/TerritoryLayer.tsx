@@ -46,6 +46,7 @@ function territoryToFormValues(t: Territory): TerritoryFormValues {
   const history = t.history ?? []
   const created = history[0]?.from
   return {
+    name: t.name,
     // `t` is the territory as shown at the map's date, so the form opens on the faction you're looking at
     factionId: t.factionId,
     layerId: t.layerId ?? null,
@@ -433,7 +434,7 @@ function TerritoryLayer({
   // the creation date moves its first shape. The territory's own fields follow its latest shape
   const handleEditSubmit = async (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null, wholePeriod: boolean) => {
     if (!editing) return
-    const { factionId, color, layerId } = values
+    const { name, factionId, color, layerId } = values
     let history = (editing.history ?? []).map((s) => (wholePeriod ? { ...s, factionId, color } : s))
     const from = createdMs === null ? null : new Date(createdMs).toISOString() // null: it has always been there
     if (history.length > 0) history[0] = { ...history[0], from }
@@ -444,7 +445,7 @@ function TerritoryLayer({
       ? withShapeAt({ ...editing, history }, { points: editing.points, factionId, color }, changeTime)
       : { ...editing, history, factionId, color, points: history.at(-1)?.points ?? editing.points }
     const saved = await editTerritory(mapId, editing.id, {
-      name: editing.name,
+      name,
       points: updated.points,
       factionId: updated.factionId,
       color: updated.color,
@@ -547,9 +548,9 @@ function TerritoryLayer({
   }
 
   const handleSubmit = async (values: TerritoryFormValues & { factionId: number }, createdMs: number | null, endMs: number | null) => {
-    const { factionId, color, layerId } = values
+    const { name, factionId, color, layerId } = values
     const territory = await createTerritory(mapId, {
-      name: '',
+      name,
       color,
       points: pendingPoints,
       factionId,
@@ -576,7 +577,7 @@ function TerritoryLayer({
         key={pendingFeatureId ?? ''}
         heading="New Territory"
         submitLabel="Add Territory"
-        initial={{ factionId: '', layerId: null, color: '#ff0000', createdAt: '', ongoing: true, endTime: toLocalInput(drawnAt) }}
+        initial={{ name: '', factionId: '', layerId: null, color: '#ff0000', createdAt: '', ongoing: true, endTime: toLocalInput(drawnAt) }}
         factions={factions}
         layers={layers}
         requireCreated={false}
