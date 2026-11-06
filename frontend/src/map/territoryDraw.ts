@@ -72,6 +72,7 @@ export function createTerraDrawControl(map: Map): MaplibreMeasureControl {
               draggable: false,
               rotateable: true,
               scaleable: true,
+              selfIntersectable: true, // or points on an already self-intersecting shape can't be moved
               coordinates: { midpoints: true, draggable: true, deletable: true },
             },
           },
