@@ -71,6 +71,7 @@ export type EventCategory =
   | 'ONE_WAY_DRONE'
   | 'IED'
   | 'SHELLING_ARTILLERY_MISSILE_ATTACK'
+  | 'ANNOUNCEMENT'
   | 'AGREEMENT'
   | 'ARRESTS'
   | 'CHANGE_TO_GROUP'

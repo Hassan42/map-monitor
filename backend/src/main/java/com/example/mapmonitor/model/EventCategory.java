@@ -19,6 +19,7 @@ public enum EventCategory {
     IED,
     SHELLING_ARTILLERY_MISSILE_ATTACK,
     // political announcement
+    ANNOUNCEMENT,
     AGREEMENT,
     ARRESTS,
     CHANGE_TO_GROUP,

@@ -14,6 +14,7 @@ import grenadeIcon from '../assets/markers/grenade.svg'
 import oneWayDroneIcon from '../assets/markers/one_way_drone.svg'
 import iedIcon from '../assets/markers/ied.svg'
 import shellingIcon from '../assets/markers/shelling_missile_attack.svg'
+import announcementIcon from '../assets/markers/announcement.svg'
 import agreementIcon from '../assets/markers/agreement.svg'
 import arrestsIcon from '../assets/markers/arrests.svg'
 import changeToGroupIcon from '../assets/markers/change_to_group.svg'
@@ -50,6 +51,7 @@ export const EVENT_CATEGORIES: Record<EventCategory, { label: string; icon: stri
   ONE_WAY_DRONE: { label: 'One-way drone', icon: oneWayDroneIcon },
   IED: { label: 'IED', icon: iedIcon },
   SHELLING_ARTILLERY_MISSILE_ATTACK: { label: 'Shelling attack', icon: shellingIcon },
+  ANNOUNCEMENT: { label: 'Announcement', icon: announcementIcon },
   AGREEMENT: { label: 'Agreement', icon: agreementIcon },
   ARRESTS: { label: 'Arrests', icon: arrestsIcon },
   CHANGE_TO_GROUP: { label: 'Change to group/activity', icon: changeToGroupIcon },
@@ -80,7 +82,7 @@ export const EVENT_CATEGORY_GROUPS = [
   },
   {
     label: 'Political announcement',
-    categories: ['AGREEMENT', 'ARRESTS', 'CHANGE_TO_GROUP', 'HEADQUARTERS_ESTABLISHED', 'NON_VIOLENT_TERRITORY_TRANSFER', 'OPERATION', 'LEGISLATION'],
+    categories: ['ANNOUNCEMENT', 'AGREEMENT', 'ARRESTS', 'CHANGE_TO_GROUP', 'HEADQUARTERS_ESTABLISHED', 'NON_VIOLENT_TERRITORY_TRANSFER', 'OPERATION', 'LEGISLATION'],
   },
   { label: 'Protests', categories: ['PEACEFUL_PROTEST', 'VIOLENT_PROTEST'] },
   { label: 'Violence against civilians', categories: ['ABDUCTION', 'ATTACK_ON_CIVILIANS', 'LOOTING', 'PROPERTY_DESTRUCTION'] },
