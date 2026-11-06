@@ -4,15 +4,18 @@ import com.example.mapmonitor.dto.AnnotationSummaryResponse;
 import com.example.mapmonitor.dto.ChangeDto;
 import com.example.mapmonitor.dto.ElementSummary;
 import com.example.mapmonitor.dto.EventMarkerSummaryResponse;
+import com.example.mapmonitor.dto.FactionSummaryResponse;
 import com.example.mapmonitor.dto.LayerSummaryResponse;
 import com.example.mapmonitor.dto.TerritorySummaryResponse;
 import com.example.mapmonitor.model.ChangeAction;
 import com.example.mapmonitor.model.EntityType;
+import com.example.mapmonitor.model.Faction;
 import com.example.mapmonitor.model.Layer;
 import com.example.mapmonitor.model.MapElement;
 import com.example.mapmonitor.model.MapVersion;
 import com.example.mapmonitor.repository.AnnotationRepository;
 import com.example.mapmonitor.repository.EventMarkerRepository;
+import com.example.mapmonitor.repository.FactionRepository;
 import com.example.mapmonitor.repository.LayerRepository;
 import com.example.mapmonitor.repository.TerritoryRepository;
 import org.springframework.http.HttpStatus;
@@ -40,15 +43,17 @@ public class ChangeService {
     private final EventMarkerRepository eventMarkerRepository;
     private final AnnotationRepository annotationRepository;
     private final LayerRepository layerRepository;
+    private final FactionRepository factionRepository;
 
     public ChangeService(MapService mapService, TerritoryRepository territoryRepository,
                          EventMarkerRepository eventMarkerRepository, AnnotationRepository annotationRepository,
-                         LayerRepository layerRepository) {
+                         LayerRepository layerRepository, FactionRepository factionRepository) {
         this.mapService = mapService;
         this.territoryRepository = territoryRepository;
         this.eventMarkerRepository = eventMarkerRepository;
         this.annotationRepository = annotationRepository;
         this.layerRepository = layerRepository;
+        this.factionRepository = factionRepository;
     }
 
     // read-only, and like getDraftStatus it never creates a draft: no draft means no changes.
@@ -82,6 +87,7 @@ public class ChangeService {
             case EVENT -> discard(draft, eventMarkerRepository::findByMapVersionId, eventMarkerRepository::delete, stableId);
             case ANNOTATION -> discard(draft, annotationRepository::findByMapVersionId, annotationRepository::delete, stableId);
             case LAYER -> discardLayer(draft, stableId);
+            case FACTION -> discardFaction(draft, stableId);
         }
     }
 
@@ -97,6 +103,27 @@ public class ChangeService {
         leaveLayer(draft, eventMarkerRepository::findByMapVersionId, row);
         leaveLayer(draft, annotationRepository::findByMapVersionId, row);
         layerRepository.delete(row); // Hibernate flushes the elements' updates before this delete
+    }
+
+    // a faction isn't a MapElement either. Elements point at its stableId, so one added in this draft can only
+    // go once the draft's elements have left it; an edited one just reverts, and they keep pointing at it
+    private void discardFaction(MapVersion draft, Long stableId) {
+        Faction row = factionRepository.findByMapVersionId(draft.getId()).stream()
+                .filter(f -> f.getStableId().equals(stableId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "The draft has no change to this actor"));
+
+        if (!publishedFactions(draft).containsKey(stableId) && usedInDraft(draft, stableId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This actor is still used in the draft");
+        }
+        factionRepository.delete(row);
+    }
+
+    private boolean usedInDraft(MapVersion draft, Long factionId) {
+        return territoryRepository.findByMapVersionId(draft.getId()).stream().anyMatch(t -> factionId.equals(t.getFactionId())
+                        || t.getHistory().stream().anyMatch(s -> factionId.equals(s.getFactionId())))
+                || eventMarkerRepository.findByMapVersionId(draft.getId()).stream().anyMatch(e -> factionId.equals(e.getFactionId()))
+                || annotationRepository.findByMapVersionId(draft.getId()).stream().anyMatch(a -> factionId.equals(a.getFactionId()));
     }
 
     private <T extends MapElement> void leaveLayer(MapVersion draft, Function<Long, List<T>> rows, Layer layer) {
@@ -121,7 +148,37 @@ public class ChangeService {
         changes.addAll(changesOf(version, eventMarkerRepository::findByMapVersionId, EventMarkerSummaryResponse::from));
         changes.addAll(changesOf(version, annotationRepository::findByMapVersionId, AnnotationSummaryResponse::from));
         changes.addAll(layerChanges(version));
+        changes.addAll(factionChanges(version));
         return changes;
+    }
+
+    // the factions of the versions before this one, newest row per stableId
+    private Map<Long, Faction> publishedFactions(MapVersion version) {
+        var published = new LinkedHashMap<Long, Faction>();
+        for (MapVersion current = version.getBasedOnVersion(); current != null; current = current.getBasedOnVersion()) {
+            for (Faction row : factionRepository.findByMapVersionId(current.getId())) {
+                published.putIfAbsent(row.getStableId(), row);
+            }
+        }
+        return published;
+    }
+
+    // changesOf for factions, which aren't MapElements and can't be deleted
+    private List<ChangeDto> factionChanges(MapVersion version) {
+        Map<Long, Faction> published = publishedFactions(version);
+
+        return factionRepository.findByMapVersionId(version.getId()).stream()
+                .map(row -> {
+                    Faction before = published.get(row.getStableId());
+                    return new ChangeDto(
+                            EntityType.FACTION,
+                            row.getStableId(),
+                            before == null ? ChangeAction.ADDED : ChangeAction.MODIFIED,
+                            row.getName(),
+                            before == null ? null : FactionSummaryResponse.from(before),
+                            FactionSummaryResponse.from(row));
+                })
+                .toList();
     }
 
     // changesOf for layers, which aren't MapElements: same rules, by stableId against the version's base

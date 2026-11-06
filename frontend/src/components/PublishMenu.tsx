@@ -13,7 +13,7 @@ import type { MapChange, MapChangeAction } from '../types/types'
 // for a last look - each one discardable (the element goes back to how it's published) - with the actual
 // Publish button at the bottom. Locked while the draft has nothing to publish
 
-const ENTITY_LABEL: Record<MapChange['entityType'], string> = { TERRITORY: 'Territory', EVENT: 'Event', ANNOTATION: 'Annotation', LAYER: 'Layer' }
+const ENTITY_LABEL: Record<MapChange['entityType'], string> = { TERRITORY: 'Territory', EVENT: 'Event', ANNOTATION: 'Annotation', LAYER: 'Layer', FACTION: 'Actor' }
 
 const ACTION_LABEL: Record<MapChangeAction, string> = { ADDED: 'Added', MODIFIED: 'Modified', DELETED: 'Deleted' }
 

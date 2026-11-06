@@ -362,7 +362,7 @@ function Map() {
                 setElementsRevision((r) => r + 1)
                 refreshDraftStatus() // also reloads the publish menu
             })
-            .catch(() => setError('Could not discard the change'))
+            .catch(() => setError(change.entityType === 'FACTION' ? 'Could not discard: the actor may still be in use' : 'Could not discard the change'))
     }
 
     // import handle: the backend copied elements (and maybe factions) too, so reload them all

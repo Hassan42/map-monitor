@@ -161,12 +161,12 @@ export interface Annotation extends MapElement {
 }
 
 // GET /api/maps/{id}/changes: one element the draft changed, mirroring the backend's ChangeDto.
-// before/after are the element's usual summary (Territory, EventMarker, Annotation or Layer, as entityType says):
+// before/after are the element's usual summary (Territory, EventMarker, Annotation, Layer or Faction, as entityType says):
 // before is null when added, after is null when deleted
 export type MapChange = ChangeOf<'TERRITORY', Territory> | ChangeOf<'EVENT', EventMarker> | ChangeOf<'ANNOTATION', Annotation>
-  | ChangeOf<'LAYER', Layer>
+  | ChangeOf<'LAYER', Layer> | ChangeOf<'FACTION', Faction>
 
-type ChangeOf<E extends 'TERRITORY' | 'EVENT' | 'ANNOTATION' | 'LAYER', T extends MapElement | Layer> = {
+type ChangeOf<E extends 'TERRITORY' | 'EVENT' | 'ANNOTATION' | 'LAYER' | 'FACTION', T extends MapElement | Layer | Faction> = {
   entityType: E;
   stableId: number;
   action: MapChangeAction;

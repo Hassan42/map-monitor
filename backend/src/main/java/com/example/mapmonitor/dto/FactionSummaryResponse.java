@@ -2,7 +2,7 @@ package com.example.mapmonitor.dto;
 
 import com.example.mapmonitor.model.Faction;
 
-public class FactionSummaryResponse {
+public final class FactionSummaryResponse implements ElementSummary {
     private final Long id;
     private final String name;
     private final String color;
