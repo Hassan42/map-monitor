@@ -16,6 +16,12 @@ export function editFaction(mapId: string, stableId: number, data: Omit<Faction,
   })
 }
 
+export function deleteFaction(mapId: string, stableId: number): Promise<number> {
+  return apiFetch(`/api/maps/${mapId}/factions/${stableId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function getMapFactions(mapId: string, draft: boolean): Promise<Faction[]> {
   return apiFetch(`/api/maps/${mapId}/factions?draft=${draft}`, {
     method: 'GET'

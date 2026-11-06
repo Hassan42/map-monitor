@@ -49,6 +49,7 @@ function PropertyPanel({
     map,
     factions,
     onEditFaction,
+    onDeleteFaction,
     layers,
     hiddenLayers,
     onToggleLayer,
@@ -61,6 +62,7 @@ function PropertyPanel({
     map: MapSummary | null
     factions: Faction[]
     onEditFaction?: (faction: Faction) => void // edit mode only
+    onDeleteFaction?: (faction: Faction) => void // edit mode only
     layers: Layer[]
     hiddenLayers: Set<LayerKey> // layers whose elements are hidden, on the map and in this list
     onToggleLayer: (layer: LayerKey) => void
@@ -269,6 +271,24 @@ function PropertyPanel({
                                         Edit
                                     </button>
                                 )}
+                                {onDeleteFaction && (() => {
+                                    // the backend refuses this too: nothing may point at a deleted actor
+                                    const used = territories.some((t) => t.factionId === faction.id || t.history?.some((s) => s.factionId === faction.id))
+                                        || events.some((e) => e.factionId === faction.id)
+                                        || annotations.some((a) => a.factionId === faction.id)
+                                    return (
+                                        <button
+                                            type="button"
+                                            aria-label={`Delete ${faction.name}`}
+                                            title={used ? 'Still used by a territory, event or annotation' : undefined}
+                                            disabled={used}
+                                            onClick={() => onDeleteFaction(faction)}
+                                            className="text-xs text-gray-400 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-gray-400"
+                                        >
+                                            Delete
+                                        </button>
+                                    )
+                                })()}
                             </li>
                         ))}
                     </ul>

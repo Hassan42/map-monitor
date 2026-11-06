@@ -1,6 +1,7 @@
 package com.example.mapmonitor.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 public class Faction {
@@ -18,6 +19,19 @@ public class Faction {
     @ManyToOne
     @JoinColumn(name = "map_version_id", nullable = false)
     private MapVersion mapVersion;
+
+    // deleted shadow: hides this stableId from this version on, like MapElement's
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean deleted;
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 
     public Long getId() {
         return id;

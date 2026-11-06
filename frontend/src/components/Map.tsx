@@ -4,6 +4,7 @@ import MapProvider from '../store/MapContext'
 import TerraDrawProvider from '../store/TerraDrawContext'
 import TerritoryLayer from './TerritoryLayer'
 import FactionForm from './FactionForm'
+import ConfirmDialog from './ConfirmDialog'
 import AddLayer from './AddLayer'
 import AddEvent from './AddEvent'
 import EditEvent from './EditEvent'
@@ -36,7 +37,7 @@ import addEventIcon from '../assets/icons/add-event.svg'
 import addAnnotationIcon from '../assets/icons/add-annotation.svg'
 import addTerritoryIcon from '../assets/icons/add-territory.svg'
 import type { Annotation, EventMarker, MapChange, Faction, Layer, MapSummary, Territory } from '../types/types'
-import { getMapFactions } from '../api/faction'
+import { deleteFaction, getMapFactions } from '../api/faction'
 import { getMapLayers } from '../api/layer'
 import { getMapEvents, editEvent, deleteEvent } from '../api/event'
 import { getMapTerritories } from '../api/territory'
@@ -69,6 +70,7 @@ function Map() {
     const [annotations, setAnnotations] = useState<Annotation[]>([])
     const [showAddFaction, setShowAddFaction] = useState(false)
     const [editingFaction, setEditingFaction] = useState<Faction | null>(null)
+    const [deletingFaction, setDeletingFaction] = useState<Faction | null>(null)
     const [showAddLayer, setShowAddLayer] = useState(false)
     // layers switched off in the property panel (null = elements in no layer): their elements leave the map
     const [hiddenLayers, setHiddenLayers] = useState<Set<LayerKey>>(() => new Set())
@@ -241,6 +243,17 @@ function Map() {
         refreshDraftStatus()
         setShowAddFaction(false)
         setEditingFaction(null)
+    }
+
+    const handleFactionDelete = (faction: Faction) => {
+        setDeletingFaction(null)
+        if (!id) return
+        deleteFaction(id, faction.id)
+            .then(() => {
+                setFactions((prev) => prev.filter((f) => f.id !== faction.id))
+                refreshDraftStatus()
+            })
+            .catch(() => setError('Could not delete the actor'))
     }
 
     // layer creation handle
@@ -524,6 +537,7 @@ function Map() {
                         map={mapSummary}
                         factions={factions}
                         onEditFaction={editMode ? setEditingFaction : undefined}
+                        onDeleteFaction={editMode ? setDeletingFaction : undefined}
                         layers={layers}
                         hiddenLayers={hiddenLayers}
                         onToggleLayer={handleToggleLayer}
@@ -872,6 +886,14 @@ function Map() {
             )}
             {editingFaction && (
                 <FactionForm key={editingFaction.id} mapId={id} faction={editingFaction} onSaved={handleFactionSaved} onClose={() => setEditingFaction(null)} />
+            )}
+            {deletingFaction && (
+                <ConfirmDialog
+                    title={`Delete "${deletingFaction.name}"?`}
+                    message="The actor is removed from this draft. It stays on the published map until you publish, and you can undo it from the publish menu before then."
+                    onConfirm={() => handleFactionDelete(deletingFaction)}
+                    onCancel={() => setDeletingFaction(null)}
+                />
             )}
             {showAddLayer && (
                 <AddLayer mapId={id} onCreated={handleLayerCreated} onImported={handleLayersImported}

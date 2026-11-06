@@ -39,4 +39,10 @@ public class FactionController {
         // the summary: its id is the stableId, which the draft's row id isn't
         return FactionSummaryResponse.from(factionService.editFaction(uid, mapId, stableId, request.getName(), request.getColor()));
     }
+
+    @DeleteMapping("/{stableId}")
+    public Long deleteFaction(Authentication authentication, @PathVariable Long mapId, @PathVariable Long stableId) {
+        String uid = (String) authentication.getPrincipal();
+        return factionService.deleteFaction(uid, mapId, stableId);
+    }
 }

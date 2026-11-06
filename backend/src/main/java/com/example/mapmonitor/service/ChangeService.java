@@ -106,7 +106,7 @@ public class ChangeService {
     }
 
     // a faction isn't a MapElement either. Elements point at its stableId, so one added in this draft can only
-    // go once the draft's elements have left it; an edited one just reverts, and they keep pointing at it
+    // go once the draft's elements have left it; an edited one just reverts and a deleted one comes back
     private void discardFaction(MapVersion draft, Long stableId) {
         Faction row = factionRepository.findByMapVersionId(draft.getId()).stream()
                 .filter(f -> f.getStableId().equals(stableId))
@@ -163,20 +163,24 @@ public class ChangeService {
         return published;
     }
 
-    // changesOf for factions, which aren't MapElements and can't be deleted
+    // changesOf for factions, which aren't MapElements
     private List<ChangeDto> factionChanges(MapVersion version) {
         Map<Long, Faction> published = publishedFactions(version);
 
         return factionRepository.findByMapVersionId(version.getId()).stream()
                 .map(row -> {
                     Faction before = published.get(row.getStableId());
+                    if (before != null && before.isDeleted()) before = null; // deleted earlier: it's new again
+                    ChangeAction action = row.isDeleted() ? ChangeAction.DELETED
+                            : before == null ? ChangeAction.ADDED
+                            : ChangeAction.MODIFIED;
                     return new ChangeDto(
                             EntityType.FACTION,
                             row.getStableId(),
-                            before == null ? ChangeAction.ADDED : ChangeAction.MODIFIED,
+                            action,
                             row.getName(),
                             before == null ? null : FactionSummaryResponse.from(before),
-                            FactionSummaryResponse.from(row));
+                            row.isDeleted() ? null : FactionSummaryResponse.from(row));
                 })
                 .toList();
     }
