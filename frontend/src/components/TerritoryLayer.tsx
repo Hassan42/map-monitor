@@ -15,6 +15,8 @@ import TerritoryForm from './TerritoryForm'
 import type { TerritoryFormValues } from './TerritoryForm'
 import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID } from '../map/mapLayers'
 import { findAnnotationAt } from '../map/annotationHitTest'
+import { findBoundaryAt } from '../map/boundariesFetch'
+import type { FillLevel } from '../map/boundariesFetch'
 
 // polygon rings with 7 decimals (about 1 cm): freehand smoothing produces more decimals than terra-draw's
 // polygon mode accepts (9), and it silently refuses such shapes when they're loaded back
@@ -89,6 +91,8 @@ function TerritoryLayer({
   now,
   measuring,
   drawingLine,
+  filling,
+  onFillDone,
 }: {
   mapId: string
   factions: Faction[]
@@ -104,6 +108,8 @@ function TerritoryLayer({
   now: number // the timeline's date: a reshaped polygon is saved as its shape from this date on
   measuring: boolean // the ruler is on: terra-draw draws measured lines, territories can't be picked
   drawingLine: boolean // a line annotation is being drawn (AddAnnotationLine): same line mode
+  filling: FillLevel | null // which Fill tool is on: a click fills the country or state under it
+  onFillDone: () => void
 }) {
   const map = useMap()
   const draw = useTerraDraw()
@@ -420,6 +426,44 @@ function TerritoryLayer({
       }
     }
   }, [map, moving])
+
+  // filling effect
+  useEffect(() => {
+    const terraDraw = terraDrawRef.current
+    if (!map || !terraDraw || !filling) return
+    const canvas = map.getCanvas()
+    canvas.style.cursor = 'crosshair'
+
+    const onClick = async (e: MapMouseEvent) => {
+      const rings = await findBoundaryAt(e.lngLat.lng, e.lngLat.lat, filling)
+      if (!rings) return // the sea: keep the tool on
+      const coordinates = roundRings(rings)
+      const id = crypto.randomUUID()
+      const [result] = terraDraw.addFeatures([
+        { id, type: 'Feature', geometry: { type: 'Polygon', coordinates }, properties: { mode: 'polygon' } },
+      ])
+      if (!result?.valid) return
+      setPendingPoints(JSON.stringify(coordinates))
+      setPendingFeatureId(id)
+      setDrawnAt(Date.now())
+      onFillDone()
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onFillDone() }
+
+    map.on('click', onClick)
+    map.on('contextmenu', onFillDone)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      canvas.style.cursor = ''
+      map.off('click', onClick)
+      map.off('contextmenu', onFillDone)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [map, filling, onFillDone])
+
+
+
+
 
   // leaving edit mode mid-move cancels it (set while rendering, not in an effect)
   if (!active && moving) setMoving(null)

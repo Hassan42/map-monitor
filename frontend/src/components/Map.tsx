@@ -57,6 +57,7 @@ import PublishMenu from './PublishMenu'
 import { territoryAt, territoryKey } from '../map/territoryTime'
 import { activeAt, parseServerTime } from '../map/eventTime'
 import { DAY_MS } from '../map/eventTime'
+import type { FillLevel } from '../map/boundariesFetch'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
@@ -112,6 +113,13 @@ function Map() {
     const [today] = useState(() => Date.now()) // real time in case there was no events, we use it as fallback
     const [live, setLive] = useState<boolean>(false)
 
+    const [fillLevel, setFillLevel] = useState<FillLevel | null>(null)
+    const stopFill = useCallback(() => setFillLevel(null), [])
+
+    const startFill = (level: FillLevel) => {
+        pickPan()          // switches the other tools off
+        setFillLevel(level)
+    }
     // territories as they were at the timeline's date: earlier shapes from their history, ones that
     // didn't exist yet or had ended left out. Rebuilt only when some territory switches state
     // (shownTerritoriesKey), not on every timeline tick - a new list makes TerritoryLayer redraw all polygons
@@ -426,6 +434,7 @@ function Map() {
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         setIsDrawingLine(false)
+        setFillLevel(null)
         setDrawMode(null)
     }
     const pickSelect = () => {
@@ -434,6 +443,7 @@ function Map() {
         setIsPlacingEvent(false)
         setIsPlacingAnnotation(false)
         setIsDrawingLine(false)
+        setFillLevel(null)
         setDrawMode('select')
     }
     const startAddEvent = () => {
@@ -442,6 +452,7 @@ function Map() {
         setIsPlacingAnnotation(false)
         setIsDrawingLine(false)
         setIsPlacingViewshed(false)
+        setFillLevel(null)
         setIsPlacingEvent(true)
     }
     // no draw/select tool while placing, so that click isn't also handled by them
@@ -452,6 +463,7 @@ function Map() {
         setIsPlacingEvent(false)
         setIsPlacingViewshed(false)
         setIsDrawingLine(false)
+        setFillLevel(null)
         setIsPlacingAnnotation(true)
     }
     // terra-draw's line mode instead of a tool (TerritoryLayer switches to it), like the ruler
@@ -462,6 +474,7 @@ function Map() {
         setIsPlacingEvent(false)
         setIsPlacingViewshed(false)
         setIsPlacingAnnotation(false)
+        setFillLevel(null)
         setIsDrawingLine(true)
     }
     const toggleViewshed = () => {
@@ -495,7 +508,7 @@ function Map() {
     // nothing can be added before the map has an actor (the list is empty until it has loaded, too)
     const noActors = factions.length === 0
     const needsActorClass = 'cursor-not-allowed opacity-40'
-    const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation && !isDrawingLine
+    const isPanning = drawMode === null && !isPlacingEvent && !isPlacingAnnotation && !isDrawingLine && fillLevel === null
 
     if (!id) return <p>Map not found</p>
 
@@ -518,6 +531,8 @@ function Map() {
                         onError={setError}
                         measuring={isMeasuring}
                         drawingLine={isDrawingLine}
+                        filling={fillLevel}
+                        onFillDone={stopFill}
                     />
                     <AddAnnotationLine
                         mapId={id}
@@ -734,10 +749,12 @@ function Map() {
                             label={<NavIcon src={addTerritoryIcon} />}
                             ariaLabel="Add territory"
                             title="Add territory - draw it as a polygon or freehand"
-                            active={drawMode === 'polygon' || drawMode === 'freehand'}
+                            active={drawMode === 'polygon' || drawMode === 'freehand' || fillLevel !== null}
                         >
-                            <NavDropdownItem onClick={() => setDrawMode('polygon')}>Polygon</NavDropdownItem>
-                            <NavDropdownItem onClick={() => setDrawMode('freehand')}>Freehand</NavDropdownItem>
+                            <NavDropdownItem onClick={() => { setFillLevel(null); setDrawMode('polygon') }}>Polygon</NavDropdownItem>
+                            <NavDropdownItem onClick={() => { setFillLevel(null); setDrawMode('freehand') }}>Freehand</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startFill('country')}>Fill country</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startFill('state')}>Fill state</NavDropdownItem>
                         </NavDropdown>
                     ))}
                 </div>
@@ -759,6 +776,8 @@ function Map() {
                             <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent} disabled={noActors}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
                             <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
                             <NavDropdownItem onClick={startDrawLine} active={isDrawingLine} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Draw line</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startFill('country')} active={fillLevel === 'country'} disabled={noActors}><NavIcon src={addTerritoryIcon} /> Fill country</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startFill('state')} active={fillLevel === 'state'} disabled={noActors}><NavIcon src={addTerritoryIcon} /> Fill state</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add actor</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddLayer(true)}><NavIcon src={addLayerIcon} /> Add layer</NavDropdownItem>
                             <NavDropdownItem onClick={handleEditClick}>Exit edit mode</NavDropdownItem>
