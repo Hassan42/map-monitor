@@ -20,6 +20,9 @@ function stateIndexAt(t: Territory, now: number): number | 'current' | null {
 }
 
 // the territory as it was at time `now`, or null if it didn't exist then
+// drawing order, bottom first: stackOrder (null = 0), then oldest first, so newer ones are on top
+export const byStackOrder = (a: Territory, b: Territory) => (a.stackOrder ?? 0) - (b.stackOrder ?? 0) || a.id - b.id
+
 export function territoryAt(t: Territory, now: number): Territory | null {
   const index = stateIndexAt(t, now)
   if (index === null) return null

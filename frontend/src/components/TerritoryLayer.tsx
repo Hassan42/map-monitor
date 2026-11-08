@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LngLatBounds, MercatorCoordinate } from 'maplibre-gl'
-import type { LngLat, MapMouseEvent } from 'maplibre-gl'
+import type { GeoJSONSource, LngLat, MapMouseEvent } from 'maplibre-gl'
 import type { TerraDraw, GeoJSONStoreFeatures } from 'terra-draw'
 import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import { useTerraDraw } from '../store/TerraDrawContext'
@@ -12,11 +12,14 @@ import { parseServerTime } from '../map/eventTime'
 import ConfirmDialog from './ConfirmDialog'
 import type { DrawMode, Faction, Layer, Territory } from '../types/types'
 import TerritoryForm from './TerritoryForm'
+import NavIcon from './NavIcon'
+import chevronDownIcon from '../assets/icons/chevron-down.svg'
 import type { TerritoryFormValues } from './TerritoryForm'
 import { EVENTS_CLUSTER_LAYER_ID, EVENTS_LAYER_ID } from '../map/mapLayers'
 import { findAnnotationAt } from '../map/annotationHitTest'
 import { findBoundaryAt } from '../map/boundariesFetch'
 import type { FillLevel } from '../map/boundariesFetch'
+import { TERRITORY_BORDER_LAYER_ID, TERRITORY_FILL_LAYER_ID, TERRITORY_FILL_OPACITY, TERRITORY_FILL_SOURCE_ID, TERRITORY_HIGHLIGHT_OPACITY, visibleFills } from '../map/territoryFill'
 
 // polygon rings with 7 decimals (about 1 cm): freehand smoothing produces more decimals than terra-draw's
 // polygon mode accepts (9), and it silently refuses such shapes when they're loaded back
@@ -76,6 +79,36 @@ function latestCreation(t: Territory): { time: number; message: string } {
   return { time: Date.now(), message: "Creation can't be in the future" }
 }
 
+const menuItemClass = 'block w-full px-3 py-1.5 text-left hover:bg-accent-400/15 hover:text-accent-300'
+
+// the right-click menu's Layering group: opens in place (no side menu, which could run off a phone's
+// screen). Cut beneath is a checkbox that stays open, so its new state shows once it's saved
+function LayeringItems({ cutBeneath, onRestack, onCutBeneath }: {
+  cutBeneath: boolean
+  onRestack: (toFront: boolean) => void
+  onCutBeneath: (cut: boolean) => void
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className={`${menuItemClass} flex items-center justify-between gap-3`}>
+        Layering
+        <NavIcon src={chevronDownIcon} className={`!h-4 !w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="border-y border-white/10 bg-white/5 py-1">
+          <button type="button" onClick={() => onRestack(true)} className={`${menuItemClass} pl-6`}>Bring to front</button>
+          <button type="button" onClick={() => onRestack(false)} className={`${menuItemClass} pl-6`}>Send to back</button>
+          <label className={`${menuItemClass} flex cursor-pointer items-center gap-2 pl-6`}>
+            <input type="checkbox" checked={cutBeneath} onChange={(e) => onCutBeneath(e.target.checked)} className="accent-accent-400" />
+            Cut beneath
+          </label>
+        </div>
+      )}
+    </>
+  )
+}
+
 function TerritoryLayer({
   mapId,
   factions,
@@ -130,6 +163,9 @@ function TerritoryLayer({
   const menu = contextMenu?.type === 'territory' ? contextMenu : null
   // right-click > Move: the territory follows the pointer from where it was right-clicked (`anchor`)
   const [moving, setMoving] = useState<{ territoryId: number; anchor: LngLat } | null>(null)
+  // the territory terra-draw has selected (edit mode): it fills that one itself, the fill layer leaves it out.
+  // Not the same as `selected`: a territory picked in the property panel isn't selected in terra-draw
+  const [drawSelectedId, setDrawSelectedId] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   // saves a reshaped polygon as its shape from the timeline's date on (withShapeAt), and carries the
   // edit into later shapes wherever they still have the changed stretches (carryEditForward) - their
@@ -149,6 +185,27 @@ function TerritoryLayer({
     editTerritory(mapId, stableId, { ...data, endTime: data.endTime ?? null })
       .then(onUpdated)
       .catch(() => onError('Could not save territory'))
+  }
+  // a right-click setting (stack order, cut beneath). Saved with the territory's latest shape, as the
+  // shown one may be an older one (timeline)
+  const saveSetting = (territory: Territory, change: Pick<Territory, 'stackOrder'> | Pick<Territory, 'cutBeneath'>) => {
+    const latest = territory.history?.at(-1)
+    const { id: stableId, ...data } = territory
+    editTerritory(mapId, stableId, {
+      ...data,
+      points: latest?.points ?? data.points,
+      factionId: latest?.factionId ?? data.factionId,
+      color: latest?.color ?? data.color,
+      endTime: data.endTime ?? null,
+      ...change,
+    })
+      .then(onUpdated)
+      .catch(() => onError('Could not save territory'))
+  }
+  // right-click > Bring to front / Send to back: above or below every other territory
+  const restack = (territory: Territory, toFront: boolean) => {
+    const others = territories.filter((t) => t.id !== territory.id).map((t) => t.stackOrder ?? 0)
+    saveSetting(territory, { stackOrder: toFront ? Math.max(0, ...others) + 1 : Math.min(0, ...others) - 1 })
   }
   // for the terra-draw handlers, which are only created once
   const saveShapeRef = useRef(saveShape)
@@ -192,8 +249,10 @@ function TerritoryLayer({
       const territoryId = feature?.properties.territoryId as number | undefined
       // a just-drawn, unsaved shape has no territoryId yet
       setSelected(territoryId != null ? { type: 'territory', id: territoryId } : null)
+      setDrawSelectedId(territoryId ?? null)
     }
     const handleDeselect = (id: string | number) => {
+      setDrawSelectedId(null)
       // only clear a territory selection; clicking an event also deselects the polygon in terra-draw
       if (!reloadingRef.current) setSelected((prev) => (prev?.type === 'territory' ? null : prev))
       if (!editedFeatureIds.delete(id)) return
@@ -285,20 +344,21 @@ function TerritoryLayer({
 
     // already showing exactly these shapes (e.g. right after saving an edit, or an undo): leave terra-draw
     // alone, so its undo history (Ctrl+Z) stays valid across saves
-    const shownKey = (id: number, coordinates: unknown, color: unknown) => `${id}|${color}|${JSON.stringify(coordinates)}`
-    const wanted = territories.map((t) => shownKey(t.id, roundRings(JSON.parse(t.points)), t.color)).sort()
+    const shownKey = (id: number, coordinates: unknown, color: unknown, stack: unknown) => `${id}|${color}|${stack}|${JSON.stringify(coordinates)}`
+    const wanted = territories.map((t, i) => shownKey(t.id, roundRings(JSON.parse(t.points)), t.color, i)).sort()
     const drawn = terraDraw
       .getSnapshot()
       .filter((f) => f.geometry.type === 'Polygon')
-      .map((f) => shownKey(f.properties.territoryId as number, roundRings(f.geometry.coordinates as number[][][]), f.properties.color))
+      .map((f) => shownKey(f.properties.territoryId as number, roundRings(f.geometry.coordinates as number[][][]), f.properties.color, f.properties.stack))
       .sort()
     if (wanted.length === drawn.length && wanted.every((key, i) => key === drawn[i])) return
 
-    const features: GeoJSONStoreFeatures[] = territories.map((t) => ({
+    // `territories` comes bottom first: `stack` is its place in that order, and decides which is drawn on top
+    const features: GeoJSONStoreFeatures[] = territories.map((t, i) => ({
       type: 'Feature',
       id: terraDraw.getFeatureId(),
       geometry: { type: 'Polygon', coordinates: roundRings(JSON.parse(t.points)) },
-      properties: { mode: 'polygon', territoryId: t.id, color: t.color },
+      properties: { mode: 'polygon', territoryId: t.id, color: t.color, stack: i },
     }))
     reloadingRef.current = true
     // only the territories: clear() would also wipe the ruler's lines
@@ -334,8 +394,65 @@ function TerritoryLayer({
       if (f.properties.territoryId == null) continue
       const highlight = f.properties.territoryId === highlightedId
       if (isHighlighted(f) !== highlight) terraDraw.updateFeatureProperties(f.id!, { highlighted: highlight })
+      // the moved territory: terra-draw fills it while it follows the pointer, the fill layer leaves it out
+      const ownFill = f.properties.territoryId === moving?.territoryId
+      if ((f.properties.ownFill === true) !== ownFill) terraDraw.updateFeatureProperties(f.id!, { ownFill })
     }
-  }, [draw, active, selected, territories])
+  }, [draw, active, selected, territories, moving])
+
+  // the fill layer: added once, between terra-draw's polygon fills and their outlines. Above terra-draw's
+  // fill, so the territory it fills itself (selected, moved) doesn't paint over the ones on top of it;
+  // below the outlines and handles, so those stay visible
+  useEffect(() => {
+    if (!map) return
+    map.addSource(TERRITORY_FILL_SOURCE_ID, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+    map.addLayer({
+      id: TERRITORY_FILL_LAYER_ID,
+      type: 'fill',
+      source: TERRITORY_FILL_SOURCE_ID,
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': TERRITORY_FILL_OPACITY },
+    })
+    map.addLayer({
+      id: TERRITORY_BORDER_LAYER_ID,
+      type: 'line',
+      source: TERRITORY_FILL_SOURCE_ID,
+      paint: { 'line-color': ['get', 'color'], 'line-width': 1 },
+    })
+    const TERRA_DRAW_FILLS = 'td-measure-polygon'
+    const TERRA_DRAW_OUTLINES = 'td-measure-polygon-outline'
+    const keepInPlace = () => {
+      const layers = map.getStyle()?.layers ?? []
+      const at = (id: string) => layers.findIndex((l) => l.id === id)
+      const outlines = at(TERRA_DRAW_OUTLINES)
+      if (outlines === -1 || at(TERRA_DRAW_FILLS) === -1) return
+      const inPlace = at(TERRITORY_FILL_LAYER_ID) === outlines - 2 && at(TERRITORY_BORDER_LAYER_ID) === outlines - 1
+        && at(TERRA_DRAW_FILLS) < at(TERRITORY_FILL_LAYER_ID)
+      if (!inPlace) for (const id of [TERRITORY_FILL_LAYER_ID, TERRITORY_BORDER_LAYER_ID]) map.moveLayer(id, TERRA_DRAW_OUTLINES)
+    }
+    keepInPlace()
+    map.on('styledata', keepInPlace)
+    return () => {
+      map.off('styledata', keepInPlace)
+      if (map.getLayer(TERRITORY_BORDER_LAYER_ID)) map.removeLayer(TERRITORY_BORDER_LAYER_ID)
+      if (map.getLayer(TERRITORY_FILL_LAYER_ID)) map.removeLayer(TERRITORY_FILL_LAYER_ID)
+      if (map.getSource(TERRITORY_FILL_SOURCE_ID)) map.removeSource(TERRITORY_FILL_SOURCE_ID)
+    }
+  }, [map])
+
+  // what's filled: every territory's uncovered part, recomputed only when the shown territories change.
+  // Left out: the territory selected in edit mode (terra-draw's select styling fills it, and follows its
+  // reshaping) and the one being moved
+  const fills = useMemo(() => visibleFills(territories), [territories])
+  const editedId = active ? drawSelectedId : null
+  const highlightedId = !active && selected?.type === 'territory' ? selected.id : null
+  useEffect(() => {
+    const source = map?.getSource(TERRITORY_FILL_SOURCE_ID) as GeoJSONSource | undefined
+    if (!map || !source) return
+    const left = new Set([editedId, moving?.territoryId ?? null])
+    source.setData({ ...fills, features: fills.features.filter((f) => !left.has(f.properties.territoryId)) })
+    map.setPaintProperty(TERRITORY_FILL_LAYER_ID, 'fill-opacity',
+      ['case', ['==', ['get', 'territoryId'], highlightedId ?? -1], TERRITORY_HIGHLIGHT_OPACITY, TERRITORY_FILL_OPACITY])
+  }, [map, fills, editedId, highlightedId, moving])
 
   // right-click a territory in edit mode: open its menu. Events and annotations on top have their own
   useEffect(() => {
@@ -510,6 +627,7 @@ function TerritoryLayer({
       )}
       {menu && active && (
         <div
+          key={`${menu.id}-${menu.x}-${menu.y}`}
           className="fixed z-50 min-w-40 bg-neutral-900 py-1 text-sm text-gray-300 shadow-xl ring-1 ring-white/10"
           style={{ left: menu.x, top: menu.y }}
         >
@@ -536,6 +654,18 @@ function TerritoryLayer({
           >
             Move
           </button>
+          <LayeringItems
+            cutBeneath={territories.find((t) => t.id === menu.id)?.cutBeneath === true}
+            onRestack={(toFront) => {
+              const territory = territories.find((t) => t.id === menu.id)
+              if (territory) restack(territory, toFront)
+              setContextMenu(null)
+            }}
+            onCutBeneath={(cut) => {
+              const territory = territories.find((t) => t.id === menu.id)
+              if (territory) saveSetting(territory, { cutBeneath: cut })
+            }}
+          />
           <button
             type="button"
             onClick={() => {
@@ -599,6 +729,7 @@ function TerritoryLayer({
       // the creation time is the first history entry's `from`; null: it has always been there
       history: [{ from: createdMs === null ? null : new Date(createdMs).toISOString(), points: pendingPoints, factionId, color }],
       endTime: endMs === null ? null : new Date(endMs).toISOString(),
+      stackOrder: Math.max(0, ...territories.map((t) => t.stackOrder ?? 0)) + 1, // a new one goes on top
     })
     // territories changes -> reload effect replaces the drawn shape with the saved one
     onCreated(territory)

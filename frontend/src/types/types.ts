@@ -127,6 +127,8 @@ export interface Territory extends MapElement {
   factionId: number; // narrowed: territories always have a faction
   history?: TerritoryState[]; // the shapes over time, sorted by `from`; the first one's `from` is when it was created
   endTime?: string | null; // null = ongoing (still there)
+  stackOrder?: number | null; // drawing order: higher is drawn on top; null = 0, ties by id
+  cutBeneath?: boolean | null; // hides the territories beneath it where it covers them (right-click > Cut beneath)
 }
 
 // one shape of a territory over time (the backend's TerritoryStateDto): holds from `from` until the next one

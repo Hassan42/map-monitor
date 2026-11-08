@@ -54,7 +54,7 @@ import ScreenshotTool from './ScreenshotTool'
 import DemoDirector from './DemoDirector'
 import TimeLine from './TimeLine'
 import PublishMenu from './PublishMenu'
-import { territoryAt, territoryKey } from '../map/territoryTime'
+import { byStackOrder, territoryAt, territoryKey } from '../map/territoryTime'
 import { activeAt, parseServerTime } from '../map/eventTime'
 import { DAY_MS } from '../map/eventTime'
 import type { FillLevel } from '../map/boundariesFetch'
@@ -131,7 +131,7 @@ function Map() {
         () => (showAllTime
             ? territories // All time: each in its latest shape (its own points), ended ones included
             : territories.map((t) => territoryAt(t, now)).filter((t): t is Territory => t !== null)
-        ).filter((t) => !hiddenLayers.has(t.layerId ?? null)),
+        ).filter((t) => !hiddenLayers.has(t.layerId ?? null)).sort(byStackOrder), // bottom first: the drawing order
         // eslint-disable-next-line react-hooks/exhaustive-deps -- shownTerritoriesKey covers `now`
         [territories, shownTerritoriesKey, showAllTime, hiddenLayers],
     )
