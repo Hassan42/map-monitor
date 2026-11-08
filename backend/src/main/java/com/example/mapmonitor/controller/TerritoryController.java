@@ -29,7 +29,8 @@ public class TerritoryController {
     public TerritorySummaryResponse createTerritory(Authentication authentication, @PathVariable Long mapId, @RequestBody CreateTerritoryRequest request) {
         String uid = (String) authentication.getPrincipal();
         return territoryService.toResponse(territoryService.createTerritory(uid, mapId, request.getName(), request.getColor(), request.getPoints(), request.getFactionId(),
-                request.getHistory(), request.getEndTime(), request.getLayerId()));
+                request.getHistory(), request.getEndTime(), request.getLayerId(), request.getStackOrder(),
+                request.getCutBeneath()));
     }
 
     @PutMapping("/{stableId}")
@@ -37,7 +38,8 @@ public class TerritoryController {
                                     @RequestBody CreateTerritoryRequest request) {
         String uid = (String) authentication.getPrincipal();
         return territoryService.toResponse(territoryService.editTerritory(uid, mapId, stableId, request.getName(), request.getColor(), request.getPoints(), request.getFactionId(),
-                request.getHistory(), request.getEndTime(), request.getLayerId()));
+                request.getHistory(), request.getEndTime(), request.getLayerId(), request.getStackOrder(),
+                request.getCutBeneath()));
     }
 
     @DeleteMapping("/{stableId}")

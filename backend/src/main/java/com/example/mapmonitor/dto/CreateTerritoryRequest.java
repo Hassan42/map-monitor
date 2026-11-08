@@ -12,6 +12,8 @@ public class CreateTerritoryRequest {
     private Long layerId; // null = in no layer
     private List<TerritoryStateDto> history = new ArrayList<>(); // the shapes over time, see TerritoryStateDto
     private LocalDateTime endTime;
+    private Double stackOrder; // drawing order, higher on top; null = 0
+    private Boolean cutBeneath; // hides the territories beneath it where it covers them; null = false
 
     public String getName() {
         return name;
@@ -59,6 +61,22 @@ public class CreateTerritoryRequest {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public Double getStackOrder() {
+        return stackOrder;
+    }
+
+    public void setStackOrder(Double stackOrder) {
+        this.stackOrder = stackOrder;
+    }
+
+    public Boolean getCutBeneath() {
+        return cutBeneath;
+    }
+
+    public void setCutBeneath(Boolean cutBeneath) {
+        this.cutBeneath = cutBeneath;
     }
 
     public Long getLayerId() {

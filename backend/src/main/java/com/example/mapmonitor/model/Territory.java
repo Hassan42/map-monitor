@@ -28,6 +28,28 @@ public class Territory extends MapElement {
 
     private LocalDateTime endTime;
 
+    // drawing order among territories: higher is drawn on top. null = 0, then by stableId
+    private Double stackOrder;
+
+    // hides what's beneath it: territories under it are shown only where it doesn't cover them. null = false
+    private Boolean cutBeneath;
+
+    public Boolean getCutBeneath() {
+        return cutBeneath;
+    }
+
+    public void setCutBeneath(Boolean cutBeneath) {
+        this.cutBeneath = cutBeneath;
+    }
+
+    public Double getStackOrder() {
+        return stackOrder;
+    }
+
+    public void setStackOrder(Double stackOrder) {
+        this.stackOrder = stackOrder;
+    }
+
     public LocalDateTime getEndTime() {
         return endTime;
     }
@@ -94,6 +116,8 @@ public class Territory extends MapElement {
         copy.setPoints(this.points);
         copy.setFactionId(this.factionId);
         copy.setEndTime(this.endTime);
+        copy.setStackOrder(this.stackOrder);
+        copy.setCutBeneath(this.cutBeneath);
         return copy;
     }
 }

@@ -13,6 +13,8 @@ public final class TerritorySummaryResponse implements ElementSummary {
     private final Long layerId;
     private final List<TerritoryStateDto> history;
     private final LocalDateTime endTime;
+    private final Double stackOrder;
+    private final Boolean cutBeneath;
 
     private TerritorySummaryResponse(Territory territory) {
         this.id = territory.getStableId();
@@ -23,6 +25,8 @@ public final class TerritorySummaryResponse implements ElementSummary {
         this.layerId = territory.getLayerId();
         this.history = territory.getHistory().stream().map(TerritoryStateDto::from).toList();
         this.endTime = territory.getEndTime();
+        this.stackOrder = territory.getStackOrder();
+        this.cutBeneath = territory.getCutBeneath();
     }
 
     public static TerritorySummaryResponse from(Territory territory) {
@@ -55,6 +59,14 @@ public final class TerritorySummaryResponse implements ElementSummary {
 
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+    public Double getStackOrder() {
+        return stackOrder;
+    }
+
+    public Boolean getCutBeneath() {
+        return cutBeneath;
     }
 
     public Long getLayerId() {

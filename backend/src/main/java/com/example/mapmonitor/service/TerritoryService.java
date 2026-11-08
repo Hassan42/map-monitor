@@ -62,7 +62,8 @@ public class TerritoryService extends MapElementService<Territory> {
     }
 
     public Territory createTerritory(String firebaseUid, Long mapId, String name, String color, String points, Long factionId,
-                                     List<TerritoryStateDto> history, LocalDateTime endTime, Long layerId) {
+                                     List<TerritoryStateDto> history, LocalDateTime endTime, Long layerId, Double stackOrder,
+                                     Boolean cutBeneath) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
         Territory territory = new Territory();
@@ -73,6 +74,8 @@ public class TerritoryService extends MapElementService<Territory> {
         territory.setLayer(layerService.findLayerOfMap(draft, layerId));
         applyHistory(territory, history);
         territory.setEndTime(endTime);
+        territory.setStackOrder(stackOrder);
+        territory.setCutBeneath(cutBeneath);
         territory.setMapVersion(draft);
         Territory saved = territoryRepository.save(territory);
 
@@ -81,7 +84,8 @@ public class TerritoryService extends MapElementService<Territory> {
     }
 
     public Territory editTerritory(String firebaseUid, Long mapId, Long stableId, String name, String color, String points, Long factionId,
-                                   List<TerritoryStateDto> history, LocalDateTime endTime, Long layerId) {
+                                   List<TerritoryStateDto> history, LocalDateTime endTime, Long layerId, Double stackOrder,
+                                   Boolean cutBeneath) {
         MapVersion draft = mapService.resolveVersion(firebaseUid, mapId, true);
 
         Territory shadow = territoryRepository.findByMapVersionId(draft.getId()).stream()
@@ -102,6 +106,8 @@ public class TerritoryService extends MapElementService<Territory> {
         shadow.setLayer(layerService.findLayerOfMap(draft, layerId));
         applyHistory(shadow, history);
         shadow.setEndTime(endTime);
+        shadow.setStackOrder(stackOrder);
+        shadow.setCutBeneath(cutBeneath);
         return territoryRepository.save(shadow);
     }
 
@@ -134,6 +140,8 @@ public class TerritoryService extends MapElementService<Territory> {
         // the shadow is a new row, so it gets its own copies of the states (rows can't be shared)
         applyHistory(shadow, visible.getHistory().stream().map(TerritoryStateDto::from).toList());
         shadow.setEndTime(visible.getEndTime());
+        shadow.setStackOrder(visible.getStackOrder());
+        shadow.setCutBeneath(visible.getCutBeneath());
         shadow.setDeleted(true);
         territoryRepository.save(shadow);
 
