@@ -105,7 +105,7 @@ function PublishMenu({
 
             {open && (
                 <div role="menu" // phones: across the screen under the nav bar, since centered under the button it would run off the edge
-                    className="absolute left-1/2 top-full mt-3 w-[28rem] -translate-x-1/2 max-w-[calc(100vw-2rem)] max-md:fixed max-md:inset-x-2 max-md:top-14 max-md:w-auto max-md:max-w-none max-md:translate-x-0 bg-neutral-800 py-1 text-sm shadow-lg ring-1 ring-black/40">
+                    className="absolute left-1/2 top-full mt-3 w-[28rem] -translate-x-1/2 max-w-[calc(100vw-2rem)] max-md:fixed max-md:inset-x-2 max-md:top-18 max-md:w-auto max-md:max-w-none max-md:translate-x-0 bg-neutral-800 py-1 text-sm shadow-lg ring-1 ring-black/40">
                     <p className="px-3 pt-1 pb-2 text-xs uppercase text-gray-400">Draft changes</p>
                     {loading && changes.length === 0 && <p className="px-3 pb-2 text-gray-400">Loading…</p>}
                     {!loading && changes.length === 0 && <p className="px-3 pb-2 text-gray-400">Nothing to publish</p>}

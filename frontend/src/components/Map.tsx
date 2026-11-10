@@ -636,7 +636,7 @@ function Map() {
                 </div>
             )}
 
-            {!isDemo && <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
+            {!isDemo && <nav className="fixed top-0 left-0 right-0 z-50 h-18 [&_.nav-icon]:h-6 [&_.nav-icon]:w-6 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
                 <div className="contents max-md:hidden">
                     {canEdit && (
                         <button

@@ -32,7 +32,7 @@ function Ruler({ measuring, onClose }: { measuring: boolean; onClose: () => void
 
   return (
     // top center over the map area (the property panel takes the right 24rem); phones: across the screen
-    <div className="fixed top-16 left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap z-40 flex -translate-x-1/2 items-center gap-3 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10">
+    <div className="fixed top-20 left-[calc((100%-24rem)/2)] max-md:inset-x-2 max-md:translate-x-0 max-md:flex-wrap z-40 flex -translate-x-1/2 items-center gap-3 bg-neutral-900 px-4 py-2 text-sm text-gray-300 shadow-xl ring-1 ring-white/10">
       <span className="font-semibold text-white">Ruler</span>
       <span className="text-gray-400">
         <span className="md:hidden">Tap to add points, tap the last one to finish</span>

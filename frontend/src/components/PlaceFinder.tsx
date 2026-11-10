@@ -46,7 +46,7 @@ function PlaceSearch() {
 
   // phones: the box covers the whole bar while open. Wider screens: it opens in place
   return (
-    <div className="flex items-center gap-1 max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-[60] max-md:h-14 max-md:bg-neutral-900 max-md:px-2 md:relative">
+    <div className="flex items-center gap-1 max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-[60] max-md:h-18 max-md:bg-neutral-900 max-md:px-2 md:relative">
       <input
         autoFocus
         value={text}

@@ -621,7 +621,7 @@ function TerritoryLayer({
     <>
       {/* how to edit the selected shape; phones have no right-click, so no hint there */}
       {active && mode === 'select' && selected?.type === 'territory' && !moving && !measuring && (
-        <div className="pointer-events-none fixed top-16 left-[calc((100%-24rem)/2)] z-40 flex -translate-x-1/2 items-center gap-3 whitespace-nowrap bg-neutral-900 px-3 py-1.5 text-xs text-gray-400 shadow-xl ring-1 ring-white/10 max-md:hidden">
+        <div className="pointer-events-none fixed top-20 left-[calc((100%-24rem)/2)] z-40 flex -translate-x-1/2 items-center gap-3 whitespace-nowrap bg-neutral-900 px-3 py-1.5 text-xs text-gray-400 shadow-xl ring-1 ring-white/10 max-md:hidden">
           <span><span className="font-semibold text-gray-200">Drag</span> a point to move it</span>
           <span><span className="font-semibold text-gray-200">Click</span> a midpoint to add one</span>
           <span><span className="font-semibold text-gray-200">Right-click</span> a point to delete it</span>

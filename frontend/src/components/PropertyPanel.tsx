@@ -198,7 +198,7 @@ function PropertyPanel({
         // desktop: a column on the right under the nav bar. Phones: a sheet across the bottom, 60% of the
         // screen when open, folded down to its 56px bar otherwise (above the timeline, under the nav bar)
         <div
-            className={`absolute top-14 right-0 bottom-0 w-96 bg-neutral-900 text-gray-300 shadow-lg flex flex-col
+            className={`absolute top-18 right-0 bottom-0 w-96 bg-neutral-900 text-gray-300 shadow-lg flex flex-col
                 max-md:fixed max-md:top-auto max-md:inset-x-0 max-md:z-[45] max-md:w-auto max-md:h-[75dvh] max-md:transition-transform
                 ${sheetOpen ? '' : 'max-md:translate-y-[calc(100%-3.5rem)]'}`}
         >

@@ -65,11 +65,11 @@
   background: transparent;
 }
 
-/* top-left map controls (zoom, compass, reset view) start below the fixed nav bar (h-14).
+/* top-left map controls (zoom, compass, reset view) start below the fixed nav bar (h-18).
    The container in front: maplibre-gl.css loads after this file and sets top: 0 on the same class. Not
    .maplibregl-map: in dev, StrictMode's first map takes that class with it when it's removed */
 .maplibregl-control-container .maplibregl-ctrl-top-left {
-  top: 3.5rem;
+  top: 4.5rem;
 }
 
 /* reset-view button: icon color + centered in the button. .maplibregl-ctrl-group in front because
