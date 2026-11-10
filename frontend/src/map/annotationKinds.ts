@@ -3,6 +3,7 @@ import ambushIcon from '../assets/annotations/Ambush.svg'
 import arrowIcon from '../assets/annotations/Arrow.svg'
 import destroyIcon from '../assets/annotations/Destroy.svg'
 import objectiveIcon from '../assets/annotations/Objective.svg'
+import dotIcon from '../assets/annotations/Dot.svg'
 import lineIcon from '../assets/annotations/Line.svg'
 
 // every backend annotation kind -> how it's shown. Record<AnnotationKind, ...> makes the build fail
@@ -13,6 +14,7 @@ export const ANNOTATION_KINDS: Record<AnnotationKind, { label: string; icon: str
   ARROW: { label: 'Arrow', icon: arrowIcon },
   DESTROY: { label: 'Mark point', icon: destroyIcon }, // the enum keeps its old name
   OBJECTIVE: { label: 'Objective', icon: objectiveIcon },
+  DOT: { label: 'Dot', icon: dotIcon },
 }
 
 export const ANNOTATION_KIND_LIST = Object.keys(ANNOTATION_KINDS) as AnnotationKind[]

@@ -4,5 +4,6 @@ public enum AnnotationKind {
     AMBUSH,
     ARROW,
     DESTROY,
-    OBJECTIVE
+    OBJECTIVE,
+    DOT
 }

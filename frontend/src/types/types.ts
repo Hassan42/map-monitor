@@ -148,7 +148,7 @@ export interface DraftStatus {
 }
 
 // mirrors the backend's AnnotationKind enum (Jackson sends the constant's name)
-export type AnnotationKind = 'AMBUSH' | 'ARROW' | 'DESTROY' | 'OBJECTIVE'
+export type AnnotationKind = 'AMBUSH' | 'ARROW' | 'DESTROY' | 'OBJECTIVE' | 'DOT'
 
 // a tactical graphic on the map: the kind's icon at a point, in `color`, sized by `scale`, or a drawn line
 export interface Annotation extends MapElement {
