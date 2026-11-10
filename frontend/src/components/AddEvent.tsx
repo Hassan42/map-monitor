@@ -44,13 +44,19 @@ function AddEvent({
       onExit()
     }
 
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onExit()
+    }
+
     map.on('click', handleClick)
     map.on('contextmenu', handleCancel)
+    window.addEventListener('keydown', onKey)
 
     return () => {
       map.getCanvas().style.cursor = ''
       map.off('click', handleClick)
       map.off('contextmenu', handleCancel)
+      window.removeEventListener('keydown', onKey)
     }
   }, [map, active, onExit])
 
