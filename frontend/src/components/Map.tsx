@@ -58,6 +58,7 @@ import { byStackOrder, territoryAt, territoryKey } from '../map/territoryTime'
 import { activeAt, parseServerTime } from '../map/eventTime'
 import { DAY_MS } from '../map/eventTime'
 import type { FillLevel } from '../map/boundariesFetch'
+import PlaceSearch from './PlaceFinder'
 
 function Map() {
     const { id } = useParams<{ id: string }>()
@@ -571,6 +572,7 @@ function Map() {
                         onCommit={handleAnnotationCommit}
                         onDelete={handleAnnotationDeleted}
                     />
+                    
                     <EventMarkers events={shownEvents} factions={factions} onMoved={handleEventMoved} onEdit={setEditingEventId}
                         onDelete={handleEventDeleted} now={now} editMode={editMode} showRelations={showRelations} allTime={showAllTime} />
                     {editingEvent && (
@@ -609,7 +611,7 @@ function Map() {
                     {isCapturing && <ScreenshotTool mapTitle={mapSummary?.title ?? 'map'} showTopo={!!showTopo} onClose={closeScreenshot} />}
                     {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} demo={isDemo} />}
                 </TerraDrawProvider>
-            </MapProvider>
+
 
 
 
@@ -642,7 +644,6 @@ function Map() {
                     {!canEdit && mapSummary?.creator && <Link to={`/users/${mapSummary.creator}`} className="whitespace-nowrap px-2 text-gray-200 hover:underline">by <span className="font-semibold text-accent-300">{mapSummary.creator}</span></Link>}
 
 
-
                     {/* tools, edit mode only (view mode is always Select): Pan = only move the map (no tool),
                     Select = terra-draw's editing select; leaving it deselects, which saves any reshaped territory */}
                     {editMode && (
@@ -669,7 +670,6 @@ function Map() {
                             </button>
                         </>
                     )}
-
 
                     {editMode && (
                         <button
@@ -914,6 +914,8 @@ function Map() {
                     </button>
                 </div>
 
+                <PlaceSearch />
+
                 {/* phones: the same map layers and tools, in one menu */}
                 <div className="md:hidden">
                     <NavDropdown
@@ -946,6 +948,7 @@ function Map() {
                     <NavIcon src={closeIcon} />
                 </button>
             </nav>}
+            </MapProvider>
 
             {loading && <p className="absolute bottom-4 left-4 bg-white px-2 py-1">Loading...</p>}
             {error && <p className="absolute bottom-4 left-4 text-red-600 bg-white px-2 py-1">{error}</p>}
