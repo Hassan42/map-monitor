@@ -10,6 +10,7 @@ public final class AnnotationSummaryResponse implements ElementSummary {
     private final String geometry;
     private final String line;
     private final Boolean dashed;
+    private final Boolean arrow;
     private final Long factionId;
     private final Long layerId;
     private final String label;
@@ -25,6 +26,7 @@ public final class AnnotationSummaryResponse implements ElementSummary {
         this.geometry = annotation.getGeometry();
         this.line = annotation.getLine();
         this.dashed = annotation.getDashed();
+        this.arrow = annotation.getArrow();
         this.factionId = annotation.getFactionId();
         this.layerId = annotation.getLayerId();
         this.label = annotation.getLabel();
@@ -57,6 +59,10 @@ public final class AnnotationSummaryResponse implements ElementSummary {
 
     public Boolean getDashed() {
         return dashed;
+    }
+
+    public Boolean getArrow() {
+        return arrow;
     }
 
     public Long getFactionId() {

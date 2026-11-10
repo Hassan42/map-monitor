@@ -4,7 +4,7 @@ import type { GeoJSONSource, LngLat, MapMouseEvent } from 'maplibre-gl'
 import type { TerraDraw, GeoJSONStoreFeatures } from 'terra-draw'
 import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import { useTerraDraw } from '../store/TerraDrawContext'
-import { EDIT_ACTIONS, RULER_MODE, isHighlighted } from '../map/territoryDraw'
+import { EDIT_ACTIONS, FREEHAND_LINE_MODE, RULER_MODE, isHighlighted } from '../map/territoryDraw'
 import { createTerritory, deleteTerritory, editTerritory } from '../api/territory'
 import { toLocalInput } from './eventFormValues'
 import { carryEditForward, shapeStart, withShapeAt } from '../map/territoryTime'
@@ -124,6 +124,7 @@ function TerritoryLayer({
   now,
   measuring,
   drawingLine,
+  freehandLine,
   filling,
   onFillDone,
 }: {
@@ -141,6 +142,7 @@ function TerritoryLayer({
   now: number // the timeline's date: a reshaped polygon is saved as its shape from this date on
   measuring: boolean // the ruler is on: terra-draw draws measured lines, territories can't be picked
   drawingLine: boolean // a line annotation is being drawn (AddAnnotationLine): same line mode
+  freehandLine: boolean // ...dragged freehand instead of clicked point by point
   filling: FillLevel | null // which Fill tool is on: a click fills the country or state under it
   onFillDone: () => void
 }) {
@@ -270,7 +272,7 @@ function TerritoryLayer({
       if (context.action === 'draw') {
         const feature = terraDraw.getSnapshot().find((f) => f.id === id)
         // a ruler line: the control measures it, it's no territory
-        if (!feature || feature.properties.mode === RULER_MODE) return
+        if (!feature || feature.geometry.type !== 'Polygon') return
         setPendingPoints(JSON.stringify(roundRings(feature.geometry.coordinates as number[][][])))
         setPendingFeatureId(id)
         setDrawnAt(Date.now())
@@ -334,8 +336,8 @@ function TerritoryLayer({
     if (!terraDraw) return
     if (!terraDraw.enabled) terraDraw.start()
     // the ruler takes over terra-draw while it's on, in view and edit mode
-    terraDraw.setMode(measuring || drawingLine ? RULER_MODE : active && mode ? mode : 'default')
-  }, [draw, active, mode, measuring, drawingLine])
+    terraDraw.setMode(drawingLine && freehandLine ? FREEHAND_LINE_MODE : measuring || drawingLine ? RULER_MODE : active && mode ? mode : 'default')
+  }, [draw, active, mode, measuring, drawingLine, freehandLine])
 
   // terra-draw is the only renderer of territories: reload all of them whenever the list changes
   useEffect(() => {

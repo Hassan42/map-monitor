@@ -20,6 +20,8 @@ public class Annotation extends MapElement {
 
     private Boolean dashed; // how a line is drawn; null for a ready annotation
 
+    private Boolean arrow; // an arrowhead at the line's end; null for a ready annotation
+
     private Long factionId; // optional, the owning Faction's stableId, not its row id
 
     private String label; // optional
@@ -70,6 +72,14 @@ public class Annotation extends MapElement {
 
     public void setDashed(Boolean dashed) {
         this.dashed = dashed;
+    }
+
+    public Boolean getArrow() {
+        return arrow;
+    }
+
+    public void setArrow(Boolean arrow) {
+        this.arrow = arrow;
     }
 
     public Long getFactionId() {
@@ -145,6 +155,7 @@ public class Annotation extends MapElement {
         copy.setGeometry(this.geometry);
         copy.setLine(this.line);
         copy.setDashed(this.dashed);
+        copy.setArrow(this.arrow);
         copy.setFactionId(this.factionId);
         copy.setLabel(this.label);
         copy.setColor(this.color);

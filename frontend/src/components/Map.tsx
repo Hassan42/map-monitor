@@ -87,6 +87,8 @@ function Map() {
     const [isPlacingEvent, setIsPlacingEvent] = useState(false)
     const [isPlacingAnnotation, setIsPlacingAnnotation] = useState(false)
     const [isDrawingLine, setIsDrawingLine] = useState(false)
+    const [freehandLine, setFreehandLine] = useState(false) // the line is dragged in one stroke
+    const [arrowLine, setArrowLine] = useState(false) // the Arrow tool: a line with an arrowhead
     const [isPlacingViewshed, setIsPlacingViewshed] = useState(false)
     // the ruler: map clicks draw measured lines instead of selecting or drawing territories
     const [isMeasuring, setIsMeasuring] = useState(false)
@@ -468,7 +470,7 @@ function Map() {
         setIsPlacingAnnotation(true)
     }
     // terra-draw's line mode instead of a tool (TerritoryLayer switches to it), like the ruler
-    const startDrawLine = () => {
+    const startDrawLine = (freehand: boolean, arrow = false) => {
         setDrawMode(null)
         setIsMeasuring(false)
         setIsCapturing(false)
@@ -476,6 +478,8 @@ function Map() {
         setIsPlacingViewshed(false)
         setIsPlacingAnnotation(false)
         setFillLevel(null)
+        setFreehandLine(freehand)
+        setArrowLine(arrow)
         setIsDrawingLine(true)
     }
     const toggleViewshed = () => {
@@ -532,6 +536,7 @@ function Map() {
                         onError={setError}
                         measuring={isMeasuring}
                         drawingLine={isDrawingLine}
+                        freehandLine={freehandLine}
                         filling={fillLevel}
                         onFillDone={stopFill}
                     />
@@ -540,6 +545,8 @@ function Map() {
                         factions={factions}
                         layers={layers}
                         active={isDrawingLine}
+                        freehand={freehandLine}
+                        arrow={arrowLine}
                         onExit={() => setIsDrawingLine(false)}
                         onCreated={handleAnnotationCreated}
                     />
@@ -729,8 +736,10 @@ function Map() {
                             title="Add annotation - a ready one or a drawn line"
                             active={isPlacingAnnotation || isDrawingLine}
                         >
-                            <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation}>Ready annotation</NavDropdownItem>
-                            <NavDropdownItem onClick={startDrawLine} active={isDrawingLine}>Draw line</NavDropdownItem>
+                            <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation}>Annotation</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startDrawLine(false)} active={isDrawingLine && !freehandLine && !arrowLine}>Draw line</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startDrawLine(true)} active={isDrawingLine && freehandLine && !arrowLine}>Freehand line</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startDrawLine(true, true)} active={isDrawingLine && arrowLine}>Arrow</NavDropdownItem>
                         </NavDropdown>
                     ))}
 
@@ -775,7 +784,9 @@ function Map() {
                             <NavDropdownItem onClick={pickSelect} active={drawMode === 'select'}><NavIcon src={cursorIcon} /> Select</NavDropdownItem>
                             <NavDropdownItem onClick={startAddEvent} active={isPlacingEvent} disabled={noActors}><NavIcon src={addEventIcon} /> Add event</NavDropdownItem>
                             <NavDropdownItem onClick={startAddAnnotation} active={isPlacingAnnotation} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Add annotation</NavDropdownItem>
-                            <NavDropdownItem onClick={startDrawLine} active={isDrawingLine} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Draw line</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startDrawLine(false)} active={isDrawingLine && !freehandLine && !arrowLine} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Draw line</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startDrawLine(true)} active={isDrawingLine && freehandLine && !arrowLine} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Freehand line</NavDropdownItem>
+                            <NavDropdownItem onClick={() => startDrawLine(true, true)} active={isDrawingLine && arrowLine} disabled={noActors}><NavIcon src={addAnnotationIcon} /> Arrow</NavDropdownItem>
                             <NavDropdownItem onClick={() => startFill('country')} active={fillLevel === 'country'} disabled={noActors}><NavIcon src={addTerritoryIcon} /> Fill country</NavDropdownItem>
                             <NavDropdownItem onClick={() => startFill('state')} active={fillLevel === 'state'} disabled={noActors}><NavIcon src={addTerritoryIcon} /> Fill state</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add actor</NavDropdownItem>

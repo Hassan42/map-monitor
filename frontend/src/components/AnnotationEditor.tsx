@@ -259,7 +259,7 @@ function AnnotationEditor({
       {editing && (
         <AnnotationForm
           key={editing.id}
-          heading={editing.line ? 'Edit Line' : 'Edit Annotation'}
+          heading={editing.line ? (editing.arrow ? 'Edit Arrow' : 'Edit Line') : 'Edit Annotation'}
           submitLabel="Save"
           initial={annotationToFormValues(editing)}
           isLine={editing.line != null}

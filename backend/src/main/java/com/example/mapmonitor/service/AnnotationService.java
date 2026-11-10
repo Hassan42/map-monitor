@@ -90,6 +90,7 @@ public class AnnotationService extends MapElementService<Annotation> {
         shadow.setGeometry(visible.getGeometry());
         shadow.setLine(visible.getLine());
         shadow.setDashed(visible.getDashed());
+        shadow.setArrow(visible.getArrow());
         shadow.setFactionId(visible.getFactionId());
         shadow.setLayer(visible.getLayer());
         shadow.setLabel(visible.getLabel());
@@ -120,6 +121,7 @@ public class AnnotationService extends MapElementService<Annotation> {
         boolean isLine = request.getLine() != null && !request.getLine().isBlank();
         annotation.setLine(isLine ? request.getLine() : null);
         annotation.setDashed(isLine ? Boolean.TRUE.equals(request.getDashed()) : null);
+        annotation.setArrow(isLine ? Boolean.TRUE.equals(request.getArrow()) : null);
         annotation.setFactionId(request.getFactionId());
         annotation.setLabel(request.getLabel());
         annotation.setColor(request.getColor());

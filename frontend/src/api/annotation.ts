@@ -14,6 +14,7 @@ function toAnnotation(a: Annotation & { stableId: number }): Annotation {
     geometry: a.geometry,
     line: a.line ?? null,
     dashed: a.dashed ?? null,
+    arrow: a.arrow ?? null,
     factionId: a.factionId,
     layerId: a.layerId ?? null,
     label: a.label,

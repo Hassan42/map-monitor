@@ -8,6 +8,7 @@ public class CreateAnnotationRequest {
     private String geometry;
     private String line;     // a drawn line's points; null = a ready annotation
     private Boolean dashed;
+    private Boolean arrow;
     private Long factionId;
     private Long layerId; // null = in no layer
     private String label;
@@ -47,6 +48,14 @@ public class CreateAnnotationRequest {
 
     public void setDashed(Boolean dashed) {
         this.dashed = dashed;
+    }
+
+    public Boolean getArrow() {
+        return arrow;
+    }
+
+    public void setArrow(Boolean arrow) {
+        this.arrow = arrow;
     }
 
     public Long getFactionId() {

@@ -11,6 +11,7 @@ export interface AnnotationFormValues {
   layerId: number | null
   color: string
   dashed: boolean // lines only
+  arrow: boolean // lines only: an arrowhead at the end
   startTime: string // datetime-local value; '' = no start ("always been there")
   ongoing: boolean // no end
   endTime: string // datetime-local value
@@ -25,6 +26,7 @@ export const newAnnotationValues = (): AnnotationFormValues => ({
   layerId: null,
   color: ACCENT,
   dashed: false,
+  arrow: false,
   startTime: '',
   ongoing: true,
   endTime: toLocalInput(Date.now()),
@@ -38,6 +40,7 @@ export function annotationToFormValues(a: Annotation): AnnotationFormValues {
     layerId: a.layerId ?? null,
     color: a.color ?? '#ffffff',
     dashed: a.dashed === true,
+    arrow: a.arrow === true,
     startTime: a.startTime ? toLocalInput(parseServerTime(a.startTime)) : '',
     ongoing: !a.endTime,
     endTime: toLocalInput(a.endTime ? parseServerTime(a.endTime) : Date.now()),

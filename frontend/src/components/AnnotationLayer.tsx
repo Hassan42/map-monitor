@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import type { GeoJSONSource } from 'maplibre-gl'
 import { useMap, useSelection } from '../store/MapContext'
 import type { Annotation, AnnotationKind, Faction } from '../types/types'
-import { ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SELECTED_LINE_LAYER_ID, ANNOTATIONS_SOURCE_ID, annotationImageId } from '../map/mapLayers'
-import { addAnnotationLayers, removeAnnotationLayers } from '../map/annotationLayers'
+import { ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SELECTED_LINE_LAYER_ID, ANNOTATIONS_SOURCE_ID, annotationImageId, arrowheadImageId } from '../map/mapLayers'
+import { addAnnotationLayers, addArrowheadImage, removeAnnotationLayers } from '../map/annotationLayers'
+import { endBearing } from '../map/annotationLine'
 import { ANNOTATION_KINDS, ANNOTATION_KIND_LIST } from '../map/annotationKinds'
 import { ACCENT } from '../styles/colors'
 
@@ -49,6 +50,14 @@ function annotationsToGeoJSON(annotations: Annotation[], factions: Faction[]): G
         geometry: { type: 'LineString', coordinates: JSON.parse(a.line) },
         properties: { id: a.id, color: colorOf(a, colorByFaction), dashed: a.dashed === true, label: a.label ?? '' },
       })
+      const points = JSON.parse(a.line) as number[][]
+      if (a.arrow === true && points.length >= 2) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: points[points.length - 1] },
+          properties: { arrowOf: a.id, color: colorOf(a, colorByFaction), rotation: endBearing(points) },
+        })
+      }
       continue
     }
     const geometry = JSON.parse(a.geometry) as GeoJSON.Geometry
@@ -120,6 +129,11 @@ function AnnotationLayer({ annotations, factions }: { annotations: Annotation[];
     const data = annotationsToGeoJSON(annotations, factions)
     for (const feature of data.features) {
       if (feature.geometry.type !== 'Point') continue // lines need no image
+      if (feature.properties?.arrowOf != null) {
+        const imageId = arrowheadImageId(feature.properties.color)
+        if (!map.hasImage(imageId)) addArrowheadImage(map, imageId, feature.properties.color)
+        continue
+      }
       const { kind, color } = feature.properties as { kind: AnnotationKind; color: string }
       const imageId = annotationImageId(kind, color)
       if (!map.hasImage(imageId)) map.addImage(imageId, drawAnnotationImage(icons[kind], color), { pixelRatio: ICON_PIXEL_RATIO })

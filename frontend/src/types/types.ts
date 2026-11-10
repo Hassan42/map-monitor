@@ -156,6 +156,7 @@ export interface Annotation extends MapElement {
   geometry: string; // GeoJSON point as text, e.g. {"type":"Point","coordinates":[lng,lat]}
   line?: string | null; // a drawn line's points as JSON, [[lng,lat],...]; null = a ready annotation (kind's icon)
   dashed?: boolean | null; // how a line is drawn; null for a ready annotation
+  arrow?: boolean | null; // an arrowhead at the line's end; null for a ready annotation
   factionId: number | null;
   label: string | null;
   color: string | null;

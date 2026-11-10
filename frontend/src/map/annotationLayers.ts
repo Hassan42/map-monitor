@@ -1,6 +1,6 @@
 import type { AddLayerObject, ExpressionSpecification, Map, SourceSpecification } from 'maplibre-gl'
 import { ICON_MIN_SIZE, ICON_RADIUS_PX, MAX_ICON_SIZE, zoomScaled } from './annotationScale'
-import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_DASHED_LINE_LAYER_ID, ANNOTATIONS_LABEL_LAYER_ID, ANNOTATIONS_LAYER_ID, ANNOTATIONS_LINE_LABEL_LAYER_ID, ANNOTATIONS_LINE_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SELECTED_LINE_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
+import { ANNOTATION_IMAGE_PREFIX, ANNOTATIONS_ARROWHEAD_LAYER_ID, ANNOTATIONS_DASHED_LINE_LAYER_ID, ARROWHEAD_IMAGE_PREFIX, ANNOTATIONS_LABEL_LAYER_ID, ANNOTATIONS_LAYER_ID, ANNOTATIONS_LINE_LABEL_LAYER_ID, ANNOTATIONS_LINE_LAYER_ID, ANNOTATIONS_SELECTED_LAYER_ID, ANNOTATIONS_SELECTED_LINE_LAYER_ID, ANNOTATIONS_SOURCE_ID } from './mapLayers'
 import { ACCENT } from '../styles/colors'
 
 // what annotations look like on the map: one GeoJSON source with points (a symbol layer stamps each kind's
@@ -16,7 +16,14 @@ const LABEL_SIZE_PX = 15
 const LABEL_MIN_ZOOM = 8
 const LINE_WIDTH_PX = 3
 
-const IS_POINT = ['==', ['geometry-type'], 'Point'] as ExpressionSpecification
+// an annotation's point; a line's arrowhead is a point too, marked with `arrowOf`, and has its own layer
+const IS_POINT = ['all', ['==', ['geometry-type'], 'Point'], ['!', ['has', 'arrowOf']]] as ExpressionSpecification
+const IS_ARROWHEAD = ['has', 'arrowOf'] as ExpressionSpecification
+// the arrowhead's image: drawn at twice its size on screen, so its edges stay sharp
+const ARROWHEAD_PX = 24
+const ARROWHEAD_PIXEL_RATIO = 2
+// how far the tip reaches past the line's last point: enough to cover the line's round end
+const ARROWHEAD_OVERSHOOT_PX = 4
 const IS_LINE = ['==', ['geometry-type'], 'LineString'] as ExpressionSpecification
 const LINE_LABEL_PAINT = { 'text-color': '#e5e7eb', 'text-halo-color': '#1c1f23', 'text-halo-width': 2 }
 
@@ -47,6 +54,26 @@ const annotationLayers: AddLayerObject[] = [
     filter: ['all', IS_LINE, ['==', ['get', 'dashed'], true]],
     layout: { 'line-join': 'round' },
     paint: { 'line-color': ['get', 'color'], 'line-width': LINE_WIDTH_PX, 'line-dasharray': [2.5, 2] },
+  },
+  // the arrowhead: its tip on the line's last point, turned the way the line ends
+  {
+    id: ANNOTATIONS_ARROWHEAD_LAYER_ID,
+    type: 'symbol',
+    source: ANNOTATIONS_SOURCE_ID,
+    filter: IS_ARROWHEAD,
+    layout: {
+      'icon-image': ['concat', ARROWHEAD_IMAGE_PREFIX, ['get', 'color']],
+      // the line keeps its width at every zoom, but zoomed out it's short on screen: a full-size head would
+      // swamp it, so the head shrinks from 24px (zoom 14 and in) to 6px (zoom 2 and out)
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 2, 0.25, 6, 0.45, 10, 0.75, 14, 1],
+      'icon-anchor': 'top', // the image's top middle is the tip
+      // pushes the tip forward, along the way it points (the offset turns with icon-rotate)
+      'icon-offset': [0, -ARROWHEAD_OVERSHOOT_PX],
+      'icon-rotate': ['get', 'rotation'], // clockwise degrees from north
+      'icon-rotation-alignment': 'map',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
   },
   // a line's label: along its middle
   {
@@ -120,6 +147,22 @@ const annotationLayers: AddLayerObject[] = [
     },
   },
 ]
+
+// an arrowhead in `color`: a filled triangle pointing up, its tip at the top middle of the image
+export function addArrowheadImage(map: Map, id: string, color: string) {
+  const size = ARROWHEAD_PX * ARROWHEAD_PIXEL_RATIO
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.moveTo(size / 2, 0)
+  ctx.lineTo(size * 0.875, size * 0.85)
+  ctx.lineTo(size * 0.125, size * 0.85)
+  ctx.closePath()
+  ctx.fill()
+  map.addImage(id, ctx.getImageData(0, 0, size, size), { pixelRatio: ARROWHEAD_PIXEL_RATIO })
+}
 
 export function addAnnotationLayers(map: Map) {
   if (!map.getSource(ANNOTATIONS_SOURCE_ID)) map.addSource(ANNOTATIONS_SOURCE_ID, annotationsSource)

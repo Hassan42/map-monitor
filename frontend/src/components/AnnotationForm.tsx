@@ -25,7 +25,7 @@ function AnnotationForm({
   factions: Faction[]
   layers: Layer[]
   // the form's fields as sent to the backend: times as ISO strings, null for no start / no end
-  onSubmit: (fields: Pick<Annotation, 'kind' | 'dashed' | 'label' | 'factionId' | 'layerId' | 'color' | 'startTime' | 'endTime'>) => Promise<void>
+  onSubmit: (fields: Pick<Annotation, 'kind' | 'dashed' | 'arrow' | 'label' | 'factionId' | 'layerId' | 'color' | 'startTime' | 'endTime'>) => Promise<void>
   onCancel: () => void
 }) {
   const [kind, setKind] = useState(initial.kind)
@@ -52,6 +52,7 @@ function AnnotationForm({
       await onSubmit({
         kind,
         dashed: isLine ? dashed : null,
+        arrow: isLine ? initial.arrow : null, // set by the tool it was drawn with (Arrow or a line)
         label: label.trim() || null,
         factionId: factionId === '' ? null : factionId,
         layerId,

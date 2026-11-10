@@ -33,6 +33,10 @@ export const ANNOTATIONS_LINE_LAYER_ID = 'annotations-line'
 export const ANNOTATIONS_DASHED_LINE_LAYER_ID = 'annotations-line-dashed'
 export const ANNOTATIONS_LINE_LABEL_LAYER_ID = 'annotations-line-label'
 export const ANNOTATIONS_SELECTED_LINE_LAYER_ID = 'annotations-selected-line'
+// the arrowhead at the end of a line that has one; its images are named by color, like the annotation icons
+export const ANNOTATIONS_ARROWHEAD_LAYER_ID = 'annotations-arrowhead'
+export const ARROWHEAD_IMAGE_PREFIX = 'line-arrowhead-'
+export const arrowheadImageId = (color: string) => `${ARROWHEAD_IMAGE_PREFIX}${color}`
 // annotation images are named by kind + color, e.g. 'annotation-ARROW-#c0392b'.
 // annotationLayers.ts builds the same name per feature with an expression - keep the two in sync
 export const ANNOTATION_IMAGE_PREFIX = 'annotation-'

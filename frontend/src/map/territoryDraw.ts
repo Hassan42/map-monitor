@@ -18,6 +18,8 @@ export const EDIT_ACTIONS = ['edit', 'deleteCoordinate', 'insertMidpoint', 'drag
 
 // the ruler's lines: terra-draw's linestring mode, measured by the control
 export const RULER_MODE = 'linestring'
+// a line annotation drawn by dragging, like freehand territories but left open
+export const FREEHAND_LINE_MODE = 'freehand-linestring'
 
 // true when the pointer is over an event or annotation: terra-draw leaves the click to them, and drops
 // its own polygon selection so the two aren't selected at once
@@ -87,6 +89,7 @@ export function createTerraDrawControl(map: Map): MaplibreMeasureControl {
       'select',
       'delete-selection',
       RULER_MODE,
+      FREEHAND_LINE_MODE,
     ],
     open: true,
     // deleting now removes the territory on the backend, so ask first
