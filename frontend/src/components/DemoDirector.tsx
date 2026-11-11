@@ -30,11 +30,12 @@ function pickScenes(events: EventMarker[], from: number) {
 
 // the landing page's demo (?demo on the map page): drives the real page like a film. It only moves the
 // camera, the timeline's date and the selection, as a visitor would; everything drawn is the app's own
-function DemoDirector({ events, loaded, from, onTime }: {
+function DemoDirector({ events, loaded, from, onTime, instant = false }: {
   events: EventMarker[]
   loaded: boolean
   from: number
   onTime: (time: number) => void
+  instant?: boolean // director mode: the map is already showing, so start without the opening waits
 }) {
   const map = useMap()
   const [, setSelected] = useSelection()
@@ -78,11 +79,16 @@ function DemoDirector({ events, loaded, from, onTime }: {
     }
 
     const play = async () => {
+      let first = true
       while (!stopped) {
         onTimeRef.current(from)
         setSelected(null)
-        await showOverview()
-        await sleep(OVERVIEW_PAUSE_MS)
+        // director mode: no opening zoom-out and pause on the first loop
+        if (!(instant && first)) {
+          await showOverview()
+          await sleep(OVERVIEW_PAUSE_MS)
+        }
+        first = false
 
         let time = from
         for (let i = 0; i < scenes.length; i++) {
@@ -134,7 +140,8 @@ function DemoDirector({ events, loaded, from, onTime }: {
       started = true
       void play()
     }
-    map.once('idle', begin)
+    if (instant) begin()
+    else map.once('idle', begin)
     const startTimer = setTimeout(begin, MAX_START_WAIT_MS)
     map.triggerRepaint()
 

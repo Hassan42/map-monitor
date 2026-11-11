@@ -115,6 +115,7 @@ function Map() {
     const [now, setNow] = useState(() => (isDemo ? demoFrom : Date.now()))
     const [today] = useState(() => Date.now()) // real time in case there was no events, we use it as fallback
     const [live, setLive] = useState<boolean>(false)
+    const [directorMode, setDirectorMode] = useState<boolean>(false)
 
     const [fillLevel, setFillLevel] = useState<FillLevel | null>(null)
     const stopFill = useCallback(() => setFillLevel(null), [])
@@ -508,6 +509,17 @@ function Map() {
         setIsMeasuring(false)
         setIsCapturing((on) => !on)
     }
+
+    const toggleDirectorMode = () => {
+        setIsPlacingEvent(false)
+        setIsPlacingAnnotation(false)
+        setIsDrawingLine(false)
+        setIsPlacingViewshed(false)
+        setIsMeasuring(false)
+        setDirectorMode(!directorMode)
+    }
+
+
     const closeScreenshot = useCallback(() => setIsCapturing(false), [])
     const closeRuler = useCallback(() => setIsMeasuring(false), [])
     // nothing can be added before the map has an actor (the list is empty until it has loaded, too)
@@ -596,7 +608,7 @@ function Map() {
                     {/* view mode is always selectable; in edit mode only with the Select tool */}
                     <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed && !isMeasuring} editMode={editMode} territories={visibleTerritories} />
                     {!isDemo && <MapControls territories={territories} events={events} loaded={eventsLoaded && territoriesLoaded} />}
-                    {isDemo && <DemoDirector events={shownEvents} loaded={eventsLoaded && territoriesLoaded} from={demoFrom} onTime={handleTimeChange} />}
+                    {(directorMode || isDemo) && <DemoDirector events={shownEvents} loaded={eventsLoaded && territoriesLoaded} from={isDemo ? demoFrom : min} onTime={handleTimeChange} instant={directorMode} />}
                     {!isDemo && <PropertyPanel
                         map={mapSummary}
                         factions={factions}
@@ -616,7 +628,7 @@ function Map() {
                     <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
                     <Ruler measuring={isMeasuring} onClose={closeRuler} />
                     {isCapturing && <ScreenshotTool mapTitle={mapSummary?.title ?? 'map'} showTopo={!!showTopo} onClose={closeScreenshot} />}
-                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} demo={isDemo} />}
+                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} demo={isDemo} onDirectorMode={toggleDirectorMode} />}
                 </TerraDrawProvider>
 
 

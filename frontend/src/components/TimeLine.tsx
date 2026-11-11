@@ -43,6 +43,7 @@ function TimeLine({
     events,
     onChange,
     demo = false,
+    onDirectorMode,
 }: {
     min: number,
     max: number,
@@ -51,8 +52,10 @@ function TimeLine({
     events: EventMarker[], // the shown ones (visible layers), for the event strip
     onChange: (time: number) => void
     demo?: boolean // the landing page's film: no property panel, so center on the whole width. Phones: a slim, watch-only bar
+    onDirectorMode: () => void
 }) {
     const [playing, setPlaying] = useState(false)
+    const [directing, setDirecting] = useState(false)
     const [selected] = useSelection()
 
     // the bar's width in pixels decides how fine the ticks and labels can be
@@ -187,25 +190,57 @@ function TimeLine({
             className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 ${demo ? 'left-1/2' : 'left-[calc((100%-24rem)/2)]'}
                 max-md:inset-x-2 max-md:translate-x-0 max-md:gap-1 max-md:px-2 ${demo ? 'max-md:bottom-9 max-md:py-1' : 'max-md:bottom-16 max-md:py-4'}`}
         >
-            <button
+            {/* <button
                 type="button"
                 onClick={togglePlay}
                 aria-label={playing ? 'Pause' : 'Play through time'}
                 title={playing ? 'Pause' : 'Play through time'}
-                className={`flex h-20 w-7 items-center justify-center transition-colors ${demo ? 'hidden' : ''} ${playing ? 'bg-accent-400/15 text-accent-300' : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
-            >
-                {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
+                className={`flex h-20 w-7 items-center justify-center transition-[color,background-color,box-shadow,transform] ${demo ? 'hidden' : ''} ${playing ? navButtonActiveClass : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
+            > */}
+                {/* square, pixel-style icons drawn in currentColor, like the nav icons
                 {playing ? (
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <rect x="2" y="1" width="3" height="10" />
                         <rect x="7" y="1" width="3" height="10" />
                     </svg>
                 ) : (
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <path d="M3 1L11 6L3 11Z" />
+                    </svg>
+                )} */}
+            {/* </button> */}
+
+            <button
+                type="button"
+                onClick={() => { onDirectorMode(); setDirecting(!directing);}}
+                aria-label={'Director Mode'}
+                title={'Direct'}
+                className={`flex h-14 w-14 shrink-0 items-center justify-center self-center transition-[color,background-color,box-shadow,transform] ${demo ? 'hidden' : ''} ${directing
+                    // on: solid accent, pressed in
+                    ? 'bg-accent-400 text-neutral-900 translate-y-px shadow-[inset_0_2px_5px_rgba(0,0,0,0.45)]'
+                    // off: raised neutral key, accent only on hover
+                    : 'bg-neutral-800 text-gray-200 shadow-md ring-1 ring-inset ring-white/15 hover:-translate-y-px hover:text-accent-300 hover:shadow-lg hover:ring-accent-400/60'}`}
+            >
+                {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
+                {directing ? (
+                    // clapper open
+                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                        <path d="M1 3.6L10.2 0.6L10.8 2.5L1.6 5.5Z" />
+                        <rect x="1" y="6" width="10" height="5" />
+                    </svg>
+                ) : (
+                    // clapper closed: striped bar on top of the board
+                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                        <rect x="1" y="2" width="2" height="2" />
+                        <rect x="4" y="2" width="2" height="2" />
+                        <rect x="7" y="2" width="2" height="2" />
+                        <rect x="10" y="2" width="1" height="2" />
+                        <rect x="1" y="5" width="10" height="6" />
                     </svg>
                 )}
             </button>
+
+
 
             <div
                 ref={barRef}
