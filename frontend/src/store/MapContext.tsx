@@ -85,6 +85,11 @@ function MapProvider({ children, collapseCredits = false }: { children: ReactNod
       ...(collapseCredits ? { attributionControl: { compact: true } } : {}),
     })
 
+    // snappier scroll zoom: more zoom per wheel click / trackpad scroll and pinch than MapLibre's
+    // defaults (1/450 and 1/100)
+    mapInstance.scrollZoom.setWheelZoomRate(1 / 250)
+    mapInstance.scrollZoom.setZoomRate(1 / 60)
+
     const container = containerRef.current
     // a resized window gets a new pixel budget; setPixelRatio also resizes the map
     const resizeObserver = new ResizeObserver(() => {
