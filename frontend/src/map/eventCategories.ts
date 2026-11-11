@@ -12,6 +12,8 @@ import chemicalWeaponIcon from '../assets/markers/chemical_weapon.svg'
 import droneAttackIcon from '../assets/markers/drone_attack.svg'
 import grenadeIcon from '../assets/markers/grenade.svg'
 import oneWayDroneIcon from '../assets/markers/one_way_drone.svg'
+import uavPresenceIcon from '../assets/markers/uav_presence.svg'
+import rocketLaunchIcon from '../assets/markers/rocket_launch.svg'
 import iedIcon from '../assets/markers/ied.svg'
 import shellingIcon from '../assets/markers/shelling_missile_attack.svg'
 import announcementIcon from '../assets/markers/announcement.svg'
@@ -49,6 +51,8 @@ export const EVENT_CATEGORIES: Record<EventCategory, { label: string; icon: stri
   DRONE_ATTACK: { label: 'Drone attack', icon: droneAttackIcon },
   GRENADE: { label: 'Grenade', icon: grenadeIcon },
   ONE_WAY_DRONE: { label: 'One-way drone', icon: oneWayDroneIcon },
+  UAV_PRESENCE: { label: 'UAV presence', icon: uavPresenceIcon },
+  ROCKET_LAUNCH: { label: 'Rocket launch', icon: rocketLaunchIcon },
   IED: { label: 'IED', icon: iedIcon },
   SHELLING_ARTILLERY_MISSILE_ATTACK: { label: 'Shelling attack', icon: shellingIcon },
   ANNOUNCEMENT: { label: 'Announcement', icon: announcementIcon },
@@ -78,7 +82,7 @@ export const EVENT_CATEGORY_GROUPS = [
   { label: 'Battles', categories: ['ATTACK', 'CAPTURE', 'MARITIME_ATTACK', 'PLANE_CRASH'] },
   {
     label: 'Explosions/remote violence',
-    categories: ['EXPLOSION', 'AIR_STRIKE', 'CHEMICAL_WEAPON', 'DRONE_ATTACK', 'ONE_WAY_DRONE', 'GRENADE', 'IED', 'SHELLING_ARTILLERY_MISSILE_ATTACK'],
+    categories: ['EXPLOSION', 'AIR_STRIKE', 'CHEMICAL_WEAPON', 'DRONE_ATTACK', 'ONE_WAY_DRONE', 'UAV_PRESENCE', 'ROCKET_LAUNCH', 'GRENADE', 'IED', 'SHELLING_ARTILLERY_MISSILE_ATTACK'],
   },
   {
     label: 'Political announcement',

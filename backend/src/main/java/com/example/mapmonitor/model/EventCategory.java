@@ -16,6 +16,8 @@ public enum EventCategory {
     DRONE_ATTACK,
     GRENADE,
     ONE_WAY_DRONE,
+    UAV_PRESENCE,
+    ROCKET_LAUNCH,
     IED,
     SHELLING_ARTILLERY_MISSILE_ATTACK,
     // political announcement
