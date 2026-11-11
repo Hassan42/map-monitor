@@ -116,6 +116,7 @@ function Map() {
     const [today] = useState(() => Date.now()) // real time in case there was no events, we use it as fallback
     const [live, setLive] = useState<boolean>(false)
     const [directorMode, setDirectorMode] = useState<boolean>(false)
+    const [speed, setSpeed] = useState(1) // the timeline's ×2, for Play
 
     const [fillLevel, setFillLevel] = useState<FillLevel | null>(null)
     const stopFill = useCallback(() => setFillLevel(null), [])
@@ -628,7 +629,7 @@ function Map() {
                     <Viewshed placing={isPlacingViewshed} onPlaced={() => setIsPlacingViewshed(false)} />
                     <Ruler measuring={isMeasuring} onClose={closeRuler} />
                     {isCapturing && <ScreenshotTool mapTitle={mapSummary?.title ?? 'map'} showTopo={!!showTopo} onClose={closeScreenshot} />}
-                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} demo={isDemo} onDirectorMode={toggleDirectorMode} />}
+                    {!live && !showAllTime && <TimeLine min={min} max={max} now={now} territories={territories} events={shownEvents} onChange={handleTimeChange} demo={isDemo} onDirectorMode={toggleDirectorMode} speed={speed} onSpeedChange={setSpeed} />}
                 </TerraDrawProvider>
 
 

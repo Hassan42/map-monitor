@@ -17,6 +17,10 @@ const SNAP_PX = 8
 // the slider's thumb (14px, see .timeline-range in index.css) stays inside the bar, so its centre runs
 // from 5px to width - 5px, not 0 to 100%: ticks go on that same track so they line up with it
 const THUMB_PX = 14
+// the square keys left of the bar (Play, Direct, ×2): raised when off, solid accent and pressed in when on
+const keyClass = (on: boolean) => `flex shrink-0 items-center justify-center transition-[color,background-color,box-shadow,transform] disabled:opacity-40 ${on
+    ? 'bg-accent-400 text-neutral-900 translate-y-px shadow-[inset_0_2px_5px_rgba(0,0,0,0.45)]'
+    : 'bg-neutral-800 text-gray-200 shadow-md ring-1 ring-inset ring-white/15 enabled:hover:-translate-y-px enabled:hover:text-accent-300 enabled:hover:shadow-lg enabled:hover:ring-accent-400/60'}`
 
 // times the selected territory changed shape: the `from` of each history entry before its end
 function territoryTicks(territories: Territory[], selected: Selection): number[] {
@@ -44,6 +48,8 @@ function TimeLine({
     onChange,
     demo = false,
     onDirectorMode,
+    speed = 1,
+    onSpeedChange,
 }: {
     min: number,
     max: number,
@@ -53,6 +59,8 @@ function TimeLine({
     onChange: (time: number) => void
     demo?: boolean // the landing page's film: no property panel, so center on the whole width. Phones: a slim, watch-only bar
     onDirectorMode: () => void
+    speed?: number // 1 or 2: how fast Play runs
+    onSpeedChange?: (speed: number) => void
 }) {
     const [playing, setPlaying] = useState(false)
     const [directing, setDirecting] = useState(false)
@@ -132,18 +140,18 @@ function TimeLine({
     useEffect(() => {
         if (!playing) return
         const timer = setTimeout(() => {
-            const next = Math.min(max, Math.round(now + span / (PLAY_DURATION_MS / PLAY_TICK_MS))) // whole ms, like every saved time
+            const next = Math.min(max, Math.round(now + (span / (PLAY_DURATION_MS / PLAY_TICK_MS)) * speed)) // whole ms, like every saved time
             onChange(next)
             if (next >= max) setPlaying(false)
         }, PLAY_TICK_MS)
         return () => clearTimeout(timer)
-    }, [playing, now, max, span, onChange])
+    }, [playing, now, max, span, speed, onChange])
 
-    // const togglePlay = () => {
-    //     if (playing) return setPlaying(false)
-    //     if (now >= max) onChange(view.start) // at the end: play again from the start of the view
-    //     setPlaying(true)
-    // }
+    const togglePlay = () => {
+        if (playing) return setPlaying(false)
+        if (now >= max) onChange(view.start) // at the end: play again from the start of the view
+        setPlaying(true)
+    }
 
     // dragging the tick strip (below the slider's track) moves the zoomed window, like dragging a map
     const zoomed = span < max - min
@@ -190,14 +198,18 @@ function TimeLine({
             className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 ${demo ? 'left-1/2' : 'left-[calc((100%-24rem)/2)]'}
                 max-md:inset-x-2 max-md:translate-x-0 max-md:gap-1 max-md:px-2 ${demo ? 'max-md:bottom-9 max-md:py-1' : 'max-md:bottom-16 max-md:py-4'}`}
         >
-            {/* <button
+            {/* Play and Direct side by side, ×2 under them */}
+            <div className={`flex shrink-0 flex-col gap-1.5 self-center ${demo ? 'hidden' : ''}`}>
+            <div className="flex gap-4">
+            <button
                 type="button"
                 onClick={togglePlay}
+                disabled={directing} // the director runs the clock
                 aria-label={playing ? 'Pause' : 'Play through time'}
                 title={playing ? 'Pause' : 'Play through time'}
-                className={`flex h-20 w-7 items-center justify-center transition-[color,background-color,box-shadow,transform] ${demo ? 'hidden' : ''} ${playing ? navButtonActiveClass : 'text-gray-300 hover:bg-accent-400/15 hover:text-accent-300'}`}
-            > */}
-                {/* square, pixel-style icons drawn in currentColor, like the nav icons
+                className={`${keyClass(playing)} h-14 w-14`}
+            >
+                {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
                 {playing ? (
                     <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <rect x="2" y="1" width="3" height="10" />
@@ -207,19 +219,15 @@ function TimeLine({
                     <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <path d="M3 1L11 6L3 11Z" />
                     </svg>
-                )} */}
-            {/* </button> */}
+                )}
+            </button>
 
             <button
                 type="button"
-                onClick={() => { onDirectorMode(); setDirecting(!directing);}}
+                onClick={() => { onDirectorMode(); setPlaying(false); setDirecting(!directing);}}
                 aria-label={'Director Mode'}
                 title={'Direct'}
-                className={`flex h-14 w-14 shrink-0 items-center justify-center self-center transition-[color,background-color,box-shadow,transform] ${demo ? 'hidden' : ''} ${directing
-                    // on: solid accent, pressed in
-                    ? 'bg-accent-400 text-neutral-900 translate-y-px shadow-[inset_0_2px_5px_rgba(0,0,0,0.45)]'
-                    // off: raised neutral key, accent only on hover
-                    : 'bg-neutral-800 text-gray-200 shadow-md ring-1 ring-inset ring-white/15 hover:-translate-y-px hover:text-accent-300 hover:shadow-lg hover:ring-accent-400/60'}`}
+                className={`${keyClass(directing)} h-14 w-14`}
             >
                 {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
                 {directing ? (
@@ -239,13 +247,28 @@ function TimeLine({
                     </svg>
                 )}
             </button>
+            </div>
+
+            <button
+                type="button"
+                onClick={() => onSpeedChange?.(speed === 2 ? 1 : 2)}
+                disabled={directing} // only for Play
+                aria-pressed={speed === 2}
+                aria-label="Double speed"
+                title={speed === 2 ? 'Normal speed' : 'Double speed'}
+                className={`${keyClass(speed === 2)} h-6 w-full text-xs font-semibold ${!onSpeedChange ? 'hidden' : ''}`}
+            >
+                ×2
+            </button>
+            </div>
 
 
 
             <div
                 ref={barRef}
-                title="Scroll to zoom; drag the ticks or Shift+scroll to move"
-                className={`relative h-[82px] ${demo ? 'max-md:h-[52px] w-[min(52rem,calc(100vw-10rem))]' : 'w-[min(52rem,calc(100vw-30rem))]'} overflow-hidden max-md:w-auto max-md:min-w-0 max-md:flex-1`}
+                title={directing ? 'Locked while directing' : 'Scroll to zoom; drag the ticks or Shift+scroll to move'}
+                // locked while directing: the director moves the date, so no dragging or jumping
+                className={`${directing ? 'pointer-events-none' : ''} relative h-[82px] ${demo ? 'max-md:h-[52px] w-[min(52rem,calc(100vw-10rem))]' : 'w-[min(52rem,calc(100vw-30rem))]'} overflow-hidden max-md:w-auto max-md:min-w-0 max-md:flex-1`}
             >
                 {/* the strip below the slider's track: drag it to move the zoomed window */}
                 <div
