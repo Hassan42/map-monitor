@@ -25,6 +25,17 @@ export type ContextMenu = {
   lngLat?: LngLat
 } | null
 
+// MapLibre redraws every pixel of the map each frame, so a big window on a Retina screen (often 2-4x a
+// phone's pixels) pans slowly. Past this many device pixels the map's resolution drops so the total stays
+// near it: phones and normal windows stay full-sharp, only big screens go slightly softer
+const MAX_MAP_PIXELS = 2_000_000
+
+function mapPixelRatio(container: HTMLElement) {
+  const cssPixels = Math.max(1, container.clientWidth * container.clientHeight)
+  const fit = Math.sqrt(MAX_MAP_PIXELS / cssPixels)
+  return Math.max(1, Math.min(window.devicePixelRatio, fit)) // never below 1 (blurrier than a normal screen)
+}
+
 const MapContext = createContext<{
   map: Map | null
   selected: Selection
@@ -69,11 +80,18 @@ function MapProvider({ children, collapseCredits = false }: { children: ReactNod
       maxPitch: 85,
       // show each tile as soon as it arrives, instead of fading it in over 300ms
       fadeDuration: 0,
+      pixelRatio: mapPixelRatio(containerRef.current),
       // the small (i) button instead of the credits line; MapLibre opens it at first, so it's closed on load
       ...(collapseCredits ? { attributionControl: { compact: true } } : {}),
     })
 
-    const resizeObserver = new ResizeObserver(() => mapInstance.resize())
+    const container = containerRef.current
+    // a resized window gets a new pixel budget; setPixelRatio also resizes the map
+    const resizeObserver = new ResizeObserver(() => {
+      const ratio = mapPixelRatio(container)
+      if (ratio !== mapInstance.getPixelRatio()) mapInstance.setPixelRatio(ratio)
+      else mapInstance.resize()
+    })
     resizeObserver.observe(containerRef.current)
 
     mapInstance.on('load', () => {
