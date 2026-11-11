@@ -63,3 +63,13 @@ export function getDraftChanges(mapId: string): Promise<MapChange[]> {
 export function discardChange(mapId: string, change: MapChange): Promise<void> {
   return apiFetch(`/api/maps/${mapId}/changes/${change.entityType}/${change.stableId}`, { method: 'DELETE' })
 }
+
+// how many users monitor the map, and whether you do
+export interface Monitors {
+  count: number
+  monitoredByMe: boolean
+}
+
+export function getMonitorsCount(mapId: string): Promise<Monitors> {
+  return apiFetch(`/api/maps/${mapId}/monitorsCount`, {method: 'GET'})
+}

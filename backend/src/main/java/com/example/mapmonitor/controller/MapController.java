@@ -107,4 +107,10 @@ public class MapController {
         return mapService.changeCountries(uid, mapId, request.countries());
     }
 
+    @GetMapping("/{mapId}/monitorsCount")
+    public MonitorsResponse getMonitorsCount(Authentication authentication, @PathVariable Long mapId){
+        String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor
+        return mapService.getMonitorsCount(uid, mapId);
+    }
+
 }

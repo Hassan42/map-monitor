@@ -31,7 +31,8 @@ public class Map {
     @JoinColumn(name = "published_version_id")
     private MapVersion publishedVersion;
 
-    // ISO 3166 two-letter codes of the countries this map is about. Describes the map as a whole, like
+    // ISO 3166 two-letter codes of the countries this map is about. Describes the
+    // map as a whole, like
     // its title: not versioned, a change applies right away
     @ElementCollection
     @CollectionTable(name = "map_countries", joinColumns = @JoinColumn(name = "map_id"))
@@ -74,9 +75,13 @@ public class Map {
         this.user = user;
     }
 
-    public MapVersion getPublishedVersion() { return publishedVersion; }
+    public MapVersion getPublishedVersion() {
+        return publishedVersion;
+    }
 
-    public void setPublishedVersion(MapVersion publishedVersion) { this.publishedVersion = publishedVersion; }
+    public void setPublishedVersion(MapVersion publishedVersion) {
+        this.publishedVersion = publishedVersion;
+    }
 
     public Set<String> getCountries() {
         return countries;

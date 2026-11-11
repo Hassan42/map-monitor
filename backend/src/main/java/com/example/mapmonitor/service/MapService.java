@@ -2,6 +2,7 @@ package com.example.mapmonitor.service;
 
 import com.example.mapmonitor.dto.DraftStatusResponse;
 import com.example.mapmonitor.dto.MapSummaryResponse;
+import com.example.mapmonitor.dto.MonitorsResponse;
 import com.example.mapmonitor.model.*;
 import com.example.mapmonitor.repository.*;
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -33,11 +35,12 @@ public class MapService {
     private final TerritoryRepository territoryRepository;
     private final AnnotationRepository annotationRepository;
     private final LayerRepository layerRepository;
+    private final MapMonitorRepository mapMonitorRepository;
 
     public MapService(MapRepository mapRepository, UserRepository userRepository, MapVersionRepository mapVersionRepository,
                        FactionRepository factionRepository, EventMarkerRepository eventMarkerRepository,
                        TerritoryRepository territoryRepository, AnnotationRepository annotationRepository,
-                       LayerRepository layerRepository) {
+                       LayerRepository layerRepository, MapMonitorRepository mapMonitorRepository) {
         this.mapRepository = mapRepository;
         this.userRepository = userRepository;
         this.mapVersionRepository = mapVersionRepository;
@@ -46,6 +49,7 @@ public class MapService {
         this.territoryRepository = territoryRepository;
         this.annotationRepository = annotationRepository;
         this.layerRepository = layerRepository;
+        this.mapMonitorRepository = mapMonitorRepository;
     }
 
     public List<MapSummaryResponse> getUserMaps(String firebaseUid) {
@@ -284,5 +288,17 @@ public class MapService {
         map.setVisibility(visibility);
         mapRepository.save(map);
         return;
+    }
+
+    @Transactional(readOnly = true)
+    public MonitorsResponse getMonitorsCount(String firebaseUid, Long mapId) {
+
+        Map map = getReadableMap(firebaseUid, mapId);
+
+        boolean monitoredByMe = firebaseUid != null
+                && mapMonitorRepository.existsByUserFirebaseUidAndMapId(firebaseUid, map.getId());
+
+        return new MonitorsResponse(mapMonitorRepository.countByMapId(map.getId()), monitoredByMe);
+
     }
 }

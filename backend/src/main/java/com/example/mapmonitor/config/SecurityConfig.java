@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 "/api/maps/{mapId}/factions",
                                 "/api/maps/{mapId}/territories",
                                 "/api/maps/{mapId}/annotations",
-                                "/api/maps/{mapId}/layers").permitAll()
+                                "/api/maps/{mapId}/layers",
+                                "/api/maps/{mapId}/monitorsCount").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new FirebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
