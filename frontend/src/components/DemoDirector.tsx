@@ -30,10 +30,12 @@ function pickScenes(events: EventMarker[], from: number) {
 
 // the landing page's demo (?demo on the map page): drives the real page like a film. It only moves the
 // camera, the timeline's date and the selection, as a visitor would; everything drawn is the app's own
-function DemoDirector({ events, loaded, from, onTime, instant = false }: {
+function DemoDirector({ events, loaded, from, to, restart, onTime, instant = false }: {
   events: EventMarker[]
   loaded: boolean
   from: number
+  to?: number // the timeline's end: after the last scene the date runs on to it, then starts over
+  restart?: number // where the later rounds start (default `from`)
   onTime: (time: number) => void
   instant?: boolean // director mode: the map is already showing, so start without the opening waits
 }) {
@@ -46,8 +48,9 @@ function DemoDirector({ events, loaded, from, onTime, instant = false }: {
 
   useEffect(() => {
     if (!map || !loaded) return
-    const scenes = pickScenes(events, from)
-    if (scenes.length === 0) return
+    const firstScenes = pickScenes(events, from)
+    const laterScenes = restart === undefined ? firstScenes : pickScenes(events, restart)
+    if (firstScenes.length === 0 && laterScenes.length === 0) return
     let stopped = false
     let popup: Popup | null = null
     let clockTimer: ReturnType<typeof setInterval> | undefined
@@ -56,7 +59,7 @@ function DemoDirector({ events, loaded, from, onTime, instant = false }: {
     // the demo has no nav bar or property panel: only the timeline to keep clear of
     const padding = { top: 30, right: 30, bottom: 190, left: 30 }
     // everywhere the scenes happen
-    const overview = boundsOf([], scenes)
+    const overview = boundsOf([], laterScenes.length > 0 ? laterScenes : firstScenes)
 
     const move = (start: () => void) =>
       new Promise<void>((resolve) => {
@@ -80,8 +83,10 @@ function DemoDirector({ events, loaded, from, onTime, instant = false }: {
 
     const play = async () => {
       let first = true
+      let start = from
+      let scenes = firstScenes
       while (!stopped) {
-        onTimeRef.current(from)
+        onTimeRef.current(start)
         setSelected(null)
         // director mode: no opening zoom-out and pause on the first loop
         if (!(instant && first)) {
@@ -90,7 +95,7 @@ function DemoDirector({ events, loaded, from, onTime, instant = false }: {
         }
         first = false
 
-        let time = from
+        let time = start
         for (let i = 0; i < scenes.length; i++) {
           if (stopped) return
           const event = scenes[i]
@@ -124,10 +129,19 @@ function DemoDirector({ events, loaded, from, onTime, instant = false }: {
         }
         popup?.remove()
         setSelected(null)
+        if (to !== undefined && to > time) runClock(time, to, OVERVIEW_MS) // on to the end, then from the start again
         await showOverview()
         await sleep(OVERVIEW_PAUSE_MS * 2)
+        // the next rounds: from the timeline's start
+        start = restart ?? from
+        scenes = laterScenes
       }
     }
+
+    // director mode: the camera is the director's, so the map can't be dragged or zoomed meanwhile
+    const handlers = [map.dragPan, map.scrollZoom, map.boxZoom, map.dragRotate, map.keyboard, map.doubleClickZoom, map.touchZoomRotate]
+    const wasOn = handlers.map((h) => h.isEnabled())
+    if (instant) handlers.forEach((h) => h.disable())
 
     // straight to the first date and place, without waiting for anything
     onTimeRef.current(from)
@@ -151,6 +165,7 @@ function DemoDirector({ events, loaded, from, onTime, instant = false }: {
       map.off('idle', begin)
       clearInterval(clockTimer)
       popup?.remove()
+      if (instant) handlers.forEach((h, i) => wasOn[i] && h.enable())
     }
     // runs once the data is in; later reloads don't restart the film
     // eslint-disable-next-line react-hooks/exhaustive-deps

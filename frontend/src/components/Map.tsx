@@ -608,7 +608,7 @@ function Map() {
                     {/* view mode is always selectable; in edit mode only with the Select tool */}
                     <SelectTool active={(!editMode || drawMode === 'select') && !isPlacingViewshed && !isMeasuring} editMode={editMode} territories={visibleTerritories} />
                     {!isDemo && <MapControls territories={territories} events={events} loaded={eventsLoaded && territoriesLoaded} />}
-                    {(directorMode || isDemo) && <DemoDirector events={shownEvents} loaded={eventsLoaded && territoriesLoaded} from={isDemo ? demoFrom : min} onTime={handleTimeChange} instant={directorMode} />}
+                    {(directorMode || isDemo) && <DemoDirector events={shownEvents} loaded={eventsLoaded && territoriesLoaded} from={isDemo ? demoFrom : now} to={isDemo ? undefined : max} restart={isDemo ? undefined : min} onTime={handleTimeChange} instant={directorMode} />}
                     {!isDemo && <PropertyPanel
                         map={mapSummary}
                         factions={factions}
