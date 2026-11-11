@@ -6,12 +6,13 @@ import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../store/AuthContext'
 import { navButtonClass } from '../styles/navStyles'
 import NavIcon from './NavIcon'
-import publicIcon from '../assets/icons/visibility-public.svg'
-import privateIcon from '../assets/icons/visibility-private.svg'
+import publicIcon from '../assets/icons/unlock.svg'
+import privateIcon from '../assets/icons/lock.svg'
 import AppLogo from './AppLogo'
 import ConfirmDialog from './ConfirmDialog'
 import CountryChips from './CountryChips'
 import EditCountries from './EditCountries'
+import MonitorsCount from './MonitorsCount'
 
 function Maps() {
     const [maps, setMaps] = useState<MapSummary[]>([])
@@ -100,7 +101,7 @@ function Maps() {
                 )}
 
                 {!loading && !error && maps.length > 0 && (
-                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <ul className="grid gap-4 md:grid-cols-2" /* two columns at most: the action row needs the width */>
                         {maps.map((map) => (
                             <li
                                 key={map.id}
@@ -113,7 +114,7 @@ function Maps() {
                                     className="flex flex-1 flex-col gap-2 p-4 text-left"
                                 >
                                     <h3 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h3>
-                                    <p className="line-clamp-3 text-sm text-gray-400">
+                                    <p className="line-clamp-3 h-[3lh] text-sm text-gray-400">
                                         {map.description || <span className="italic text-gray-600">No description</span>}
                                     </p>
                                     <CountryChips codes={map.countries} limit={3} />
@@ -127,6 +128,7 @@ function Maps() {
                                     >
                                         Open →
                                     </button>
+                                    <MonitorsCount mapId={map.id} />
                                     <button
                                         type="button"
                                         onClick={() => handleDelete(map)}
@@ -144,7 +146,7 @@ function Maps() {
                                     <button
                                         type="button"
                                         onClick={() => setVisibilityMap(map)}
-                                        // open eye = public, closed eye = private; the title says which and what a click does
+                                        // open padlock = public, closed padlock = private; the title says which and what a click does
                                         aria-label={map.visibility === 'PUBLIC' ? 'Public - make private' : 'Private - make public'}
                                         title={map.visibility === 'PUBLIC' ? 'Public - click to make private' : 'Private - click to make public'}
                                         className={`flex items-center gap-2 px-3 py-2 transition-colors ${map.visibility === 'PUBLIC' ? 'text-green-400 hover:bg-green-500/15' : 'text-gray-400 hover:bg-blue-500/15 hover:text-blue-400'}`}
