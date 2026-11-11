@@ -101,7 +101,7 @@ function Map() {
     const [showRelations, setShowRelations] = useState(isDemo)
     // nav bar toggle: every element at once, ignoring the timeline's date. Territories then show their
     // latest shape, so edits made meanwhile are saved as of the present (`editTime` below)
-    const [showAllTime, setShowAllTime] = useState(!isDemo) // opens showing every date
+    const [showAllTime, setShowAllTime] = useState(false) // opens on the timeline, not every date
     // bumped to reload the map's elements from the backend (after a change is discarded)
     const [elementsRevision, setElementsRevision] = useState(0)
     // bumped after every draft status refresh, i.e. after every edit: tells the open publish menu to reload
