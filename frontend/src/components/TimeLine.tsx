@@ -139,11 +139,11 @@ function TimeLine({
         return () => clearTimeout(timer)
     }, [playing, now, max, span, onChange])
 
-    const togglePlay = () => {
-        if (playing) return setPlaying(false)
-        if (now >= max) onChange(view.start) // at the end: play again from the start of the view
-        setPlaying(true)
-    }
+    // const togglePlay = () => {
+    //     if (playing) return setPlaying(false)
+    //     if (now >= max) onChange(view.start) // at the end: play again from the start of the view
+    //     setPlaying(true)
+    // }
 
     // dragging the tick strip (below the slider's track) moves the zoomed window, like dragging a map
     const zoomed = span < max - min
