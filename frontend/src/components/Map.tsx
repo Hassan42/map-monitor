@@ -98,7 +98,7 @@ function Map() {
     const [showTopo, setShowTopo] = useState<boolean | null>(true)
     const [showTerrain, setShowTerrain] = useState(isDemo)
     // nav bar toggle: lines between related events that have happened by the timeline's date
-    const [showRelations, setShowRelations] = useState(isDemo)
+    const [showRelations, setShowRelations] = useState(true)
     // nav bar toggle: every element at once, ignoring the timeline's date. Territories then show their
     // latest shape, so edits made meanwhile are saved as of the present (`editTime` below)
     const [showAllTime, setShowAllTime] = useState(false) // opens on the timeline, not every date
