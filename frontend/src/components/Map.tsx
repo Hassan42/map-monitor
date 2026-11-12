@@ -174,11 +174,16 @@ function Map() {
     const min = times.length > 0 ? Math.min(...times) : today - 30 * DAY_MS // nothing dated yet: the last 30 days
     const max = times.length > 0 ? Math.max(...times, min + DAY_MS) : today // the latest element's date; at least a day long
 
+
+
     useEffect(() => {
-        if (!live) return;
-        const timer = setInterval(() => setNow(Date.now()), 60_000)
+        if (!live){
+        setNow(min) 
+        return;}
+        const timer = setInterval(() => setNow(Date.now()), 30_000)
         return () => clearInterval(timer)
-    }, [live])
+    }, [live,times])
+    
     const editingEvent = events.find((e) => e.id === editingEventId)
 
     // only the owner edits; visitors (and other users of a public map) just view the published map
