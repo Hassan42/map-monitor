@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import MapProvider from '../store/MapContext'
 import TerraDrawProvider from '../store/TerraDrawContext'
@@ -176,13 +176,20 @@ function Map() {
 
 
 
+    // open at the first date, once the map's data is in
+    const openedAtMin = useRef(false)
     useEffect(() => {
-        if (!live && !directorMode){
-        setNow(min) 
-        return;}
+        if (isDemo || openedAtMin.current || !(eventsLoaded && territoriesLoaded)) return
+        openedAtMin.current = true
+        setNow(min)
+    }, [isDemo, eventsLoaded, territoriesLoaded, min])
+
+    // Live: follow the real clock
+    useEffect(() => {
+        if (!live) return
         const timer = setInterval(() => setNow(Date.now()), 30_000)
         return () => clearInterval(timer)
-    }, [live,times])
+    }, [live])
     
     const editingEvent = events.find((e) => e.id === editingEventId)
 
