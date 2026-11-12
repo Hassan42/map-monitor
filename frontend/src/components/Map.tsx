@@ -177,7 +177,7 @@ function Map() {
 
 
     useEffect(() => {
-        if (!live){
+        if (!live && !directorMode){
         setNow(min) 
         return;}
         const timer = setInterval(() => setNow(Date.now()), 30_000)
