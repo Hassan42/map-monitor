@@ -64,6 +64,14 @@ public class ChannelWatchService {
         return ChannelWatchResponse.from(channelWatchRepository.save(new ChannelWatch(map, channel)));
     }
 
+    // stop watching a channel: its events already on the map stay
+    public void removeWatch(String firebaseUid, Long mapId, Long watchId) {
+        mapService.getOwnedMap(firebaseUid, mapId); // owner only
+        ChannelWatch watch = channelWatchRepository.findByIdAndMapId(watchId, mapId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Watch not found"));
+        channelWatchRepository.delete(watch);
+    }
+
     // "https://t.me/s/name", "t.me/name", "@name" or "name" -> "name"; null when it isn't a channel name
     private String channelName(String input) {
         if (input == null) return null;

@@ -31,4 +31,10 @@ public class ChannelWatchController {
         String uid = (String) authentication.getPrincipal();
         return channelWatchService.addWatch(uid, mapId, request.getChannel());
     }
+
+    @DeleteMapping("/{watchId}")
+    public void removeWatch(Authentication authentication, @PathVariable Long mapId, @PathVariable Long watchId) {
+        String uid = (String) authentication.getPrincipal();
+        channelWatchService.removeWatch(uid, mapId, watchId);
+    }
 }

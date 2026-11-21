@@ -18,3 +18,8 @@ export function addChannelWatch(mapId: string, channel: string): Promise<Channel
     body: JSON.stringify({ channel }),
   })
 }
+
+// stop watching; events it already added stay on the map
+export function removeChannelWatch(mapId: string, watchId: number): Promise<void> {
+  return apiFetch(`/api/maps/${mapId}/channels/${watchId}`, { method: 'DELETE' })
+}

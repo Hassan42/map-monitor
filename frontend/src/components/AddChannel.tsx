@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { addChannelWatch, getChannelWatches } from '../api/channels'
+import { addChannelWatch, getChannelWatches, removeChannelWatch } from '../api/channels'
 import type { ChannelWatch } from '../api/channels'
 import { formOverlayClass, formClass, formTitleClass, formFieldClass, formInputClass, formPrimaryButtonClass, formSecondaryButtonClass, formErrorClass } from '../styles/formStyles'
 
@@ -15,6 +15,16 @@ function AddChannel({ mapId, onClose }: { mapId: string; onClose: () => void }) 
   useEffect(() => {
     getChannelWatches(mapId).then(setWatches).catch(() => {})
   }, [mapId])
+
+  const handleRemove = async (watch: ChannelWatch) => {
+    setError('')
+    try {
+      await removeChannelWatch(mapId, watch.id)
+      setWatches((prev) => prev.filter((w) => w.id !== watch.id))
+    } catch {
+      setError(`Could not stop watching @${watch.channel}`)
+    }
+  }
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault()
@@ -60,8 +70,16 @@ function AddChannel({ mapId, onClose }: { mapId: string; onClose: () => void }) 
             <span>Watching:</span>
             <ul className="flex flex-col gap-1">
               {watches.map((w) => (
-                <li key={w.id} className="text-gray-200">
-                  @{w.channel} {!w.active && <span className="text-xs text-gray-500">(paused)</span>}
+                <li key={w.id} className="flex items-center justify-between gap-2 text-gray-200">
+                  <span>@{w.channel} {!w.active && <span className="text-xs text-gray-500">(paused)</span>}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(w)}
+                    title={`Stop watching @${w.channel}; its events already on the map stay`}
+                    className="px-2 py-0.5 text-xs text-gray-400 transition-colors hover:bg-red-500/15 hover:text-red-400"
+                  >
+                    Remove
+                  </button>
                 </li>
               ))}
             </ul>
