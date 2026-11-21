@@ -61,6 +61,8 @@ export type EventCategory =
   | 'ELECTION'
   | 'ATTACK'
   | 'CAPTURE'
+  | 'PERSONNEL_CAPTURED'
+  | 'RETREAT'
   | 'MARITIME_ATTACK'
   | 'PLANE_CRASH'
   | 'EXPLOSION'

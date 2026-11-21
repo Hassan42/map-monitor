@@ -33,6 +33,8 @@ import propertyDestructionIcon from '../assets/markers/property_destruction.svg'
 import stormIcon from '../assets/markers/storm.svg'
 import earthquakeIcon from '../assets/markers/earthquake.svg'
 import otherIcon from '../assets/markers/other_marker.svg'
+import personnelCapturedIcon from '../assets/markers/personnel_captured.svg'
+import retreatIcon from '../assets/markers/retreat.svg'
 
 // every backend category -> how it's shown on the map and in the UI. Record<EventCategory, ...>
 // makes the build fail if a category is added to the type but forgotten here.
@@ -43,6 +45,8 @@ export const EVENT_CATEGORIES: Record<EventCategory, { label: string; icon: stri
   ELECTION: { label: 'Election', icon: electionIcon },
   ATTACK: { label: 'Attack', icon: attackIcon },
   CAPTURE: { label: 'Capture', icon: flagIcon },
+  PERSONNEL_CAPTURED: { label: 'Military personnel captured', icon: personnelCapturedIcon },
+  RETREAT: { label: 'Failed defence/retreat', icon: retreatIcon },
   MARITIME_ATTACK: { label: 'Maritime attack', icon: maritimeAttackIcon },
   PLANE_CRASH: { label: 'Plane crash', icon: planeCrashIcon },
   EXPLOSION: { label: 'Explosion', icon: explosionIcon },
@@ -79,7 +83,7 @@ export const EVENT_CATEGORY_LIST = Object.keys(EVENT_CATEGORIES) as EventCategor
 // how the category picker groups them; the satisfies check fails the build if one is in no group
 export const EVENT_CATEGORY_GROUPS = [
   { label: 'General', categories: ['DEATH', 'ECONOMIC_DEVELOPMENT', 'ELECTION', 'OTHER'] },
-  { label: 'Battles', categories: ['ATTACK', 'CAPTURE', 'MARITIME_ATTACK', 'PLANE_CRASH'] },
+  { label: 'Battles', categories: ['ATTACK', 'CAPTURE', 'PERSONNEL_CAPTURED', 'RETREAT', 'MARITIME_ATTACK', 'PLANE_CRASH'] },
   {
     label: 'Explosions/remote violence',
     categories: ['EXPLOSION', 'AIR_STRIKE', 'CHEMICAL_WEAPON', 'DRONE_ATTACK', 'ONE_WAY_DRONE', 'UAV_PRESENCE', 'ROCKET_LAUNCH', 'GRENADE', 'IED', 'SHELLING_ARTILLERY_MISSILE_ATTACK'],

@@ -7,6 +7,8 @@ public enum EventCategory {
     // battles
     ATTACK,
     CAPTURE,
+    PERSONNEL_CAPTURED,
+    RETREAT,
     MARITIME_ATTACK,
     PLANE_CRASH,
     // explosions / remote violence
