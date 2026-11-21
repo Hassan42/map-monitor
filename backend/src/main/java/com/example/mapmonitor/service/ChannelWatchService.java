@@ -205,7 +205,7 @@ public class ChannelWatchService {
         req.setTimestamp(time);
         req.setCategory(e.category());
         req.setFactionId(e.factionId());
-        req.setSourceURL(post.url());
+        // req.setSourceURL(post.url()); // left empty for now
         req.setOngoing(false);
         req.setRelations(List.of());
         return req;
