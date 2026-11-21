@@ -10,6 +10,7 @@ import publicIcon from '../assets/icons/unlock.svg'
 import privateIcon from '../assets/icons/lock.svg'
 import AppLogo from './AppLogo'
 import ConfirmDialog from './ConfirmDialog'
+import AiWatchTag from './AiWatchTag'
 import CountryChips from './CountryChips'
 import EditCountries from './EditCountries'
 import MonitorsCount from './MonitorsCount'
@@ -113,7 +114,10 @@ function Maps() {
                                     onClick={() => handleOpen(map.id)}
                                     className="flex flex-1 flex-col gap-2 p-4 text-left"
                                 >
-                                    <h3 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h3>
+                                        {map.aiWatched && <AiWatchTag />}
+                                    </div>
                                     <p className="line-clamp-3 h-[3lh] text-sm text-gray-400">
                                         {map.description || <span className="italic text-gray-600">No description</span>}
                                     </p>

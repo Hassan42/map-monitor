@@ -13,8 +13,9 @@ public class MapSummaryResponse {
     private final List<String> countries; // ISO 3166 two-letter codes
     private final String creator; // the owner's username
     private final boolean owned; // whether the caller owns it: only the owner may edit (visitors just view)
+    private final boolean aiWatched; // an admin's Telegram channel watch adds its events (AI): a tag on the card
 
-    private MapSummaryResponse(Map map, String viewerUid) {
+    private MapSummaryResponse(Map map, String viewerUid, boolean aiWatched) {
         this.id = map.getId();
         this.title = map.getTitle();
         this.description = map.getDescription();
@@ -22,10 +23,11 @@ public class MapSummaryResponse {
         this.countries = List.copyOf(map.getCountries());
         this.creator = map.getUser().getUsername();
         this.owned = map.getUser().getFirebaseUid().equals(viewerUid); // viewerUid is null for a visitor
+        this.aiWatched = aiWatched;
     }
 
-    public static MapSummaryResponse from(Map map, String viewerUid) {
-        return new MapSummaryResponse(map, viewerUid);
+    public static MapSummaryResponse from(Map map, String viewerUid, boolean aiWatched) {
+        return new MapSummaryResponse(map, viewerUid, aiWatched);
     }
 
     public Long getId() {
@@ -54,5 +56,9 @@ public class MapSummaryResponse {
 
     public boolean isOwned() {
         return owned;
+    }
+
+    public boolean isAiWatched() {
+        return aiWatched;
     }
 }

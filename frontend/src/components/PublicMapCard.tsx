@@ -7,6 +7,7 @@ import type { Monitors } from '../api/map'
 import { useEffect, useState } from 'react'
 import { formErrorClass } from '../styles/formStyles'
 import NavIcon from './NavIcon'
+import AiWatchTag from './AiWatchTag'
 import { useAuth } from '../store/AuthContext'
 import eyeIcon from '../assets/icons/visibility-public.svg'
 
@@ -35,7 +36,10 @@ function PublicMapCard({ map }: { map: MapSummary }) {
     return (
         <li className="group bg-neutral-900 ring-1 ring-white/10 transition-colors hover:ring-accent-400 flex h-full flex-col gap-2 p-4">
             <Link to={`/maps/${map.id}`} className="flex flex-1 flex-col gap-2">
-                <h2 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h2>
+                <div className="flex items-center gap-2">
+                    <h2 className="truncate font-semibold text-white group-hover:text-accent-300">{map.title}</h2>
+                    {map.aiWatched && <AiWatchTag />}
+                </div>
                 {/* always 3 lines tall, so every card is the same height */}
                 <p className="line-clamp-3 h-[3lh] text-sm text-gray-400">
                     {map.description || <span className="italic text-gray-600">No description</span>}

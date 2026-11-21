@@ -33,7 +33,7 @@ public class MapController {
     @GetMapping("/{mapId}")
     public MapSummaryResponse getMap(Authentication authentication, @PathVariable Long mapId){
         String uid = authentication != null ? (String) authentication.getPrincipal() : null; // null for a visitor
-        return MapSummaryResponse.from(mapService.getReadableMap(uid, mapId), uid);
+        return mapService.toSummary(mapService.getReadableMap(uid, mapId), uid);
     }
 
     @GetMapping

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ChannelWatchRepository extends JpaRepository<ChannelWatch, Long> {
     List<ChannelWatch> findByMapId(Long mapId);
@@ -17,4 +18,8 @@ public interface ChannelWatchRepository extends JpaRepository<ChannelWatch, Long
     List<ChannelWatch> findActiveWithMap();
 
     boolean existsByMapIdAndChannel(Long mapId, String channel);
+
+    // maps with an active channel watch set up by an admin: they get the AI watch tag on their cards
+    @Query("select distinct w.map.id from ChannelWatch w where w.active = true and w.map.user.admin = true")
+    Set<Long> findAiWatchedMapIds();
 }

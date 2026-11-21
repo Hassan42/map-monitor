@@ -36,11 +36,12 @@ public class MapService {
     private final AnnotationRepository annotationRepository;
     private final LayerRepository layerRepository;
     private final MapMonitorRepository mapMonitorRepository;
+    private final ChannelWatchRepository channelWatchRepository;
 
     public MapService(MapRepository mapRepository, UserRepository userRepository, MapVersionRepository mapVersionRepository,
                        FactionRepository factionRepository, EventMarkerRepository eventMarkerRepository,
                        TerritoryRepository territoryRepository, AnnotationRepository annotationRepository,
-                       LayerRepository layerRepository, MapMonitorRepository mapMonitorRepository) {
+                       LayerRepository layerRepository, MapMonitorRepository mapMonitorRepository, ChannelWatchRepository channelWatchRepository) {
         this.mapRepository = mapRepository;
         this.userRepository = userRepository;
         this.mapVersionRepository = mapVersionRepository;
@@ -50,14 +51,25 @@ public class MapService {
         this.annotationRepository = annotationRepository;
         this.layerRepository = layerRepository;
         this.mapMonitorRepository = mapMonitorRepository;
+        this.channelWatchRepository = channelWatchRepository;
+    }
+
+    // the maps whose cards get the AI watch tag (an admin's active Telegram channel watch)
+    public Set<Long> aiWatchedMapIds() {
+        return channelWatchRepository.findAiWatchedMapIds();
+    }
+
+    public MapSummaryResponse toSummary(Map map, String viewerUid) {
+        return MapSummaryResponse.from(map, viewerUid, aiWatchedMapIds().contains(map.getId()));
     }
 
     public List<MapSummaryResponse> getUserMaps(String firebaseUid) {
         User user = userRepository.findByFirebaseUid(firebaseUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        Set<Long> aiWatched = aiWatchedMapIds();
         return mapRepository.findByUserId(user.getId()).stream()
-                .map((map) -> MapSummaryResponse.from(map, firebaseUid))
+                .map((map) -> MapSummaryResponse.from(map, firebaseUid, aiWatched.contains(map.getId())))
                 .toList();
     }
 
@@ -70,8 +82,9 @@ public class MapService {
                 ? mapRepository.findByVisibilityOrderByIdDesc(Visibility.PUBLIC, newest)
                 : mapRepository.findByVisibilityAndCountries(Visibility.PUBLIC, countries, newest);
 
+        Set<Long> aiWatched = aiWatchedMapIds();
         return maps.stream()
-                .map((map) -> MapSummaryResponse.from(map, firebaseUid))
+                .map((map) -> MapSummaryResponse.from(map, firebaseUid, aiWatched.contains(map.getId())))
                 .toList();
     }
 

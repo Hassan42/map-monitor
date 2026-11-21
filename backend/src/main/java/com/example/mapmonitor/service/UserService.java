@@ -45,9 +45,10 @@ public class UserService {
         User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        java.util.Set<Long> aiWatched = mapService.aiWatchedMapIds();
         List<MapSummaryResponse> maps = mapRepository
                 .findByUserIdAndVisibilityOrderByIdDesc(user.getId(), Visibility.PUBLIC).stream()
-                .map((map) -> MapSummaryResponse.from(map, viewerUid))
+                .map((map) -> MapSummaryResponse.from(map, viewerUid, aiWatched.contains(map.getId())))
                 .toList();
 
         return new ProfileResponse(user.getUsername(), user.getDescription(), user.getFirebaseUid().equals(viewerUid),
