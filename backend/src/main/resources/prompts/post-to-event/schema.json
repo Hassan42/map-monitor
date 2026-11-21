@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "kind":          { "type": "string", "enum": ["event", "duplicate", "ignore"] },
+    "reason":        { "type": "string" },
+    "duplicateOfId": { "type": ["integer", "null"] },
+    "event": {
+      "type": ["object", "null"],
+      "properties": {
+        "category":    { "type": "string", "enum": [] },
+        "title":       { "type": "string", "description": "English, short" },
+        "description": { "type": "string", "maxLength": 255 },
+        "placeName":   { "type": "string", "description": "Most specific place, e.g. 'Kharkiv, Ukraine'" },
+        "timestamp":   { "type": "string", "description": "yyyy-MM-dd'T'HH:mm:ss" },
+        "factionId":   { "type": ["integer", "null"] },
+        "confidence":  { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "required": ["category", "title", "description", "placeName", "timestamp", "factionId", "confidence"]
+    }
+  },
+  "required": ["kind", "reason", "duplicateOfId", "event"]
+}

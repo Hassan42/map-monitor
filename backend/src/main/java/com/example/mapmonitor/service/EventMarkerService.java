@@ -10,11 +10,13 @@ import com.example.mapmonitor.model.MapVersion;
 import com.example.mapmonitor.repository.EventMarkerRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -38,6 +40,19 @@ public class EventMarkerService extends MapElementService<EventMarker> {
         MapVersion version = mapService.resolveVersion(firebaseUid, mapId, draft);
 
         return getVisible(version).stream()
+                .map(EventMarkerSummaryResponse::from)
+                .toList();
+    }
+
+    // the map's `limit` latest events (by start time, newest first), as the draft shows them.
+    // Transactional so the events' lazy relations can load (the scheduled job has no open session)
+    @Transactional(readOnly = true)
+    public List<EventMarkerSummaryResponse> getRecentEvents(String firebaseUid, Long mapId, int limit) {
+        MapVersion version = mapService.resolveVersion(firebaseUid, mapId, true);
+
+        return getVisible(version).stream()
+                .sorted(Comparator.comparing(EventMarker::getTimestamp, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(limit)
                 .map(EventMarkerSummaryResponse::from)
                 .toList();
     }

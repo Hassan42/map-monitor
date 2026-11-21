@@ -1,0 +1,14 @@
+<post date="{{post_date}}">
+{{post_text}}
+</post>
+
+<countries>{{countries}}</countries>
+
+<factions>
+{{factions}}
+</factions>
+
+<recent_events>
+id | title | place | time
+{{recent_events}}
+</recent_events>

@@ -6,6 +6,8 @@ import TerritoryLayer from './TerritoryLayer'
 import FactionForm from './FactionForm'
 import ConfirmDialog from './ConfirmDialog'
 import AddLayer from './AddLayer'
+import AddChannel from './AddChannel'
+import { useAuth } from '../store/AuthContext'
 import AddEvent from './AddEvent'
 import EditEvent from './EditEvent'
 import EventMarkers from './EventMarkers'
@@ -34,6 +36,7 @@ import allTimeIcon from '../assets/icons/all-time.svg'
 import liveIcon from '../assets/icons/live.svg'
 import addFactionIcon from '../assets/icons/add-faction.svg'
 import addLayerIcon from '../assets/icons/add-layer.svg'
+import addChannelIcon from '../assets/icons/add-channel.svg'
 import addEventIcon from '../assets/icons/add-event.svg'
 import addAnnotationIcon from '../assets/icons/add-annotation.svg'
 import addTerritoryIcon from '../assets/icons/add-territory.svg'
@@ -61,6 +64,7 @@ import type { FillLevel } from '../map/boundariesFetch'
 import PlaceSearch from './PlaceFinder'
 
 function Map() {
+    const { isAdmin } = useAuth() // the Telegram channel watch is for admins only
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const [factions, setFactions] = useState<Faction[]>([])
@@ -75,6 +79,7 @@ function Map() {
     const [editingFaction, setEditingFaction] = useState<Faction | null>(null)
     const [deletingFaction, setDeletingFaction] = useState<Faction | null>(null)
     const [showAddLayer, setShowAddLayer] = useState(false)
+    const [showAddChannel, setShowAddChannel] = useState(false)
     // layers switched off in the property panel (null = elements in no layer): their elements leave the map
     const [hiddenLayers, setHiddenLayers] = useState<Set<LayerKey>>(() => new Set())
     const [searchParams] = useSearchParams()
@@ -727,6 +732,18 @@ function Map() {
                         </button>
                     )}
 
+                    {editMode && isAdmin && (
+                        <button
+                            type="button"
+                            aria-label="Watch Telegram channel"
+                            title="Watch a Telegram channel - its news becomes draft events"
+                            onClick={() => setShowAddChannel(true)}
+                            className={navButtonClass}
+                        >
+                            <NavIcon src={addChannelIcon} />
+                        </button>
+                    )}
+
                     {/* pressed while waiting for the map click that places it */}
                     {editMode && (
                         <button
@@ -816,6 +833,7 @@ function Map() {
                             <NavDropdownItem onClick={() => startFill('state')} active={fillLevel === 'state'} disabled={noActors}><NavIcon src={addTerritoryIcon} /> Fill state</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddFaction(true)}><NavIcon src={addFactionIcon} /> Add actor</NavDropdownItem>
                             <NavDropdownItem onClick={() => setShowAddLayer(true)}><NavIcon src={addLayerIcon} /> Add layer</NavDropdownItem>
+                            {isAdmin && <NavDropdownItem onClick={() => setShowAddChannel(true)}><NavIcon src={addChannelIcon} /> Watch channel</NavDropdownItem>}
                             <NavDropdownItem onClick={handleEditClick}>Exit edit mode</NavDropdownItem>
                         </NavDropdown>
                     </div>
@@ -1006,6 +1024,9 @@ function Map() {
             {showAddLayer && (
                 <AddLayer mapId={id} onCreated={handleLayerCreated} onImported={handleLayersImported}
                     onClose={() => setShowAddLayer(false)} />
+            )}
+            {showAddChannel && isAdmin && id && (
+                <AddChannel mapId={id} onClose={() => setShowAddChannel(false)} />
             )}
         </div>
     )
