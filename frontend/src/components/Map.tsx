@@ -181,13 +181,13 @@ function Map() {
 
 
 
-    // open at the first date, once the map's data is in
-    const openedAtMin = useRef(false)
+    // open at the latest date, once the map's data is in
+    const openedAtEnd = useRef(false)
     useEffect(() => {
-        if (isDemo || openedAtMin.current || !(eventsLoaded && territoriesLoaded)) return
-        openedAtMin.current = true
-        setNow(min)
-    }, [isDemo, eventsLoaded, territoriesLoaded, min])
+        if (isDemo || openedAtEnd.current || !(eventsLoaded && territoriesLoaded)) return
+        openedAtEnd.current = true
+        setNow(max)
+    }, [isDemo, eventsLoaded, territoriesLoaded, max])
 
     // Live: follow the real clock
     useEffect(() => {
