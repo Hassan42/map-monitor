@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2">
+  <!-- an all-seeing machine eye: a lens housing, its rim, and a glowing pupil -->
+  <circle cx="12" cy="12" r="10"/>
+  <circle cx="12" cy="12" r="6" stroke-width="1.5"/>
+  <circle cx="12" cy="12" r="2.5" fill="black" stroke="none"/>
+  <circle cx="9.5" cy="9.5" r="0.75" fill="black" stroke="none"/>
+</svg>

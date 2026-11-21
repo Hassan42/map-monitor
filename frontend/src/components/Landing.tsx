@@ -4,6 +4,7 @@ import GoogleSignInButton from './GoogleSignInButton'
 import topoIcon from '../assets/icons/topo.svg'
 import relationsIcon from '../assets/icons/relations.svg'
 import addLayerIcon from '../assets/icons/add-layer.svg'
+import aiWatchIcon from '../assets/icons/ai-watch.svg'
 import NavIcon from './NavIcon'
 
 const DEMO_MAP_ID: string | undefined = import.meta.env.VITE_DEMO_MAP_ID || undefined
@@ -13,6 +14,7 @@ const FEATURES = [
   { icon: topoIcon, title: 'Territories that move', text: 'Drag the timeline and watch fronts advance, pockets form and ground change hands.' },
   { icon: relationsIcon, title: 'Events that connect', text: 'Link events by cause and retaliation, and follow how one led to the next.' },
   { icon: addLayerIcon, title: 'Layers you can share', text: 'Import layers from other public maps, with credit to the author built in.' },
+  { icon: aiWatchIcon, title: 'Agentic monitoring', text: 'Some maps watch Telegram channels: AI reads new posts and adds the events as they happen.' },
 ]
 
 // the public front door: what the app does, with a real map playing. Signed-in users go straight to their maps
