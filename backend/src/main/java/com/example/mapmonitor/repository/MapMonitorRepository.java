@@ -13,6 +13,8 @@ public interface MapMonitorRepository extends JpaRepository<MapMonitor, Long> {
 
     boolean existsByUserFirebaseUidAndMapId(String firebaseUid, Long mapId);
 
+    long deleteByUserIdAndMapId(Long userId, Long mapId);
+
     // ids only: no need to load the maps themselves
     @Query("select m.map.id from MapMonitor m where m.user.id = :userId")
     List<Long> findMapIdsByUserId(Long userId);

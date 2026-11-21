@@ -22,3 +22,7 @@ export function changeDescription(description: string): Promise<{ description: s
 export function monitorMap(mapID : number): Promise<Monitors> {
   return apiFetch('/api/users/monitorMap', {method: 'POST', body: JSON.stringify( mapID )})
 }
+
+export function unmonitorMap(mapID: number): Promise<Monitors> {
+  return apiFetch(`/api/users/monitorMap/${mapID}`, { method: 'DELETE' })
+}

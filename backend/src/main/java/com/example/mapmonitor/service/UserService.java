@@ -107,6 +107,17 @@ public class UserService {
         return new MonitorsResponse(mapMonitorRepository.countByMapId(map.getId()), true);
     }
 
+    // stop monitoring; works even if the map has since gone private. Pressing twice does nothing
+    @Transactional
+    public MonitorsResponse unmonitorMap(String firebaseUid, long mapID) {
+        User user = userRepository.findByFirebaseUid(firebaseUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        mapMonitorRepository.deleteByUserIdAndMapId(user.getId(), mapID);
+
+        return new MonitorsResponse(mapMonitorRepository.countByMapId(mapID), false);
+    }
+
     @Transactional(readOnly = true)
     public List<Long> getMonitoredMapsIDs(String username){
         User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found."));

@@ -59,6 +59,12 @@ public class UserController {
         return userService.monitorMap(uid, mapID);
     }
 
+    @DeleteMapping("/monitorMap/{mapId}")
+    public MonitorsResponse unmonitorMap(Authentication authentication, @PathVariable Long mapId) {
+        String uid = (String) authentication.getPrincipal();
+        return userService.unmonitorMap(uid, mapId);
+    }
+
     @GetMapping ("/me/mapsMonitored")
     public List<Long> mapMonitored(Authentication authentication, String username){
         return userService.getMonitoredMapsIDs(username);

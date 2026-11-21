@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import type { MapSummary } from '../types/types'
 import CountryChips from './CountryChips'
-import { monitorMap } from '../api/user'
+import { monitorMap, unmonitorMap } from '../api/user'
 import {getMonitorsCount} from '../api/map'
 import type { Monitors } from '../api/map'
 import { useEffect, useState } from 'react'
@@ -22,12 +22,13 @@ function PublicMapCard({ map }: { map: MapSummary }) {
         )
     }, [map.id])
 
+    // monitor, or stop monitoring when already monitoring
     const onMonitor = (mapId: number) => {
-        monitorMap(mapId).then(
-            (result) => {
-                setMonitors(result)
-            }
-        ).catch(() => setError("Couldn't monitor this map."))
+        setError(undefined)
+        const monitoring = monitors?.monitoredByMe
+        ;(monitoring ? unmonitorMap(mapId) : monitorMap(mapId))
+            .then(setMonitors)
+            .catch(() => setError(monitoring ? "Couldn't stop monitoring this map." : "Couldn't monitor this map."))
     }
 
 
@@ -46,10 +47,16 @@ function PublicMapCard({ map }: { map: MapSummary }) {
                         <button
                             type="button"
                             onClick={() => onMonitor(Number(map.id))}
-                            disabled={monitors?.monitoredByMe}
-                            className="flex-1 px-4 py-2 text-left transition-colors hover:bg-accent-400/15 hover:text-accent-300 disabled:cursor-default disabled:text-gray-500 disabled:hover:bg-transparent"
+                            title={monitors?.monitoredByMe ? 'Stop monitoring this map' : undefined}
+                            className="group/monitor flex-1 px-4 py-2 text-left transition-colors hover:bg-accent-400/15 hover:text-accent-300"
                         >
-                            {monitors?.monitoredByMe ? 'Monitoring' : '+ Monitor'}
+                            {/* monitoring: says so, and offers to stop on hover */}
+                            {monitors?.monitoredByMe ? (
+                                <>
+                                    <span className="text-gray-400 group-hover/monitor:hidden">✓ Monitoring</span>
+                                    <span className="hidden group-hover/monitor:inline">Unmonitor</span>
+                                </>
+                            ) : '+ Monitor'}
                         </button>
                     )}
                     {monitors && (
