@@ -13,6 +13,7 @@ export const AuthContext = createContext<IAuth>({
   user: auth.currentUser,
   loading: false,
   username: '',
+  isAdmin: false,
   chooseUsername: () => Promise.resolve(),
   signInWithGoogle: () => Promise.resolve(),
   signOut: () => { },
@@ -23,6 +24,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true)
   const [username, setUsername] = useState<string | null>('')
+  const [isAdmin, setIsAdmin] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -50,6 +52,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       .then(() => {
         setCurrentUser(null)
         setUsername('')
+        setIsAdmin(false)
         navigate('/', { replace: true })
       })
       .catch((error) => {
@@ -64,7 +67,9 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthLoading(true) // a new sign in: wait for its username before redirecting
       try {
         setCurrentUser(user)
-        setUsername(user ? (await getMe()).username : null)
+        const me = user ? await getMe() : null
+        setUsername(me ? me.username : null)
+        setIsAdmin(me?.admin ?? false)
       } finally {
         setIsAuthLoading(false) // also when getMe fails, so the app never hangs
       }
@@ -87,6 +92,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const authValues: IAuth = {
     user: currentUser,
     username,
+    isAdmin,
     loading: isLoading,
     chooseUsername,
     signInWithGoogle,

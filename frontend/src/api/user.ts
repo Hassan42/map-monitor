@@ -3,7 +3,7 @@ import apiFetch from './client'
 import type { Monitors } from './map'
 
 
-export function getMe(): Promise<{username: string | null}> {
+export function getMe(): Promise<{ username: string | null; admin: boolean }> {
   return apiFetch('/api/users/me', { method: 'GET' })
 }
 

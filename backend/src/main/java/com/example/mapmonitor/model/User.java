@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.groups.Default;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "users")
@@ -25,6 +27,11 @@ public class User {
     // shown on their profile page; plain text
     @Column(length = 300)
     private String description;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean admin = false;
+
+    public boolean isAdmin() { return admin; }
 
     public String getDescription() {
         return description;

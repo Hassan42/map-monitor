@@ -1,5 +1,7 @@
 package com.example.mapmonitor.security;
 
+import com.example.mapmonitor.model.User;
+import com.example.mapmonitor.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -7,6 +9,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -17,6 +21,12 @@ import java.util.List;
 // runs inside the /api/** security chain. Making it a bean would make Spring Boot
 // also auto-register (duplicate) it as a global servlet filter on /*, blocking static files.
 public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
+
+    private final UserRepository users;
+
+    public FirebaseAuthenticationFilter(UserRepository users) {
+        this.users = users;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -34,7 +44,9 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
             FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(idToken.replace("Bearer ", ""));
             // TODO: We don't implement authorities yet
             //List<GrantedAuthority> authorities = getAuthoritiesFromToken(token);
-            FirebaseAuthenticationToken authToken = new FirebaseAuthenticationToken(idToken, token, List.of());
+            boolean admin = users.findByFirebaseUid(token.getUid()).map(User::isAdmin).orElse(false);
+            List<GrantedAuthority> authorities = admin ? List.of(new SimpleGrantedAuthority("ROLE_ADMIN")) : List.of();
+            FirebaseAuthenticationToken authToken = new FirebaseAuthenticationToken(idToken, token, authorities);
             authToken.setAuthenticated(true);
             SecurityContextHolder.getContext().setAuthentication(authToken);
         } catch (FirebaseAuthException e) {

@@ -4,6 +4,7 @@ export interface IAuth {
   user: User | null;
   loading: boolean;
   username: string | null;
+  isAdmin: boolean; // from /me; only shows admin features, the backend enforces them
   chooseUsername: (username: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => void;

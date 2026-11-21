@@ -1,5 +1,6 @@
 package com.example.mapmonitor.config;
 
+import com.example.mapmonitor.repository.UserRepository;
 import com.example.mapmonitor.security.FirebaseAuthenticationFilter;
 import com.example.mapmonitor.security.RateLimitFilter;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,13 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final UserRepository users;
+
+    public SecurityConfig(UserRepository users) {
+        this.users = users;
+    }
+
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,9 +50,12 @@ public class SecurityConfig {
                                 "/api/maps/{mapId}/annotations",
                                 "/api/maps/{mapId}/layers",
                                 "/api/maps/{mapId}/monitorsCount").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // the Telegram channel watch (AI reads the posts into draft events): admins only
+                        .requestMatchers("/api/maps/{mapId}/channels", "/api/maps/{mapId}/channels/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new FirebaseAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new FirebaseAuthenticationFilter(users), UsernamePasswordAuthenticationFilter.class)
                 // after the Firebase filter, since it needs to know who is signed in
                 .addFilterAfter(new RateLimitFilter(visitorLimit, userLimit), FirebaseAuthenticationFilter.class);
 
