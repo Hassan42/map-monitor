@@ -14,7 +14,7 @@ import shownIcon from '../assets/icons/visibility-public.svg'
 import hiddenIcon from '../assets/icons/visibility-private.svg'
 
 
-type Tab = 'factions' | 'elements'
+type Tab = 'factions' | 'events' | 'areas' // areas: territories and annotations
 
 // a layer's key in the hidden set: its id, or null for "No layer"
 export type LayerKey = number | null
@@ -37,6 +37,8 @@ function territoryStart(t: Territory): number | null {
 const formatDay = (time: number) => new Date(time).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 const formatYear = (time: number) => new Date(time).getFullYear()
 const formatDate = (time: number) => new Date(time).toLocaleDateString(undefined, { dateStyle: 'medium' })
+const formatDateTime = (time: number) =>
+    new Date(time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) // "21 Nov 2026, 14:49"
 
 // one list for every element: events at their start, territories at their first shape, annotations at
 // their start; undated ones (no start: always there) after the dated ones
@@ -72,7 +74,7 @@ function PropertyPanel({
     annotations: Annotation[]
     onFly: (time: number) => void
 }) {
-    const [tab, setTab] = useState<Tab>('elements')
+    const [tab, setTab] = useState<Tab>('events')
     // phones: the panel is a bottom sheet, folded down to its bar until opened
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selected, setSelected] = useSelection()
@@ -115,8 +117,9 @@ function PropertyPanel({
         ...territories.filter(shown).map((t): Entry => ({ type: 'territory', id: t.id, time: territoryStart(t), item: t })),
         ...annotations.filter(shown).map((a): Entry => ({ type: 'annotation', id: a.id, time: a.startTime ? parseServerTime(a.startTime) : null, item: a })),
     ].sort((a, b) => (b.time ?? -Infinity) - (a.time ?? -Infinity)) // newest first; undated last
-    const firstUndated = entries.findIndex((e) => e.time === null)
-    const total = events.length + territories.length + annotations.length
+    // the Events tab is the posts; the Areas tab is what's drawn on the map
+    const eventEntries = entries.filter((e) => e.type === 'event')
+    const areaEntries = entries.filter((e) => e.type !== 'event')
 
     // the parts of a row's detail line that are known, joined by dots
     const detail = (...parts: (string | undefined | null | false)[]) => parts.filter(Boolean).join(' · ')
@@ -132,16 +135,20 @@ function PropertyPanel({
             case 'event': {
                 const e = entry.item
                 const category = categoryOf(e)
+                const faction = factionById.get(e.factionId)
                 return (
-                    <Row
+                    <EventPost
                         selected={isSelected('event', e.id)}
                         time={entry.time}
                         onClick={() => setSelected({ type: 'event', id: e.id })}
                         onDoubleClick={() => flyToEvent(e)}
                         onContextMenu={openMenu(entry)}
-                        icon={<CategoryIcon category={category} color={factionById.get(e.factionId)?.color} />}
+                        icon={<CategoryIcon category={category} color={faction?.color} />}
+                        faction={faction?.name}
+                        factionColor={faction?.color}
+                        category={EVENT_CATEGORIES[category].label}
                         title={e.title || EVENT_CATEGORIES[category].label}
-                        detail={detail(EVENT_CATEGORIES[category].label, factionById.get(e.factionId)?.name, layerName(e.layerId))}
+                        layer={layerName(e.layerId)}
                     />
                 )
             }
@@ -194,6 +201,25 @@ function PropertyPanel({
         }
     }
 
+    // one tab's list, newest first; undated ones last under a "No date" divider
+    const renderList = (list: Entry[], total: number, emptyText: string) => {
+        const firstUndated = list.findIndex((e) => e.time === null)
+        return (
+            <ul className="flex flex-col gap-1.5 text-sm">
+                {total === 0 && <li className="px-2 py-1 text-gray-500">{emptyText}</li>}
+                {total > 0 && list.length === 0 && <li className="px-2 py-1 text-gray-500">Every layer is hidden.</li>}
+                {list.map((entry, i) => (
+                    <li key={`${entry.type}-${entry.id}`}>
+                        {i === firstUndated && (
+                            <p className="mt-2 mb-1 border-t border-neutral-800 px-2 pt-2 text-xs uppercase tracking-wider text-gray-500">No date</p>
+                        )}
+                        {renderEntry(entry)}
+                    </li>
+                ))}
+            </ul>
+        )
+    }
+
     return (
         // desktop: a column on the right under the nav bar. Phones: a sheet across the bottom, 60% of the
         // screen when open, folded down to its 56px bar otherwise (above the timeline, under the nav bar)
@@ -210,7 +236,7 @@ function PropertyPanel({
                 className="flex h-14 shrink-0 items-center gap-2 border-b border-t-2 border-b-neutral-800 border-t-accent-400 px-4 text-left md:hidden"
             >
                 <span className="flex-1 truncate text-lg font-semibold text-white">{map?.title ?? 'Map'}</span>
-                <span className="text-sm text-gray-300">{total} elements</span>
+                <span className="text-sm text-gray-300">{plural(events.length, 'event', 'events')}</span>
                 <span aria-hidden="true" className={`text-base text-accent-300 transition-transform ${sheetOpen ? 'rotate-180' : ''}`}>▲</span>
             </button>
             <div className="p-4 border-b border-neutral-800 max-md:hidden">
@@ -222,13 +248,16 @@ function PropertyPanel({
                 <TabButton active={tab === 'factions'} onClick={() => setTab('factions')}>
                     Actors ({factions.length})
                 </TabButton>
-                <TabButton active={tab === 'elements'} onClick={() => setTab('elements')}>
-                    Elements ({total})
+                <TabButton active={tab === 'events'} onClick={() => setTab('events')}>
+                    Events ({events.length})
+                </TabButton>
+                <TabButton active={tab === 'areas'} onClick={() => setTab('areas')}>
+                    Areas ({territories.length + annotations.length})
                 </TabButton>
             </div>
 
             {/* layers filter the list and the map together: a hidden layer's elements leave both */}
-            {tab === 'elements' && (
+            {tab !== 'factions' && (
                 <div className="flex flex-wrap gap-1 border-b border-neutral-800 p-3">
                     {layers.map((l) => (
                         <LayerChip key={l.id} label={l.title} description={l.description} credit={l.credit} hidden={hiddenLayers.has(l.id)} onClick={() => onToggleLayer(l.id)} />
@@ -294,20 +323,8 @@ function PropertyPanel({
                     </ul>
                 )}
 
-                {tab === 'elements' && (
-                    <ul className="flex flex-col gap-0.5 text-sm">
-                        {total === 0 && <li className="px-2 py-1 text-gray-500">Nothing on the map yet.</li>}
-                        {total > 0 && entries.length === 0 && <li className="px-2 py-1 text-gray-500">Every layer is hidden.</li>}
-                        {entries.map((entry, i) => (
-                            <li key={`${entry.type}-${entry.id}`}>
-                                {i === firstUndated && (
-                                    <p className="mt-2 mb-1 border-t border-neutral-800 px-2 pt-2 text-xs uppercase tracking-wider text-gray-500">No date</p>
-                                )}
-                                {renderEntry(entry)}
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                {tab === 'events' && renderList(eventEntries, events.length, 'No events yet.')}
+                {tab === 'areas' && renderList(areaEntries, territories.length + annotations.length, 'No territories or annotations yet.')}
             </div>
         </div>
     )
@@ -369,6 +386,67 @@ function LayerChip({ label, description, credit, hidden, onClick }: { label: str
 }
 
 // one element: date on the left (day, year under it), icon, then a bold title over a gray detail line
+// an event in the elements list, shown like a post: who and what with the date and time, the title,
+// and its layer. Same clicks as a Row: select, double-click to fly to it, right-click menu
+function EventPost({
+    selected,
+    time,
+    onClick,
+    onDoubleClick,
+    onContextMenu,
+    icon,
+    faction,
+    factionColor,
+    category,
+    title,
+    layer,
+}: {
+    selected: boolean
+    time: number | null
+    onClick: () => void
+    onDoubleClick: () => void
+    onContextMenu: (x: number, y: number) => void // at the pointer
+    icon: ReactNode
+    faction?: string
+    factionColor?: string
+    category: string
+    title: string
+    layer?: string | null
+}) {
+    // touch has no right-click: holding a finger on the post opens the same menu
+    const longPress = useLongPress(onContextMenu)
+    return (
+        <article
+            {...longPress}
+            aria-current={selected || undefined}
+            title="Double-click to show on map"
+            onClick={onClick}
+            onDoubleClick={onDoubleClick}
+            onContextMenu={(e) => {
+                e.preventDefault() // no browser menu
+                onContextMenu(e.clientX, e.clientY)
+            }}
+            className={`flex cursor-pointer select-none flex-col gap-1.5 p-3 ring-1 ring-inset transition-colors ${selected
+                ? 'bg-accent-400/10 ring-accent-400/60'
+                : 'bg-neutral-900 ring-white/10 hover:bg-white/5'}`}
+        >
+            {/* who and what, and when */}
+            <header className="flex items-center gap-2 text-xs">
+                <span className="flex w-5 shrink-0 justify-center">{icon}</span>
+                <span className="min-w-0 flex-1 truncate">
+                    {faction && <span className="font-medium" style={{ color: factionColor }}>{faction}</span>}
+                    <span className="text-gray-500">{faction ? ' · ' : ''}{category}</span>
+                </span>
+                {time !== null && <time className="shrink-0 tabular-nums text-gray-400">{formatDateTime(time)}</time>}
+            </header>
+
+            <h3 className="font-semibold leading-snug text-white">{title}</h3>
+
+            {layer && <footer className="text-xs text-gray-500">{layer}</footer>}
+        </article>
+    )
+}
+
 function Row({
     selected,
     time,
