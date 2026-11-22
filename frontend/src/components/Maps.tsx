@@ -63,19 +63,20 @@ function Maps() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-gray-300">
+        <div className="min-h-dvh bg-neutral-950 text-gray-300">
             {/* same bar as the map view */}
-            <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none">
-                <span className="px-2"><AppLogo /></span>
-                <Link to={`/users/${username}`} className="px-2 text-sm hover:text-accent-300 hover:underline">{username}</Link>
+            <nav className="sticky top-0 z-50 h-14 flex items-center gap-2 bg-neutral-900 px-3 select-none max-md:gap-1 max-md:px-1">
+                {/* phones: only the logo icon, and a long username shortens with "…", so the buttons fit */}
+                <span className="px-2 max-md:px-1"><AppLogo compact /></span>
+                <Link to={`/users/${username}`} className="min-w-0 truncate px-2 text-sm hover:text-accent-300 hover:underline">{username}</Link>
                 <Link to="/explore" className={`${navButtonClass} ml-auto`}>
                     Explore
                 </Link>
                 <button type="button" onClick={() => setShowAddMap(true)} className={navButtonClass}>
-                    + New Map
+                    + New<span className="max-md:hidden"> Map</span>
                 </button>
                 <button type="button" onClick={signOut} className={navButtonClass}>
-                    Sign Out
+                    Sign out
                 </button>
             </nav>
 

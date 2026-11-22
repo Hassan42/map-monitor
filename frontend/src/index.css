@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* under every page: phones show it when the address bar hides or you over-scroll */
+html,
+body {
+  background: var(--color-neutral-950);
+}
+
 /* animate-heartbeat: double "thump" then rest, used on the Publish button's unpublished-changes square */
 @theme {
   /* app surfaces: charcoal gray instead of Tailwind's near-black neutrals. Every bg-neutral-* /
@@ -149,4 +155,44 @@
   .maplibregl-control-container .maplibregl-ctrl-bottom-left {
     bottom: 48px;
   }
+}
+
+/* instant tooltips: a button's data-tip shows under it right away on hover or keyboard focus (the native
+   title tooltip takes about a second). Not while its menu is open */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: max-content;
+  max-width: 16rem;
+  padding: 4px 8px;
+  background: var(--color-neutral-800);
+  color: var(--color-gray-200);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 4px 12px rgb(0 0 0 / 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+}
+[data-tip][aria-expanded='true']::after {
+  display: none;
+}
+[data-tip-end]::after {
+  left: auto;
+  right: 0;
+  transform: none;
 }

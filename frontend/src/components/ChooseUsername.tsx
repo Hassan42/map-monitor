@@ -32,7 +32,7 @@ function ChooseUsername() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-neutral-950 px-4 text-gray-300">
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-neutral-950 px-4 text-gray-300">
             <AppLogo />
             <form onSubmit={handleSubmit} className={formClass}>
                 <h1 className={formTitleClass}>Choose a username</h1>

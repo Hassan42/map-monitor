@@ -66,7 +66,7 @@ function Profile() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-gray-300">
+        <div className="min-h-dvh bg-neutral-950 text-gray-300">
             <nav className="sticky top-0 z-50 flex h-14 items-center justify-between gap-2 bg-neutral-900 px-3 select-none">
                 <span className="px-2"><AppLogo /></span>
                 {user ? <Link to="/maps" className={navButtonClass}>Your Maps</Link> : <GoogleSignInButton label="Sign in" />}
