@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- a clock with an arrow circling it: moving through time on the timeline -->
+  <path d="M3 12A9 9 0 1 0 5.64 5.64"/>
+  <path d="M5.64 1.64V5.64H9.64"/>
+  <path d="M12 7.5V12L15 14"/>
+</svg>

@@ -38,7 +38,7 @@ function NavDropdown({ label, ariaLabel, title, active = false, align = 'left', 
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label={ariaLabel}
-                title={title}
+                data-tip={title} // instant tooltip (index.css), not the slow native title
                 onClick={() => setOpen((o) => !o)}
                 className={`${navButtonClass} flex items-center gap-1 ${open || active ? navButtonActiveClass : ''}`}
             >

@@ -18,7 +18,7 @@ const SNAP_PX = 8
 // from 5px to width - 5px, not 0 to 100%: ticks go on that same track so they line up with it
 const THUMB_PX = 14
 // the square keys left of the bar (Play, Direct, ×2): raised when off, solid accent and pressed in when on
-const keyClass = (on: boolean) => `flex shrink-0 items-center justify-center transition-[color,background-color,box-shadow,transform] disabled:opacity-40 ${on
+const keyClass = (on: boolean) => `flex shrink-0 items-center justify-center gap-1 transition-[color,background-color,box-shadow,transform] disabled:opacity-40 ${on
     ? 'bg-accent-400 text-neutral-900 translate-y-px shadow-[inset_0_2px_5px_rgba(0,0,0,0.45)]'
     : 'bg-neutral-800 text-gray-200 shadow-md ring-1 ring-inset ring-white/15 enabled:hover:-translate-y-px enabled:hover:text-accent-300 enabled:hover:shadow-lg enabled:hover:ring-accent-400/60'}`
 
@@ -195,7 +195,7 @@ function TimeLine({
         // screen, just above the property sheet's bar
         <div
             ref={panelRef}
-            className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 ${demo ? 'left-1/2' : 'left-[calc((100%-24rem)/2)]'}
+            className={`fixed bottom-6 z-40 flex -translate-x-1/2 items-center gap-4 bg-neutral-900 px-5 py-4 text-sm text-gray-300 shadow-xl ring-1 ring-white/10 ${demo ? 'left-1/2' : 'left-[calc((100%-24rem)/2)] md:max-lg:left-2 md:max-lg:right-[24.5rem] md:max-lg:translate-x-0'}
                 max-md:inset-x-2 max-md:translate-x-0 max-md:gap-1 max-md:px-2 ${demo ? 'max-md:bottom-9 max-md:py-1' : 'max-md:bottom-16 max-md:py-4'}`}
         >
             {/* Play and Direct side by side, ×2 under them */}
@@ -206,39 +206,41 @@ function TimeLine({
                 onClick={togglePlay}
                 disabled={directing} // the director runs the clock
                 aria-label={playing ? 'Pause' : 'Play through time'}
-                title={playing ? 'Pause' : 'Play through time'}
-                className={`${keyClass(playing)} h-14 w-14`}
+                data-tip={directing ? 'Stop directing to play' : playing ? 'Pause' : 'Play through time'}
+                className={`${keyClass(playing)} h-14 w-14 flex-col disabled:cursor-not-allowed`}
             >
                 {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
                 {playing ? (
-                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <rect x="2" y="1" width="3" height="10" />
                         <rect x="7" y="1" width="3" height="10" />
                     </svg>
                 ) : (
-                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <path d="M3 1L11 6L3 11Z" />
                     </svg>
                 )}
+                <span className="text-[11px] font-medium leading-none">{playing ? 'Pause' : 'Play'}</span>
             </button>
 
             <button
                 type="button"
                 onClick={() => { onDirectorMode(); setPlaying(false); setDirecting(!directing);}}
-                aria-label={'Director Mode'}
-                title={'Direct'}
-                className={`${keyClass(directing)} h-14 w-14`}
+                aria-label="Director mode"
+                aria-pressed={directing}
+                data-tip={directing ? 'Stop directing' : 'Direct - a guided tour of the events, from the date shown'}
+                className={`${keyClass(directing)} h-14 w-14 flex-col`}
             >
                 {/* square, pixel-style icons drawn in currentColor, like the nav icons */}
                 {directing ? (
                     // clapper open
-                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <path d="M1 3.6L10.2 0.6L10.8 2.5L1.6 5.5Z" />
                         <rect x="1" y="6" width="10" height="5" />
                     </svg>
                 ) : (
                     // clapper closed: striped bar on top of the board
-                    <svg width="26" height="26" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
                         <rect x="1" y="2" width="2" height="2" />
                         <rect x="4" y="2" width="2" height="2" />
                         <rect x="7" y="2" width="2" height="2" />
@@ -246,6 +248,7 @@ function TimeLine({
                         <rect x="1" y="5" width="10" height="6" />
                     </svg>
                 )}
+                <span className="text-[11px] font-medium leading-none">{directing ? 'Stop' : 'Direct'}</span>
             </button>
             </div>
 
@@ -253,12 +256,12 @@ function TimeLine({
                 type="button"
                 onClick={() => onSpeedChange?.(speed === 2 ? 1 : 2)}
                 disabled={directing} // only for Play
-                aria-pressed={speed === 2}
-                aria-label="Double speed"
-                title={speed === 2 ? 'Normal speed' : 'Double speed'}
-                className={`${keyClass(speed === 2)} h-6 w-full text-xs font-semibold ${!onSpeedChange ? 'hidden' : ''}`}
+                aria-label={`Play speed: ${speed}×`}
+                // says the current speed (not lit like an on/off key); a click switches to the other one
+                data-tip={directing ? 'Stop directing to change speed' : speed === 2 ? 'Back to normal speed' : 'Play twice as fast'}
+                className={`${keyClass(false)} h-6 w-full text-xs disabled:cursor-not-allowed ${!onSpeedChange ? 'hidden' : ''}`}
             >
-                ×2
+                Speed <span className={`font-semibold tabular-nums ${speed === 2 ? 'text-accent-300' : ''}`}>{speed}×</span>
             </button>
             </div>
 
@@ -268,7 +271,7 @@ function TimeLine({
                 ref={barRef}
                 title={directing ? 'Locked while directing' : 'Scroll to zoom; drag the ticks or Shift+scroll to move'}
                 // locked while directing: the director moves the date, so no dragging or jumping
-                className={`${directing ? 'pointer-events-none' : ''} relative h-[82px] ${demo ? 'max-md:h-[52px] w-[min(52rem,calc(100vw-10rem))]' : 'w-[min(52rem,calc(100vw-30rem))]'} overflow-hidden max-md:w-auto max-md:min-w-0 max-md:flex-1`}
+                className={`${directing ? 'pointer-events-none' : ''} relative h-[82px] ${demo ? 'max-md:h-[52px] w-[min(52rem,calc(100vw-10rem))]' : 'w-[min(52rem,calc(100vw-43rem))] md:max-lg:w-auto md:max-lg:min-w-0 md:max-lg:flex-1'} overflow-hidden max-md:w-auto max-md:min-w-0 max-md:flex-1`}
             >
                 {/* the strip below the slider's track: drag it to move the zoomed window */}
                 <div

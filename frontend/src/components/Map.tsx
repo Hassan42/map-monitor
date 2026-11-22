@@ -22,6 +22,7 @@ import MapControls from './MapControls'
 import NavDropdown, { NavDropdownItem } from './NavDropDown'
 import { navButtonActiveClass, navButtonClass } from '../styles/navStyles'
 import NavIcon from './NavIcon'
+import NavLabeledIcon from './NavLabeledIcon'
 import handIcon from '../assets/icons/hand.svg'
 import cursorIcon from '../assets/icons/cursor.svg'
 import relationsIcon from '../assets/icons/relations.svg'
@@ -33,6 +34,7 @@ import rulerIcon from '../assets/icons/ruler.svg'
 import cameraIcon from '../assets/icons/camera.svg'
 import closeIcon from '../assets/icons/close.svg'
 import allTimeIcon from '../assets/icons/all-time.svg'
+import timelineIcon from '../assets/icons/timeline.svg'
 import liveIcon from '../assets/icons/live.svg'
 import addFactionIcon from '../assets/icons/add-faction.svg'
 import addLayerIcon from '../assets/icons/add-layer.svg'
@@ -62,6 +64,13 @@ import { activeAt, parseServerTime } from '../map/eventTime'
 import { DAY_MS } from '../map/eventTime'
 import type { FillLevel } from '../map/boundariesFetch'
 import PlaceSearch from './PlaceFinder'
+
+type TimeMode = 'timeline' | 'live' | 'allTime'
+const TIME_MODES: { mode: TimeMode; label: string; icon: string; tip: string }[] = [
+    { mode: 'timeline', label: 'Timeline', icon: timelineIcon, tip: 'Timeline - pick a date on the bar at the bottom' },
+    { mode: 'live', label: 'Live', icon: liveIcon, tip: 'Live - show the present, following the clock' },
+    { mode: 'allTime', label: 'All time', icon: allTimeIcon, tip: 'All time - show everything on the map, regardless of date' },
+]
 
 function Map() {
     const { isAdmin } = useAuth() // the Telegram channel watch is for admins only
@@ -435,16 +444,22 @@ function Map() {
 
     // nav bar Live button: on = follow the real clock (timeline hidden); off = show the timeline to
     // pick a date, starting from where the clock is now
-    const handleLiveToggle = () => {
-        if (live) {
+    // which dates the map shows: one of three modes. Timeline = the date picked on the bar at the bottom;
+    // Live = the present, following the clock; All time = everything at once. Leaving the timeline stops
+    // the director, which runs on it
+    const timeMode: TimeMode = showAllTime ? 'allTime' : live ? 'live' : 'timeline'
+    const setTimeMode = (mode: TimeMode) => {
+        if (mode === timeMode) return
+        if (mode !== 'timeline') setDirectorMode(false)
+        setShowAllTime(mode === 'allTime')
+        if (mode === 'live') {
+            setLive(true)
+            setNow(() => Date.now())
+        } else if (live) {
             setLive(false)
-            // the timeline opens at the present, unless the map's dates end earlier (e.g. a 2006 map):
-            // then at its last date, so the handle and the date shown are on the bar
+            // like leaving Live before: the present, unless the map's dates end earlier
             setNow((time) => Math.min(Math.max(time, min), max))
-            return
         }
-        setLive(true)
-        setNow(Date.now())
     }
 
     // the edit tools, used by the desktop buttons and the phone menus alike. Pan = only move the map
@@ -666,8 +681,9 @@ function Map() {
                 </div>
             )}
 
+            {/* below lg the nav uses its compact form (menus instead of rows of buttons): its full rows only fit from lg up */}
             {!isDemo && <nav className="fixed top-0 left-0 right-0 z-50 h-18 [&_.nav-icon]:h-6 [&_.nav-icon]:w-6 flex items-center gap-1 md:gap-2 bg-neutral-900 text-gray-300 text-base px-1 md:px-3 select-none">
-                <div className="contents max-md:hidden">
+                <div className="contents max-lg:hidden">
                     {canEdit && (
                         <button
                             type="button"
@@ -688,61 +704,27 @@ function Map() {
                             <button
                                 type="button"
                                 aria-label="Pan"
-                                title="Pan - drag to move the map"
+                                data-tip="Pan - drag to move the map"
                                 aria-pressed={isPanning}
                                 onClick={pickPan}
                                 className={`${navButtonClass} ${isPanning ? navButtonActiveClass : ''}`}
                             >
-                                <NavIcon src={handIcon} />
+                                <NavLabeledIcon src={handIcon} label="Pan" />
                             </button>
                             <button
                                 type="button"
                                 aria-label="Select"
-                                title="Select - click territories and events"
+                                data-tip="Select - click territories and events"
                                 aria-pressed={drawMode === 'select'}
                                 onClick={pickSelect}
                                 className={`${navButtonClass} ${drawMode === 'select' ? navButtonActiveClass : ''}`}
                             >
-                                <NavIcon src={cursorIcon} />
+                                <NavLabeledIcon src={cursorIcon} label="Select" />
                             </button>
                         </>
                     )}
 
-                    {editMode && (
-                        <button
-                            type="button"
-                            aria-label="Add actor"
-                            title="Add actor"
-                            onClick={() => setShowAddFaction(true)}
-                            className={navButtonClass}
-                        >
-                            <NavIcon src={addFactionIcon} />
-                        </button>
-                    )}
-
-                    {editMode && (
-                        <button
-                            type="button"
-                            aria-label="Add layer"
-                            title="Add layer - group events, territories and annotations"
-                            onClick={() => setShowAddLayer(true)}
-                            className={navButtonClass}
-                        >
-                            <NavIcon src={addLayerIcon} />
-                        </button>
-                    )}
-
-                    {editMode && isAdmin && (
-                        <button
-                            type="button"
-                            aria-label="Watch Telegram channel"
-                            title="Watch a Telegram channel - its news becomes draft events"
-                            onClick={() => setShowAddChannel(true)}
-                            className={navButtonClass}
-                        >
-                            <NavIcon src={addChannelIcon} />
-                        </button>
-                    )}
+                    {editMode && <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15" />}
 
                     {/* pressed while waiting for the map click that places it */}
                     {editMode && (
@@ -750,12 +732,12 @@ function Map() {
                             type="button"
                             aria-label="Add event"
                             aria-pressed={isPlacingEvent}
-                            title={noActors ? 'Add an actor first' : isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
+                            data-tip={noActors ? 'Add an actor first' : isPlacingEvent ? 'Add event - click on the map to place it' : 'Add event'}
                             disabled={noActors}
                             onClick={startAddEvent}
                             className={`${navButtonClass} ${isPlacingEvent ? navButtonActiveClass : ''} ${noActors ? needsActorClass : ''}`}
                         >
-                            <NavIcon src={addEventIcon} />
+                            <NavLabeledIcon src={addEventIcon} label="Event" />
                         </button>
                     )}
 
@@ -766,14 +748,14 @@ function Map() {
                             type="button"
                             disabled
                             aria-label="Add annotation"
-                            title="Add an actor first"
+                            data-tip="Add an actor first"
                             className={`${navButtonClass} ${needsActorClass}`}
                         >
-                            <NavIcon src={addAnnotationIcon} />
+                            <NavLabeledIcon src={addAnnotationIcon} label="Annotation" />
                         </button>
                     ) : (
                         <NavDropdown
-                            label={<NavIcon src={addAnnotationIcon} />}
+                            label={<NavLabeledIcon src={addAnnotationIcon} label="Annotation" />}
                             ariaLabel="Add annotation"
                             title="Add annotation - a ready one or a drawn line"
                             active={isPlacingAnnotation || isDrawingLine}
@@ -790,14 +772,14 @@ function Map() {
                             type="button"
                             disabled
                             aria-label="Add territory"
-                            title="Add an actor first"
+                            data-tip="Add an actor first"
                             className={`${navButtonClass} ${needsActorClass}`}
                         >
-                            <NavIcon src={addTerritoryIcon} />
+                            <NavLabeledIcon src={addTerritoryIcon} label="Territory" />
                         </button>
                     ) : (
                         <NavDropdown
-                            label={<NavIcon src={addTerritoryIcon} />}
+                            label={<NavLabeledIcon src={addTerritoryIcon} label="Territory" />}
                             ariaLabel="Add territory"
                             title="Add territory - draw it as a polygon or freehand"
                             active={drawMode === 'polygon' || drawMode === 'freehand' || fillLevel !== null}
@@ -808,15 +790,53 @@ function Map() {
                             <NavDropdownItem onClick={() => startFill('state')}>Fill state</NavDropdownItem>
                         </NavDropdown>
                     ))}
+
+                    {editMode && <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15" />}
+
+                    {editMode && (
+                        <button
+                            type="button"
+                            aria-label="Add actor"
+                            data-tip="Add actor"
+                            onClick={() => setShowAddFaction(true)}
+                            className={navButtonClass}
+                        >
+                            <NavLabeledIcon src={addFactionIcon} label="Actor" />
+                        </button>
+                    )}
+
+                    {editMode && (
+                        <button
+                            type="button"
+                            aria-label="Add layer"
+                            data-tip="Add layer - group events, territories and annotations"
+                            onClick={() => setShowAddLayer(true)}
+                            className={navButtonClass}
+                        >
+                            <NavLabeledIcon src={addLayerIcon} label="Layer" />
+                        </button>
+                    )}
+
+                    {editMode && isAdmin && (
+                        <button
+                            type="button"
+                            aria-label="Watch Telegram channel"
+                            data-tip="Watch a Telegram channel - its news becomes draft events"
+                            onClick={() => setShowAddChannel(true)}
+                            className={navButtonClass}
+                        >
+                            <NavLabeledIcon src={addChannelIcon} label="Channel" />
+                        </button>
+                    )}
                 </div>
 
                 {/* phones: Edit, or in edit mode one Tools menu (no territory drawing: too fiddly by finger) */}
                 {canEdit && !editMode && (
-                    <button type="button" onClick={handleEditClick} className={`${navButtonClass} md:hidden`}>Edit</button>
+                    <button type="button" onClick={handleEditClick} className={`${navButtonClass} lg:hidden`}>Edit</button>
                 )}
-                {!canEdit && mapSummary?.creator && <Link to={`/users/${mapSummary.creator}`} className="max-w-28 truncate px-1 text-gray-200 hover:underline md:hidden">by <span className="font-semibold text-accent-300">{mapSummary.creator}</span></Link>}
+                {!canEdit && mapSummary?.creator && <Link to={`/users/${mapSummary.creator}`} className="max-w-28 truncate px-1 text-gray-200 hover:underline lg:hidden">by <span className="font-semibold text-accent-300">{mapSummary.creator}</span></Link>}
                 {editMode && (
-                    <div className="md:hidden">
+                    <div className="lg:hidden">
                         <NavDropdown
                             label={<NavIcon src={isPlacingEvent ? addEventIcon : isPlacingAnnotation || isDrawingLine ? addAnnotationIcon : drawMode === 'select' ? cursorIcon : handIcon} />}
                             ariaLabel="Edit tools"
@@ -855,67 +875,76 @@ function Map() {
                     {/* All time shows every date at once, so there's no single date to show */}
                     {showAllTime ? 'All time' : (
                         <>
-                            <span className="md:hidden">{new Date(now).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
-                            <span className="max-md:hidden">{new Date(now).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                            <span className="lg:hidden">{new Date(now).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                            <span className="max-lg:hidden">{new Date(now).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
                         </>
                     )}
                 </div>
 
-                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-md:hidden" />
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-lg:hidden" />
 
                 {/* the right side, pushed over by ml-auto: time, then map layers, then close - one group each,
                     with a thin divider between them */}
                 <div className="flex items-center gap-1">
-                    {/* time: which dates the map shows */}
-                    <button
-                        type="button"
-                        aria-pressed={showAllTime}
-                        aria-label="All time"
-                        title="All time - show everything on the map, regardless of date"
-                        onClick={() => setShowAllTime((on) => !on)}
-                        className={`${navButtonClass} ${showAllTime ? navButtonActiveClass : ''}`}
-                    >
-                        <NavIcon src={allTimeIcon} />
-                    </button>
-                    <button
-                        type="button"
-                        aria-pressed={live}
-                        aria-label="Live"
-                        title={showAllTime ? 'Live - not available while All time shows every date'
-                            : live ? 'Live - showing the present; click to pick a date on the timeline' : 'Live - back to the present'}
-                        // locked while All time is on: no date is shown then, so there's nothing to follow or pick
-                        disabled={showAllTime}
-                        onClick={handleLiveToggle}
-                        className={`${navButtonClass} disabled:cursor-not-allowed disabled:text-gray-600 disabled:hover:bg-transparent ${live && !showAllTime ? navButtonActiveClass : ''}`}
-                    >
-                        {/* beats while live, like the unpublished-changes square */}
-                        <NavIcon src={liveIcon} className={live && !showAllTime ? 'animate-heartbeat motion-reduce:animate-none' : ''} />
-                    </button>
+                    {/* time: which dates the map shows - one of three modes, exactly one lit. Desktop: side by
+                        side; phones: the current mode's icon with a menu */}
+                    <div role="radiogroup" aria-label="Time mode" className="flex items-center ring-1 ring-inset ring-white/10 max-lg:hidden">
+                        {TIME_MODES.map(({ mode, label, icon, tip }) => (
+                            <button
+                                key={mode}
+                                type="button"
+                                role="radio"
+                                aria-checked={timeMode === mode}
+                                aria-label={label}
+                                data-tip={tip}
+                                onClick={() => setTimeMode(mode)}
+                                className={`${navButtonClass} ${timeMode === mode ? navButtonActiveClass : ''}`}
+                            >
+                                {/* Live beats while on, like the unpublished-changes square */}
+                                <NavLabeledIcon src={icon} label={label}
+                                    className={mode === 'live' && timeMode === 'live' ? 'animate-heartbeat motion-reduce:animate-none' : ''} />
+                            </button>
+                        ))}
+                    </div>
+                    <div className="lg:hidden">
+                        <NavDropdown
+                            label={<NavIcon src={TIME_MODES.find((m) => m.mode === timeMode)!.icon} />}
+                            ariaLabel="Time mode"
+                            active={timeMode !== 'timeline'}
+                            align="right"
+                        >
+                            {TIME_MODES.map(({ mode, label, icon }) => (
+                                <NavDropdownItem key={mode} onClick={() => setTimeMode(mode)} active={timeMode === mode}>
+                                    <NavIcon src={icon} /> {label}
+                                </NavDropdownItem>
+                            ))}
+                        </NavDropdown>
+                    </div>
                 </div>
 
-                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-md:hidden" />
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-lg:hidden" />
 
                 {/* map layers and tools that only change the view */}
-                <div className="flex items-center gap-1 max-md:hidden">
+                <div className="flex items-center gap-1 max-lg:hidden">
                     <button
                         type="button"
                         aria-pressed={showRelations}
                         aria-label="Event relations"
-                        title="Relations - show how events relate (caused by, retaliation, part of), up to the timeline's date"
+                        data-tip="Relations - show how events relate (caused by, retaliation, part of), up to the timeline's date"
                         onClick={() => setShowRelations((on) => !on)}
                         className={`${navButtonClass} ${showRelations ? navButtonActiveClass : ''}`}
                     >
-                        <NavIcon src={relationsIcon} />
+                        <NavLabeledIcon src={relationsIcon} label="Relations" />
                     </button>
                     <button
                         type="button"
                         aria-pressed={showTopo ? showTopo : false}
                         aria-label="Topographic map"
-                        title="Topographic map"
+                        data-tip="Topographic map"
                         onClick={() => setShowTopo((on) => !on)}
                         className={`${navButtonClass} ${showTopo ? navButtonActiveClass : ''}`}
                     >
-                        <NavIcon src={topoIcon} />
+                        <NavLabeledIcon src={topoIcon} label="Topo" />
                     </button>
 
                     {/* 3D terrain on/off: tilts the map when switched on, flat again when off */}
@@ -923,11 +952,11 @@ function Map() {
                         type="button"
                         aria-pressed={showTerrain}
                         aria-label="3D terrain"
-                        title="3D terrain (right-drag or Ctrl+drag to tilt)"
+                        data-tip="3D terrain (right-drag or Ctrl+drag to tilt)"
                         onClick={() => setShowTerrain((on) => !on)}
                         className={`${navButtonClass} ${showTerrain ? navButtonActiveClass : ''}`}
                     >
-                        <NavIcon src={terrainIcon} />
+                        <NavLabeledIcon src={terrainIcon} label="3D" />
                     </button>
 
                     {/* line of sight: the next map click places an observer; what it can't see turns gray.
@@ -936,11 +965,11 @@ function Map() {
                         type="button"
                         aria-pressed={isPlacingViewshed}
                         aria-label="Line of sight"
-                        title="Line of sight - click a point to see what is visible from there"
+                        data-tip="Line of sight - click a point to see what is visible from there"
                         onClick={toggleViewshed}
                         className={`${navButtonClass} ${isPlacingViewshed ? navButtonActiveClass : ''}`}
                     >
-                        <NavIcon src={eyeIcon} />
+                        <NavLabeledIcon src={eyeIcon} label="Sight" />
                     </button>
 
                     {/* ruler: map clicks draw lines labelled with their distances */}
@@ -948,11 +977,11 @@ function Map() {
                         type="button"
                         aria-pressed={isMeasuring}
                         aria-label="Ruler"
-                        title="Ruler - measure distances on the map"
+                        data-tip="Ruler - measure distances on the map"
                         onClick={toggleRuler}
                         className={`${navButtonClass} ${isMeasuring ? navButtonActiveClass : ''}`}
                     >
-                        <NavIcon src={rulerIcon} />
+                        <NavLabeledIcon src={rulerIcon} label="Ruler" />
                     </button>
 
                     {/* screenshot: drag a box over the map, pick a background, download a picture */}
@@ -960,18 +989,18 @@ function Map() {
                         type="button"
                         aria-pressed={isCapturing}
                         aria-label="Screenshot"
-                        title="Screenshot - save a picture of part of the map"
+                        data-tip="Screenshot - save a picture of part of the map"
                         onClick={toggleScreenshot}
                         className={`${navButtonClass} ${isCapturing ? navButtonActiveClass : ''}`}
                     >
-                        <NavIcon src={cameraIcon} />
+                        <NavLabeledIcon src={cameraIcon} label="Screenshot" />
                     </button>
                 </div>
 
                 <PlaceSearch />
 
                 {/* phones: the same map layers and tools, in one menu */}
-                <div className="md:hidden">
+                <div className="lg:hidden">
                     <NavDropdown
                         label={<NavIcon src={toolsIcon} />}
                         ariaLabel="Map layers and tools"
@@ -988,18 +1017,19 @@ function Map() {
                     </NavDropdown>
                 </div>
 
-                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-md:hidden" />
+                <span aria-hidden="true" className="mx-1 h-6 w-px bg-white/15 max-lg:hidden" />
 
                 {/* back to the maps list; a draft in progress stays saved on the backend. A visitor who
                     isn't signed in has no list, so they go to the login page instead */}
                 <button
                     type="button"
                     aria-label="Close map"
-                    title={auth.currentUser ? 'Back to maps' : 'Sign in'}
+                    data-tip-end // at the screen's edge: its tooltip grows leftward
+                    data-tip={auth.currentUser ? 'Back to maps' : 'Sign in'}
                     onClick={() => navigate(auth.currentUser ? '/maps' : '/')}
                     className={navButtonClass}
                 >
-                    <NavIcon src={closeIcon} />
+                    <NavLabeledIcon src={closeIcon} label="Close" />
                 </button>
             </nav>}
             </MapProvider>
