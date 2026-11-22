@@ -5,6 +5,7 @@ import {
   EVENTS_CLUSTER_LAYER_ID,
   EVENTS_CLUSTER_MAX_ZOOM,
   EVENTS_LAYER_ID,
+  EVENTS_NEW_LAYER_ID,
   EVENTS_SELECTED_LAYER_ID,
   EVENTS_SOURCE_ID,
   RELATIONS_ARROW_LAYER_ID,
@@ -166,6 +167,15 @@ const eventLayers: AddLayerObject[] = [
       'text-allow-overlap': true,
     },
     paint: { 'text-color': ACCENT_LIGHT },
+  },
+  // a soft glow under events added in the last few hours (isNew is set per event in EventMarkers)
+  {
+    id: EVENTS_NEW_LAYER_ID,
+    type: 'circle',
+    source: EVENTS_SOURCE_ID,
+    filter: ['all', NOT_CLUSTER, ['==', ['get', 'isNew'], true]],
+    // bigger than the ~25px marker, so a wide ring shows around it; EventMarkers makes it pulse
+    paint: { 'circle-radius': 40, 'circle-color': ACCENT, 'circle-opacity': 0.8, 'circle-blur': 0.5 },
   },
   // accent ring under the selected event (its filter is set by EventMarkers when selection changes)
   {

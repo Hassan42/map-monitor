@@ -46,6 +46,18 @@ public class EventMarker extends MapElement {
     @ColumnDefault("7")
     private int visibleDays = 7;
 
+    // when the event was first added (UTC); edits keep it, so only new events glow on the map. Null for
+    // events added before this existed
+    private LocalDateTime createdAt;
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public int getVisibleDays() {
         return visibleDays;
     }

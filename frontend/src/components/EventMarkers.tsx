@@ -5,6 +5,7 @@ import { useContextMenu, useMap, useSelection } from '../store/MapContext'
 import type { EventCategory, EventMarker as EventMarkerType, Faction } from '../types/types'
 import {
   EVENTS_LAYER_ID,
+  EVENTS_NEW_LAYER_ID,
   EVENTS_SELECTED_LAYER_ID,
   EVENTS_SOURCE_ID,
   RELATIONS_END_LAYER_ID,
@@ -29,6 +30,10 @@ const DEFAULT_COLOR = '#737373'
 // only events visible at `now` become features: expired ones never reach the map (nor its clusters),
 // they stay in the app's event list and come back when `now` moves back in time. allTime: every event,
 // fully visible, whatever its date
+// newly added events glow on the map for this long after they were added (real time, not the event's date)
+const NEW_GLOW_MS = 3 * 60 * 60 * 1000
+const isNewEvent = (e: EventMarkerType) => !!e.createdAt && Date.now() - parseServerTime(e.createdAt) < NEW_GLOW_MS
+
 function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: number, allTime: boolean): GeoJSON.FeatureCollection {
   const colorByFaction = new Map(factions.map((f) => [f.id, f.color]))
   return {
@@ -40,7 +45,7 @@ function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: nu
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [e.longitude, e.latitude] },
         // the marker layer picks its image from category + color (see eventImageId), and fades it by opacity
-        properties: { id: e.id, color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR, category: categoryOf(e), opacity },
+        properties: { id: e.id, color: colorByFaction.get(e.factionId) ?? DEFAULT_COLOR, category: categoryOf(e), opacity, isNew: isNewEvent(e) },
       }]
     }),
   }
@@ -153,6 +158,23 @@ function EventMarkers({
     }
     source.setData(data)
   }, [map, icons, events, factions, now, allTime])
+
+  // newly added events: their glow pulses, growing and fading every second (a paint transition does the
+  // animation, so it's one call a second), only while there is one and not for reduced motion
+  const anyNew = events.some(isNewEvent)
+  useEffect(() => {
+    if (!map || !anyNew || !map.getLayer(EVENTS_NEW_LAYER_ID)) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-radius-transition', { duration: 1000, delay: 0 })
+    map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-opacity-transition', { duration: 1000, delay: 0 })
+    let big = false
+    const timer = setInterval(() => {
+      big = !big
+      map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-radius', big ? 54 : 40)
+      map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-opacity', big ? 0.3 : 0.8)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [map, anyNew])
 
   // selected event: show the accent ring under it
   useEffect(() => {

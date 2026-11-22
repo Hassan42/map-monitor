@@ -124,6 +124,7 @@ export interface EventMarker extends MapElement {
   endTime?: string | null; // null: a moment (ends when it starts) or ongoing
   ongoing?: boolean;
   visibleDays?: number; // days it stays on the map after it ends
+  createdAt?: string | null; // when it was added (UTC, no timezone); new events glow on the map. Null for older ones
 }
 
 export interface Territory extends MapElement {

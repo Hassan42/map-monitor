@@ -24,6 +24,7 @@ public final class EventMarkerSummaryResponse implements ElementSummary {
     private final LocalDateTime endTime;
     private final boolean ongoing;
     private final int visibleDays;
+    private final LocalDateTime createdAt; // when it was added; the map makes new events glow
 
     private EventMarkerSummaryResponse(EventMarker event) {
         this.id = event.getStableId();
@@ -40,10 +41,15 @@ public final class EventMarkerSummaryResponse implements ElementSummary {
         this.endTime = event.getEndTime();
         this.ongoing = event.isOngoing();
         this.visibleDays = event.getVisibleDays();
+        this.createdAt = event.getCreatedAt();
     }
 
     public List<EventRelationDto> getRelations() {
         return relations;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public static EventMarkerSummaryResponse from(EventMarker event) {

@@ -62,6 +62,7 @@ public class EventMarkerService extends MapElementService<EventMarker> {
 
         EventMarker event = new EventMarker();
         applyRequest(event, request);
+        event.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
         event.setLayer(layerService.findLayerOfMap(draft, request.getLayerId()));
         event.setMapVersion(draft);
         EventMarker saved = eventMarkerRepository.save(event);
@@ -86,6 +87,7 @@ public class EventMarkerService extends MapElementService<EventMarker> {
         if (shadow.getId() == null) {
             shadow.setStableId(stableId);
             shadow.setMapVersion(draft);
+            shadow.setCreatedAt(visible.getCreatedAt()); // an edit isn't new: keep when it was added
         }
 
         applyRequest(shadow, request);
@@ -126,6 +128,7 @@ public class EventMarkerService extends MapElementService<EventMarker> {
         shadow.setEndTime(visible.getEndTime());
         shadow.setOngoing(visible.isOngoing());
         shadow.setVisibleDays(visible.getVisibleDays());
+        shadow.setCreatedAt(visible.getCreatedAt());
         shadow.getRelations().clear(); // a deleted event relates to nothing
         shadow.setDeleted(true);
         eventMarkerRepository.save(shadow);

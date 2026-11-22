@@ -4,6 +4,7 @@ export const EVENTS_SOURCE_ID = 'events'
 export const EVENTS_LAYER_ID = 'events-marker'
 // accent ring drawn under the selected event
 export const EVENTS_SELECTED_LAYER_ID = 'events-selected'
+export const EVENTS_NEW_LAYER_ID = 'events-new' // the glow under recently added events
 // marker images are named by category + faction color, e.g. 'event-ATTACK-#c0392b'.
 // eventLayers.ts builds the same name per feature with an expression - keep the two in sync
 export const EVENT_IMAGE_PREFIX = 'event-'
