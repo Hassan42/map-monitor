@@ -203,6 +203,20 @@ const eventLayers: AddLayerObject[] = [
   },
 ]
 
+// event markers at a size: 1 = full size, smaller on phones (see EventMarkers). The rings and the
+// new-event glow under them grow and shrink with them
+export const SELECTED_RING_RADIUS = 32
+export const NEW_GLOW_RADIUS = 40
+export function setEventMarkerScale(map: Map, scale: number) {
+  for (const id of [EVENTS_LAYER_ID, RELATIONS_END_LAYER_ID]) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'icon-size', scale)
+  }
+  for (const id of [EVENTS_SELECTED_LAYER_ID, RELATIONS_SELECTED_LAYER_ID]) {
+    if (map.getLayer(id)) map.setPaintProperty(id, 'circle-radius', SELECTED_RING_RADIUS * scale)
+  }
+  if (map.getLayer(EVENTS_NEW_LAYER_ID)) map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-radius', NEW_GLOW_RADIUS * scale)
+}
+
 export function addEventLayers(map: Map) {
   if (!map.hasImage(RELATION_ARROW_IMAGE)) map.addImage(RELATION_ARROW_IMAGE, relationArrowImage(), { sdf: true, pixelRatio: 2 })
   if (!map.getSource(RELATIONS_SOURCE_ID)) map.addSource(RELATIONS_SOURCE_ID, relationsSource)

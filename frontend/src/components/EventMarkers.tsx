@@ -13,7 +13,7 @@ import {
   RELATIONS_SOURCE_ID,
   eventImageId,
 } from '../map/mapLayers'
-import { addEventLayers, removeEventLayers } from '../map/eventLayers'
+import { NEW_GLOW_RADIUS, addEventLayers, removeEventLayers, setEventMarkerScale } from '../map/eventLayers'
 import { categoryOf } from '../map/eventCategories'
 import { drawMarkerImage, loadCategoryIcons } from '../map/eventMarkerImages'
 import type { CategoryIcons } from '../map/eventMarkerImages'
@@ -32,6 +32,9 @@ const DEFAULT_COLOR = '#737373'
 // fully visible, whatever its date
 // newly added events glow on the map for this long after they were added (real time, not the event's date)
 const NEW_GLOW_MS = 3 * 60 * 60 * 1000
+// phones (below md): markers at this size
+const PHONE_QUERY = '(max-width: 767px)'
+const PHONE_MARKER_SCALE = 0.7
 const isNewEvent = (e: EventMarkerType) => !!e.createdAt && Date.now() - parseServerTime(e.createdAt) < NEW_GLOW_MS
 
 function eventsToGeoJSON(events: EventMarkerType[], factions: Faction[], now: number, allTime: boolean): GeoJSON.FeatureCollection {
@@ -142,6 +145,18 @@ function EventMarkers({
     return () => removeEventLayers(map)
   }, [map])
 
+  // phones: smaller markers, so they don't cover so much of the small screen
+  const [markerScale, setMarkerScale] = useState(() => (window.matchMedia(PHONE_QUERY).matches ? PHONE_MARKER_SCALE : 1))
+  useEffect(() => {
+    const query = window.matchMedia(PHONE_QUERY)
+    const update = () => setMarkerScale(query.matches ? PHONE_MARKER_SCALE : 1)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+  useEffect(() => {
+    if (map) setEventMarkerScale(map, markerScale)
+  }, [map, markerScale])
+
   // data: one setData call replaces every point. Each (category, color) marker image in use is
   // created here, before the data needs it - MapLibre's on-demand 'styleimagemissing' route only
   // reliably fills one missing image per first draw, so some events would stay invisible
@@ -170,11 +185,11 @@ function EventMarkers({
     let big = false
     const timer = setInterval(() => {
       big = !big
-      map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-radius', big ? 54 : 40)
+      map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-radius', (big ? NEW_GLOW_RADIUS * 1.35 : NEW_GLOW_RADIUS) * markerScale)
       map.setPaintProperty(EVENTS_NEW_LAYER_ID, 'circle-opacity', big ? 0.3 : 0.8)
     }, 1000)
     return () => clearInterval(timer)
-  }, [map, anyNew])
+  }, [map, anyNew, markerScale])
 
   // selected event: show the accent ring under it
   useEffect(() => {
