@@ -203,7 +203,7 @@ const eventLayers: AddLayerObject[] = [
   },
 ]
 
-// event markers at a size: 1 = full size, smaller on phones (see EventMarkers). The rings and the
+// event markers at a size: 1 = full size (EventMarkers uses a smaller one). The rings and the
 // new-event glow under them grow and shrink with them
 export const SELECTED_RING_RADIUS = 32
 export const NEW_GLOW_RADIUS = 40
