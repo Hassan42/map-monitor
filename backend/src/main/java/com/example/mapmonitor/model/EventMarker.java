@@ -43,8 +43,8 @@ public class EventMarker extends MapElement {
 
     // how many days the event stays on the map after it ends (fading out)
     @Column(nullable = false)
-    @ColumnDefault("7")
-    private int visibleDays = 7;
+    @ColumnDefault("3")
+    private int visibleDays = 3;
 
     // when the event was first added (UTC); edits keep it, so only new events glow on the map. Null for
     // events added before this existed

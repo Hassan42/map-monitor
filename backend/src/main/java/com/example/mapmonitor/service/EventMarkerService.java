@@ -22,7 +22,7 @@ import java.util.List;
 @Service
 public class EventMarkerService extends MapElementService<EventMarker> {
 
-    private static final int DEFAULT_VISIBLE_DAYS = 7;
+    private static final int DEFAULT_VISIBLE_DAYS = 3;
     // a browser clock a little ahead of the server's shouldn't make "now" count as the future
     private static final Duration CLOCK_TOLERANCE = Duration.ofMinutes(5);
 

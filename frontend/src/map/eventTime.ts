@@ -1,7 +1,7 @@
 import type { EventMarker } from '../types/types'
 
 export const DAY_MS = 24 * 60 * 60 * 1000
-export const DEFAULT_VISIBLE_DAYS = 7
+export const DEFAULT_VISIBLE_DAYS = 3
 const MIN_OPACITY = 0.3 // faintest an event gets before it disappears, so it stays readable
 
 // the backend stores UTC but sends times without a zone ("2026-10-24T12:00:00"), which the browser
